@@ -34,7 +34,7 @@ public final class GameStore<R: Reducer> {
         try JSONEncoder().encode(state)
     }
     
-    public func onAction(_ action: R.Action) {
+    public func send(_ action: R.Action) {
         let effect = reducer.reduce(state: &state, action: action, environment: environment)
         handleEffect(effect)
     }
@@ -44,15 +44,15 @@ public final class GameStore<R: Reducer> {
         case .none:
             break
         case .logicAction(let action):
-            onAction(action)
+            send(action)
         case .systemAction(let action):
-            onSystemAction(action)
+            sendSystemAction(action)
         case .many(let effects):
             effects.forEach(handleEffect)
         }
     }
     
-    public func onSystemAction(_ action: SystemAction<R.State>) {
+    public func sendSystemAction(_ action: SystemAction<R.State>) {
         switch action {
         case .addEntity(let e):
             addEntity(e)
