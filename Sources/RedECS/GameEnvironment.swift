@@ -1,3 +1,3 @@
 import Foundation
 
-public protocol GameEnvironment: AnyObject { }
+//public protocol GameEnvironment: AnyObject { }

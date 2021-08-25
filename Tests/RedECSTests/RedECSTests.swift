@@ -32,7 +32,7 @@ class RedECSTests: XCTestCase {
         )
         
         // When
-        store.onAction(.tick)
+        store.sendAction(.tick)
         
         // Expect
         XCTAssertEqual(store.state.count, 2)
@@ -51,19 +51,19 @@ class RedECSTests: XCTestCase {
         )
         
         let newEntity: EntityId = UUID().uuidString
-        store.onSystemAction(.addEntity(newEntity))
-        store.onSystemAction(.addComponent(TestPositionComponent(entity: newEntity, position: .zero), into: \.positions))
-        store.onSystemAction(.addComponent(TestMovementComponent(entity: newEntity, velocity: .init(x: 1, y: 0)), into: \.movement))
+        store.sendSystemAction(.addEntity(newEntity))
+        store.sendSystemAction(.addComponent(TestPositionComponent(entity: newEntity, position: .zero), into: \.positions))
+        store.sendSystemAction(.addComponent(TestMovementComponent(entity: newEntity, velocity: .init(x: 1, y: 0)), into: \.movement))
 
         // When
-        store.onAction(.tick)
+        store.sendAction(.tick)
         
         // Expect
         XCTAssertEqual(store.state.positions[newEntity]?.x, 1)
         
         // When
-        store.onAction(.updateVelocity(entity: newEntity, velocity: .zero))
-        store.onAction(.tick)
+        store.sendAction(.updateVelocity(entity: newEntity, velocity: .zero))
+        store.sendAction(.tick)
         
         // Expect
         XCTAssertEqual(store.state.positions[newEntity]?.x, 1)
@@ -83,9 +83,9 @@ class RedECSTests: XCTestCase {
         )
         
         let newEntity: EntityId = UUID().uuidString
-        store.onSystemAction(.addEntity(newEntity))
-        store.onSystemAction(.addComponent(TestPositionComponent(entity: newEntity, position: .zero), into: \.positions))
-        store.onSystemAction(.addComponent(TestMovementComponent(entity: newEntity, velocity: .init(x: 1, y: 0)), into: \.movement))
+        store.sendSystemAction(.addEntity(newEntity))
+        store.sendSystemAction(.addComponent(TestPositionComponent(entity: newEntity, position: .zero), into: \.positions))
+        store.sendSystemAction(.addComponent(TestMovementComponent(entity: newEntity, velocity: .init(x: 1, y: 0)), into: \.movement))
         
         // Expect
         XCTAssertNotEqual(store.state.entities, [])
@@ -93,7 +93,7 @@ class RedECSTests: XCTestCase {
         XCTAssertNotEqual(store.state.movement[newEntity], nil)
         
         // When
-        store.onAction(.removeEntity(entity: newEntity))
+        store.sendAction(.removeEntity(entity: newEntity))
         
         // Expect
         XCTAssertEqual(store.state.entities, [])
@@ -114,12 +114,12 @@ class RedECSTests: XCTestCase {
         )
         
         let newEntity: EntityId = UUID().uuidString
-        store.onSystemAction(.addEntity(newEntity))
-        store.onSystemAction(.addComponent(TestPositionComponent(entity: newEntity, position: .zero), into: \.positions))
-        store.onSystemAction(.addComponent(TestMovementComponent(entity: newEntity, velocity: .init(x: 1, y: 0)), into: \.movement))
+        store.sendSystemAction(.addEntity(newEntity))
+        store.sendSystemAction(.addComponent(TestPositionComponent(entity: newEntity, position: .zero), into: \.positions))
+        store.sendSystemAction(.addComponent(TestMovementComponent(entity: newEntity, velocity: .init(x: 1, y: 0)), into: \.movement))
         
         // When
-        store.onAction(.tick)
+        store.sendAction(.tick)
         
         // Expect
         XCTAssertEqual(store.state.positions[newEntity]?.x, 1)

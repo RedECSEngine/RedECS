@@ -29,17 +29,21 @@ struct TestGlobalState: GameState {
     }
 }
 
-enum TestGlobalAction {
+enum TestGlobalAction: Equatable {
     case tick
     case updateVelocity(entity: EntityId, velocity: Point)
     case removeEntity(entity: EntityId)
 }
 
-final class TestGlobalEnvironment: GameEnvironment {
+final class TestGlobalEnvironment {
     
 }
 
 struct TestGlobalReducer: Reducer {
+    func reduce(state: inout TestGlobalState, delta: Double, environment: TestGlobalEnvironment) -> GameEffect<TestGlobalState, TestGlobalAction> {
+        .none
+    }
+    
     func reduce(
         state: inout TestGlobalState,
         action: TestGlobalAction,
@@ -49,7 +53,7 @@ struct TestGlobalReducer: Reducer {
         case .tick:
             state.count += 1
         case .removeEntity(let entity):
-            return .systemAction(.removeEntity(entity))
+            return .system(.removeEntity(entity))
         default: break
         }
         return .none
@@ -62,6 +66,10 @@ struct TestLocalState: GameState {
 }
 
 struct TestLocalReducer: Reducer {
+    func reduce(state: inout TestLocalState, delta: Double, environment: TestGlobalEnvironment) -> GameEffect<TestLocalState, TestGlobalAction> {
+            .none
+    }
+    
     func reduce(
         state: inout TestLocalState,
         action: TestGlobalAction,

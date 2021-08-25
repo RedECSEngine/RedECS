@@ -1,0 +1,564 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 52;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		754AB7A626792D9D006C6BEE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754AB7A526792D9D006C6BEE /* AppDelegate.swift */; };
+		754AB7A826792D9D006C6BEE /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754AB7A726792D9D006C6BEE /* GameViewController.swift */; };
+		754AB7AB26792D9D006C6BEE /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 754AB7A926792D9D006C6BEE /* Main.storyboard */; };
+		754AB7AE26792D9D006C6BEE /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 754AB7AC26792D9D006C6BEE /* LaunchScreen.storyboard */; };
+		754AB7B726792D9D006C6BEE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754AB7B626792D9D006C6BEE /* AppDelegate.swift */; };
+		754AB7B926792D9D006C6BEE /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754AB7B826792D9D006C6BEE /* GameViewController.swift */; };
+		754AB7BC26792D9D006C6BEE /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 754AB7BA26792D9D006C6BEE /* Main.storyboard */; };
+		754AB7BF26792D9D006C6BEE /* Actions.sks in Resources */ = {isa = PBXBuildFile; fileRef = 754AB79A26792D98006C6BEE /* Actions.sks */; };
+		754AB7C026792D9D006C6BEE /* Actions.sks in Resources */ = {isa = PBXBuildFile; fileRef = 754AB79A26792D98006C6BEE /* Actions.sks */; };
+		754AB7C126792D9D006C6BEE /* GameScene.sks in Resources */ = {isa = PBXBuildFile; fileRef = 754AB79B26792D98006C6BEE /* GameScene.sks */; };
+		754AB7C226792D9D006C6BEE /* GameScene.sks in Resources */ = {isa = PBXBuildFile; fileRef = 754AB79B26792D98006C6BEE /* GameScene.sks */; };
+		754AB7C326792D9D006C6BEE /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754AB79C26792D98006C6BEE /* GameScene.swift */; };
+		754AB7C426792D9D006C6BEE /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754AB79C26792D98006C6BEE /* GameScene.swift */; };
+		754AB7C526792D9D006C6BEE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 754AB79D26792D9D006C6BEE /* Assets.xcassets */; };
+		754AB7C626792D9D006C6BEE /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 754AB79D26792D9D006C6BEE /* Assets.xcassets */; };
+		754AB7D326792DFD006C6BEE /* RedECS in Frameworks */ = {isa = PBXBuildFile; productRef = 754AB7D226792DFD006C6BEE /* RedECS */; };
+		754AB7D92679328A006C6BEE /* RedECS in Frameworks */ = {isa = PBXBuildFile; productRef = 754AB7D82679328A006C6BEE /* RedECS */; };
+		758795F926797C8F00E15986 /* RedECSExamples in Frameworks */ = {isa = PBXBuildFile; productRef = 758795F826797C8F00E15986 /* RedECSExamples */; };
+		758795FB26797C9700E15986 /* RedECSExamples in Frameworks */ = {isa = PBXBuildFile; productRef = 758795FA26797C9700E15986 /* RedECSExamples */; };
+		75E36F462679782F00562113 /* RedECSBasicComponents in Frameworks */ = {isa = PBXBuildFile; productRef = 75E36F452679782F00562113 /* RedECSBasicComponents */; };
+		75E36F482679783500562113 /* RedECSBasicComponents in Frameworks */ = {isa = PBXBuildFile; productRef = 75E36F472679783500562113 /* RedECSBasicComponents */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		754AB79A26792D98006C6BEE /* Actions.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = Actions.sks; sourceTree = "<group>"; };
+		754AB79B26792D98006C6BEE /* GameScene.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = GameScene.sks; sourceTree = "<group>"; };
+		754AB79C26792D98006C6BEE /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
+		754AB79D26792D9D006C6BEE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		754AB7A226792D9D006C6BEE /* RedECSExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RedECSExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		754AB7A526792D9D006C6BEE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		754AB7A726792D9D006C6BEE /* GameViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewController.swift; sourceTree = "<group>"; };
+		754AB7AA26792D9D006C6BEE /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		754AB7AD26792D9D006C6BEE /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		754AB7AF26792D9D006C6BEE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		754AB7B426792D9D006C6BEE /* RedECSExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RedECSExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		754AB7B626792D9D006C6BEE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		754AB7B826792D9D006C6BEE /* GameViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewController.swift; sourceTree = "<group>"; };
+		754AB7BB26792D9D006C6BEE /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		754AB7BD26792D9D006C6BEE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		754AB7BE26792D9D006C6BEE /* RedECSExample_macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RedECSExample_macOS.entitlements; sourceTree = "<group>"; };
+		754AB7D026792DED006C6BEE /* RedECS */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RedECS; path = ..; sourceTree = "<group>"; };
+		754AB7D4267931D0006C6BEE /* ExamplePlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; name = ExamplePlayground.playground; path = ../ExamplePlayground.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		754AB79F26792D9D006C6BEE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				754AB7D326792DFD006C6BEE /* RedECS in Frameworks */,
+				75E36F462679782F00562113 /* RedECSBasicComponents in Frameworks */,
+				758795FB26797C9700E15986 /* RedECSExamples in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		754AB7B126792D9D006C6BEE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				754AB7D92679328A006C6BEE /* RedECS in Frameworks */,
+				75E36F482679783500562113 /* RedECSBasicComponents in Frameworks */,
+				758795F926797C8F00E15986 /* RedECSExamples in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		754AB79426792D98006C6BEE = {
+			isa = PBXGroup;
+			children = (
+				754AB7D4267931D0006C6BEE /* ExamplePlayground.playground */,
+				754AB7D026792DED006C6BEE /* RedECS */,
+				754AB79926792D98006C6BEE /* RedECSExample Shared */,
+				754AB7A426792D9D006C6BEE /* RedECSExample iOS */,
+				754AB7B526792D9D006C6BEE /* RedECSExample macOS */,
+				754AB7A326792D9D006C6BEE /* Products */,
+				754AB7D126792DFD006C6BEE /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		754AB79926792D98006C6BEE /* RedECSExample Shared */ = {
+			isa = PBXGroup;
+			children = (
+				754AB79A26792D98006C6BEE /* Actions.sks */,
+				754AB79B26792D98006C6BEE /* GameScene.sks */,
+				754AB79C26792D98006C6BEE /* GameScene.swift */,
+				754AB79D26792D9D006C6BEE /* Assets.xcassets */,
+			);
+			path = "RedECSExample Shared";
+			sourceTree = "<group>";
+		};
+		754AB7A326792D9D006C6BEE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				754AB7A226792D9D006C6BEE /* RedECSExample.app */,
+				754AB7B426792D9D006C6BEE /* RedECSExample.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		754AB7A426792D9D006C6BEE /* RedECSExample iOS */ = {
+			isa = PBXGroup;
+			children = (
+				754AB7A526792D9D006C6BEE /* AppDelegate.swift */,
+				754AB7A726792D9D006C6BEE /* GameViewController.swift */,
+				754AB7A926792D9D006C6BEE /* Main.storyboard */,
+				754AB7AC26792D9D006C6BEE /* LaunchScreen.storyboard */,
+				754AB7AF26792D9D006C6BEE /* Info.plist */,
+			);
+			path = "RedECSExample iOS";
+			sourceTree = "<group>";
+		};
+		754AB7B526792D9D006C6BEE /* RedECSExample macOS */ = {
+			isa = PBXGroup;
+			children = (
+				754AB7B626792D9D006C6BEE /* AppDelegate.swift */,
+				754AB7B826792D9D006C6BEE /* GameViewController.swift */,
+				754AB7BA26792D9D006C6BEE /* Main.storyboard */,
+				754AB7BD26792D9D006C6BEE /* Info.plist */,
+				754AB7BE26792D9D006C6BEE /* RedECSExample_macOS.entitlements */,
+			);
+			path = "RedECSExample macOS";
+			sourceTree = "<group>";
+		};
+		754AB7D126792DFD006C6BEE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		754AB7A126792D9D006C6BEE /* RedECSExample iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 754AB7C926792D9D006C6BEE /* Build configuration list for PBXNativeTarget "RedECSExample iOS" */;
+			buildPhases = (
+				754AB79E26792D9D006C6BEE /* Sources */,
+				754AB79F26792D9D006C6BEE /* Frameworks */,
+				754AB7A026792D9D006C6BEE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "RedECSExample iOS";
+			packageProductDependencies = (
+				754AB7D226792DFD006C6BEE /* RedECS */,
+				75E36F452679782F00562113 /* RedECSBasicComponents */,
+				758795FA26797C9700E15986 /* RedECSExamples */,
+			);
+			productName = "RedECSExample iOS";
+			productReference = 754AB7A226792D9D006C6BEE /* RedECSExample.app */;
+			productType = "com.apple.product-type.application";
+		};
+		754AB7B326792D9D006C6BEE /* RedECSExample macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 754AB7CC26792D9D006C6BEE /* Build configuration list for PBXNativeTarget "RedECSExample macOS" */;
+			buildPhases = (
+				754AB7B026792D9D006C6BEE /* Sources */,
+				754AB7B126792D9D006C6BEE /* Frameworks */,
+				754AB7B226792D9D006C6BEE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "RedECSExample macOS";
+			packageProductDependencies = (
+				754AB7D82679328A006C6BEE /* RedECS */,
+				75E36F472679783500562113 /* RedECSBasicComponents */,
+				758795F826797C8F00E15986 /* RedECSExamples */,
+			);
+			productName = "RedECSExample macOS";
+			productReference = 754AB7B426792D9D006C6BEE /* RedECSExample.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		754AB79526792D98006C6BEE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1250;
+				LastUpgradeCheck = 1250;
+				TargetAttributes = {
+					754AB7A126792D9D006C6BEE = {
+						CreatedOnToolsVersion = 12.5;
+					};
+					754AB7B326792D9D006C6BEE = {
+						CreatedOnToolsVersion = 12.5;
+					};
+				};
+			};
+			buildConfigurationList = 754AB79826792D98006C6BEE /* Build configuration list for PBXProject "RedECSExample" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 754AB79426792D98006C6BEE;
+			packageReferences = (
+			);
+			productRefGroup = 754AB7A326792D9D006C6BEE /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				754AB7A126792D9D006C6BEE /* RedECSExample iOS */,
+				754AB7B326792D9D006C6BEE /* RedECSExample macOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		754AB7A026792D9D006C6BEE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				754AB7C126792D9D006C6BEE /* GameScene.sks in Resources */,
+				754AB7AB26792D9D006C6BEE /* Main.storyboard in Resources */,
+				754AB7BF26792D9D006C6BEE /* Actions.sks in Resources */,
+				754AB7AE26792D9D006C6BEE /* LaunchScreen.storyboard in Resources */,
+				754AB7C526792D9D006C6BEE /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		754AB7B226792D9D006C6BEE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				754AB7BC26792D9D006C6BEE /* Main.storyboard in Resources */,
+				754AB7C226792D9D006C6BEE /* GameScene.sks in Resources */,
+				754AB7C626792D9D006C6BEE /* Assets.xcassets in Resources */,
+				754AB7C026792D9D006C6BEE /* Actions.sks in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		754AB79E26792D9D006C6BEE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				754AB7C326792D9D006C6BEE /* GameScene.swift in Sources */,
+				754AB7A826792D9D006C6BEE /* GameViewController.swift in Sources */,
+				754AB7A626792D9D006C6BEE /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		754AB7B026792D9D006C6BEE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				754AB7C426792D9D006C6BEE /* GameScene.swift in Sources */,
+				754AB7B926792D9D006C6BEE /* GameViewController.swift in Sources */,
+				754AB7B726792D9D006C6BEE /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		754AB7A926792D9D006C6BEE /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				754AB7AA26792D9D006C6BEE /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		754AB7AC26792D9D006C6BEE /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				754AB7AD26792D9D006C6BEE /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		754AB7BA26792D9D006C6BEE /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				754AB7BB26792D9D006C6BEE /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		754AB7C726792D9D006C6BEE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		754AB7C826792D9D006C6BEE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		754AB7CA26792D9D006C6BEE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = M32VKN5JLM;
+				INFOPLIST_FILE = "RedECSExample iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 14.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.pyrus.RedECSExample;
+				PRODUCT_NAME = RedECSExample;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		754AB7CB26792D9D006C6BEE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = M32VKN5JLM;
+				INFOPLIST_FILE = "RedECSExample iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 14.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = io.pyrus.RedECSExample;
+				PRODUCT_NAME = RedECSExample;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		754AB7CD26792D9D006C6BEE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "RedECSExample macOS/RedECSExample_macOS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = M32VKN5JLM;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "RedECSExample macOS/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.2;
+				PRODUCT_BUNDLE_IDENTIFIER = io.pyrus.RedECSExample;
+				PRODUCT_NAME = RedECSExample;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		754AB7CE26792D9D006C6BEE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "RedECSExample macOS/RedECSExample_macOS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = M32VKN5JLM;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "RedECSExample macOS/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.2;
+				PRODUCT_BUNDLE_IDENTIFIER = io.pyrus.RedECSExample;
+				PRODUCT_NAME = RedECSExample;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		754AB79826792D98006C6BEE /* Build configuration list for PBXProject "RedECSExample" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				754AB7C726792D9D006C6BEE /* Debug */,
+				754AB7C826792D9D006C6BEE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		754AB7C926792D9D006C6BEE /* Build configuration list for PBXNativeTarget "RedECSExample iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				754AB7CA26792D9D006C6BEE /* Debug */,
+				754AB7CB26792D9D006C6BEE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		754AB7CC26792D9D006C6BEE /* Build configuration list for PBXNativeTarget "RedECSExample macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				754AB7CD26792D9D006C6BEE /* Debug */,
+				754AB7CE26792D9D006C6BEE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		754AB7D226792DFD006C6BEE /* RedECS */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedECS;
+		};
+		754AB7D82679328A006C6BEE /* RedECS */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedECS;
+		};
+		758795F826797C8F00E15986 /* RedECSExamples */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedECSExamples;
+		};
+		758795FA26797C9700E15986 /* RedECSExamples */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedECSExamples;
+		};
+		75E36F452679782F00562113 /* RedECSBasicComponents */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedECSBasicComponents;
+		};
+		75E36F472679783500562113 /* RedECSBasicComponents */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedECSBasicComponents;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 754AB79526792D98006C6BEE /* Project object */;
+}

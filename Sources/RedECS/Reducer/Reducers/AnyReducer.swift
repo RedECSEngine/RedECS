@@ -1,13 +1,16 @@
 import Foundation
 
-public struct AnyReducer<State: GameState, Action, Environment: GameEnvironment>: Reducer {
+public struct AnyReducer<State: GameState, Action: Equatable, Environment>: Reducer {
     
-    var reducer: (inout State, Action, Environment) -> GameEffect<State, Action>
+    var reduceDelta: (inout State, Double, Environment) -> GameEffect<State, Action>
+    var reduceAction: (inout State, Action, Environment) -> GameEffect<State, Action>
     
     public init(
-        _ closure: @escaping (inout State, Action, Environment) -> GameEffect<State, Action>
+        _ reduceDelta: @escaping (inout State, Double, Environment) -> GameEffect<State, Action>,
+        _ reduceAction: @escaping (inout State, Action, Environment) -> GameEffect<State, Action>
     ) {
-        self.reducer = closure
+        self.reduceDelta = reduceDelta
+        self.reduceAction = reduceAction
     }
     
     public init<R: Reducer>(_ reducer: R)
@@ -15,15 +18,20 @@ public struct AnyReducer<State: GameState, Action, Environment: GameEnvironment>
           R.Action == Action,
           R.Environment == Environment
     {
-        self.reducer = reducer.reduce(state:action:environment:)
+        self.reduceDelta = reducer.reduce(state:delta:environment:)
+        self.reduceAction = reducer.reduce(state:action:environment:)
     }
     
     public static var noop: Self {
-        AnyReducer { _, _, _ in .none }
+        AnyReducer({ _, _, _ in .none }, { _, _, _ in .none })
+    }
+    
+    public func reduce(state: inout State, delta: Double, environment: Environment) -> GameEffect<State, Action> {
+        reduceDelta(&state, delta, environment)
     }
     
     public func reduce(state: inout State, action: Action, environment: Environment) -> GameEffect<State, Action> {
-        reducer(&state, action, environment)
+        reduceAction(&state, action, environment)
     }
 }
 

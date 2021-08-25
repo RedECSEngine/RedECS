@@ -13,6 +13,10 @@ struct TestMovementComponentState: GameState {
 }
 
 struct TestMovementReducer: Reducer {
+    func reduce(state: inout TestMovementComponentState, delta: Double, environment: TestGlobalEnvironment) -> GameEffect<TestMovementComponentState, TestGlobalAction> {
+            .none
+    }
+    
     typealias State = TestMovementComponentState
     typealias Action = TestGlobalAction
     typealias Environment = TestGlobalEnvironment
