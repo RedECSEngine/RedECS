@@ -2,18 +2,20 @@ import Foundation
 import RedECS
 import SpriteKit
 import RedECSBasicComponents
+import RedECSRenderingComponents
 
 public class FlockingExampleScene: SKScene {
     
-    var store: GameStore<AnyReducer<ExampleGameState, Never, ExampleGameEnvironment>>!
+    var store: GameStore<AnyReducer<ExampleGameState, Never, SpriteRenderingEnvironment>>!
     
     public override init() {
         super.init(size: .init(width: 640, height: 480))
         store = GameStore(
             state: ExampleGameState(),
-            environment: ExampleGameEnvironment(renderer: self),
+            environment: SpriteRenderingEnvironment(renderer: self),
             reducer: (
                 ShapeRenderingReducer()
+                    .pullback(toLocalState: \.shapeContext)
                     + MovementReducer()
                     .pullback(toLocalState: \.movementContext)
                 + FlockingReducer()
@@ -58,7 +60,10 @@ extension FlockingExampleScene {
         store.sendSystemAction(.addEntity(entity))
         store.sendSystemAction(
             .addComponent(
-                ShapeComponent(entity: entity, radius: 30),
+                ShapeComponent(
+                    entity: entity,
+                    shape: .circle(Circle(radius: 30))
+                ),
                 into: \.shape
             )
         )

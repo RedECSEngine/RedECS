@@ -2,19 +2,21 @@ import Foundation
 import RedECS
 import SpriteKit
 import RedECSBasicComponents
+import RedECSRenderingComponents
 
 public class ExampleScene1: SKScene {
     
-    var store: GameStore<AnyReducer<ExampleGameState, Never, ExampleGameEnvironment>>!
+    var store: GameStore<AnyReducer<ExampleGameState, Never, SpriteRenderingEnvironment>>!
     
     public override init() {
         super.init(size: .init(width: 640, height: 480))
         store = GameStore(
             state: ExampleGameState(),
-            environment: ExampleGameEnvironment(renderer: self),
+            environment: SpriteRenderingEnvironment(renderer: self),
             reducer: (
-                ShapeRenderingReducer() +
-                    MovementReducer()
+                ShapeRenderingReducer()
+                    .pullback(toLocalState: \.shapeContext)
+                + MovementReducer()
                     .pullback(toLocalState: \.movementContext)
             
             )
@@ -54,7 +56,7 @@ extension ExampleScene1 {
     public override func mouseDragged(with event: NSEvent) {
         let entity = UUID().uuidString
         store.sendSystemAction(.addEntity(entity))
-        store.sendSystemAction(.addComponent(ShapeComponent(entity: entity, radius: 8), into: \.shape))
+        store.sendSystemAction(.addComponent(ShapeComponent(entity: entity, shape: .circle(Circle(radius: 8))), into: \.shape))
         store.sendSystemAction(
             .addComponent(
                 PositionComponent(

@@ -2,14 +2,6 @@ import Foundation
 import RedECS
 import Geometry
 
-extension Point {
-    mutating func normalize(to maxValue: Double) {
-        let distance = distanceFrom(.zero)
-        guard distance > 0 else { return }
-        self = (self / distance) * maxValue
-    }
-}
-
 public struct FlockingComponent: GameComponent {
     public var entity: EntityId
     

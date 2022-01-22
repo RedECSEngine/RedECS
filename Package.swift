@@ -40,21 +40,29 @@ let package = Package(
             name: "RedECS",
             dependencies: []
         ),
+        .testTarget(
+            name: "RedECSTests",
+            dependencies: ["RedECS"]
+        ),
+        
         .target(
             name: "RedECSBasicComponents",
             dependencies: ["RedECS", "Geometry"]
         ),
         .target(
             name: "RedECSRenderingComponents",
-            dependencies: ["RedECS", "RedECSBasicComponents"]
+            dependencies: [
+                "RedECS",
+                "RedECSBasicComponents",
+                .product(
+                    name: "GeometrySpriteKitExtensions",
+                    package: "Geometry"
+                )
+            ]
         ),
         .target(
             name: "RedECSExamples",
-            dependencies: ["RedECSBasicComponents", "RedECSRenderingComponents"]
+            dependencies: ["RedECSRenderingComponents"]
         ),
-        
-        .testTarget(
-            name: "RedECSTests",
-            dependencies: ["RedECS"]),
     ]
 )

@@ -64,6 +64,10 @@ struct AppView: View {
                     "Follow/Flock/Path",
                     destination: SceneView(sceneType: FollowFlockingPathingExampleScene.self)
                 )
+                NavigationLink(
+                    "Asteroids",
+                    destination: SceneView(sceneType: AsteroidsGameScene.self)
+                )
             }
             HStack {
                 Spacer()

@@ -2,17 +2,18 @@ import Foundation
 import RedECS
 import SpriteKit
 import RedECSBasicComponents
+import RedECSRenderingComponents
 
 public class FollowFlockingPathingExampleScene: SKScene {
     
-    var store: GameStore<AnyReducer<ExampleGameState, PathingAction, ExampleGameEnvironment>>!
+    var store: GameStore<AnyReducer<ExampleGameState, PathingAction, SpriteRenderingEnvironment>>!
     
     public override init() {
         super.init(size: .init(width: 640, height: 480))
         
-        var reducers: AnyReducer<ExampleGameState, PathingAction, ExampleGameEnvironment> = (
+        var reducers: AnyReducer<ExampleGameState, PathingAction, SpriteRenderingEnvironment> = (
             ShapeRenderingReducer()
-                .pullback(toLocalState: \.self)
+                .pullback(toLocalState: \.shapeContext)
                 + MovementReducer()
                 .pullback(toLocalState: \.movementContext)
                 + FlockingReducer()
@@ -30,7 +31,7 @@ public class FollowFlockingPathingExampleScene: SKScene {
         
         store = GameStore(
             state: ExampleGameState(),
-            environment: ExampleGameEnvironment(renderer: self),
+            environment: SpriteRenderingEnvironment(renderer: self),
             reducer: reducers,
             registeredComponentTypes: [
                 .init(keyPath: \.position),
@@ -52,7 +53,6 @@ public class FollowFlockingPathingExampleScene: SKScene {
     var playerId = UUID().uuidString
     
     public override func update(_ currentTime: TimeInterval) {
-        
         if let lastTime = lastTime {
             store.sendDelta((currentTime - lastTime) * 100)
         }
@@ -62,7 +62,7 @@ public class FollowFlockingPathingExampleScene: SKScene {
     public func createPlayer() {
         store.sendSystemAction(.addEntity(playerId))
         
-        let playerShape = ShapeComponent(entity: playerId, radius: 30)
+        let playerShape = ShapeComponent(entity: playerId, shape: .circle(Circle(radius: 30)))
         playerShape.node.addChild(SKLabelNode(text: "P"))
         
         store.sendSystemAction(
@@ -119,7 +119,10 @@ extension FollowFlockingPathingExampleScene {
         store.sendSystemAction(.addEntity(entity))
         store.sendSystemAction(
             .addComponent(
-                ShapeComponent(entity: entity, radius: 20),
+                ShapeComponent(
+                    entity: entity,
+                    shape:  .circle(Circle(radius: 20))
+                ),
                 into: \.shape
             )
         )
