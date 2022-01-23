@@ -4,7 +4,7 @@ import RedECSBasicComponents
 import RedECSRenderingComponents
 
 public struct AsteroidsGameState: GameState {
-    public var entities: Set<EntityId> = []
+    public var entities: [EntityId: GameEntity] = [:]
     
     public var asteroid: [EntityId: AsteroidComponent] = [:]
     public var ship: [EntityId: ShipComponent] = [:]
@@ -18,11 +18,9 @@ public struct AsteroidsGameState: GameState {
      
     /**
         
-       - user interaction
-           - acceleration vector
-           - fire projectile
-       - decceleration
-       - collision (proximity interaction)
+    - collision (proximity interaction)
+    - asteroid positioning safely away from ship
+    - asteroid explode on collision
      */
     
     public init() {}

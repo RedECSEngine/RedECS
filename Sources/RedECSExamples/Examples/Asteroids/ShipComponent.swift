@@ -5,6 +5,7 @@ import Geometry
 public struct ShipComponent: GameComponent {
     public let entity: EntityId
     public let path: Path
+    public var bulletTimeout: Double = 0
     
     public init(entity: EntityId) {
         self.entity = entity

@@ -79,8 +79,8 @@ public final class GameStore<R: Reducer> {
     
     public func sendSystemAction(_ action: SystemAction<R.State>) {
         switch action {
-        case .addEntity(let entityId):
-            addEntity(entityId)
+        case .addEntity(let entityId, let tags):
+            addEntity(entityId, tags: tags)
         case .removeEntity(let entityId):
             removeEntity(entityId)
         case .addComponent(let entityId, let componentRegistration):
@@ -93,15 +93,15 @@ public final class GameStore<R: Reducer> {
         }
     }
     
-    public func addEntity(_ id: EntityId) {
-        state.entities.insert(id)
+    public func addEntity(_ id: EntityId, tags: Set<String>) {
+        state.entities[id] = GameEntity(id: id, tags: tags)
     }
     
     private func removeEntity(_ id: EntityId) {
-        state.entities.remove(id)
         registeredComponentTypes.values.forEach { componentType in
             componentType.onEntityDestroyed(id, &state)
         }
+        state.entities[id] = nil
     }
     
     public func addComponent<C: GameComponent>(

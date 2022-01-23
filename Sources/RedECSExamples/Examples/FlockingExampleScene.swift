@@ -57,7 +57,7 @@ extension FlockingExampleScene {
     
     public override func mouseDragged(with event: NSEvent) {
         let entity = UUID().uuidString
-        store.sendSystemAction(.addEntity(entity))
+        store.sendSystemAction(.addEntity(entity, []))
         store.sendSystemAction(
             .addComponent(
                 ShapeComponent(

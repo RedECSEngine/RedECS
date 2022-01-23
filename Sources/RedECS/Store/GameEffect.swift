@@ -32,7 +32,7 @@ public indirect enum GameEffect<State: GameState, LogicAction: Equatable> {
 }
 
 public enum SystemAction<State: GameState> {
-    case addEntity(EntityId)
+    case addEntity(EntityId, Set<String>)
     case removeEntity(EntityId)
     case addComponent(EntityId, AnyComponent<State>)
     case removeComponent(EntityId, RegisteredComponentId)
@@ -41,8 +41,8 @@ public enum SystemAction<State: GameState> {
         _ stateTransform: WritableKeyPath<S, State>
     ) -> SystemAction<S> {
         switch self {
-        case .addEntity(let e):
-            return .addEntity(e)
+        case .addEntity(let e, let tags):
+            return .addEntity(e, tags)
         case .removeEntity(let e):
             return .removeEntity(e)
         case .addComponent(let eId, let registeredComponent):

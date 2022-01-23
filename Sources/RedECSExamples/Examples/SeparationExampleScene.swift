@@ -21,7 +21,7 @@ extension NSImage {
 }
 
 public struct SeparationExampleState: GameState {
-    public var entities: Set<EntityId> = []
+    public var entities: [EntityId: GameEntity] = [:]
     public var sprite: [EntityId: SpriteComponent] = [:]
     public var position: [EntityId: PositionComponent] = [:]
     public var movement: [EntityId: MovementComponent] = [:]
@@ -130,7 +130,7 @@ extension SeparationExampleScene {
     
     public override func mouseDragged(with event: NSEvent) {
         let entity = UUID().uuidString
-        store.sendSystemAction(.addEntity(entity))
+        store.sendSystemAction(.addEntity(entity, []))
         
         let sprite = SpriteComponent(entity: entity)
         if #available(macOS 11.0, *) {

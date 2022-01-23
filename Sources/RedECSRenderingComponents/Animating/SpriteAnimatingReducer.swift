@@ -4,12 +4,12 @@ import RedECS
 import RedECSBasicComponents
 
 public struct SpriteAnimatingContext: GameState {
-    public var entities: Set<EntityId>
+    public var entities: [EntityId: GameEntity] = [:]
     public var sprite: [EntityId: SpriteComponent]
     public var spriteAnimating: [EntityId: SpriteAnimatingComponent]
     
     public init(
-        entities: Set<EntityId>,
+        entities: [EntityId: GameEntity] = [:],
         sprite: [EntityId : SpriteComponent],
         spriteAnimating: [EntityId : SpriteAnimatingComponent]
     ) {

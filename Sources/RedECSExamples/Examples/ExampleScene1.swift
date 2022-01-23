@@ -55,7 +55,7 @@ extension ExampleScene1 {
     
     public override func mouseDragged(with event: NSEvent) {
         let entity = UUID().uuidString
-        store.sendSystemAction(.addEntity(entity))
+        store.sendSystemAction(.addEntity(entity, []))
         store.sendSystemAction(.addComponent(ShapeComponent(entity: entity, shape: .circle(Circle(radius: 8))), into: \.shape))
         store.sendSystemAction(
             .addComponent(

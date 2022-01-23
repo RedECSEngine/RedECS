@@ -60,7 +60,7 @@ public class FollowFlockingPathingExampleScene: SKScene {
     }
     
     public func createPlayer() {
-        store.sendSystemAction(.addEntity(playerId))
+        store.sendSystemAction(.addEntity(playerId, []))
         
         let playerShape = ShapeComponent(entity: playerId, shape: .circle(Circle(radius: 30)))
         playerShape.node.addChild(SKLabelNode(text: "P"))
@@ -116,7 +116,7 @@ extension FollowFlockingPathingExampleScene {
         guard store.state.entities.count < 15 else { return }
         
         let entity = UUID().uuidString
-        store.sendSystemAction(.addEntity(entity))
+        store.sendSystemAction(.addEntity(entity, []))
         store.sendSystemAction(
             .addComponent(
                 ShapeComponent(

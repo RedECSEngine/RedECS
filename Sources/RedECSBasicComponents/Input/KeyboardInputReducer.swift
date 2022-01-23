@@ -3,11 +3,11 @@ import RedECS
 import Geometry
 
 public struct KeyboardInputReducerContext: GameState {
-    public var entities: Set<EntityId> = []
+    public var entities: [EntityId: GameEntity] = [:]
     public var keyboardInput: [EntityId: KeyboardInputComponent] = [:]
     
     public init(
-        entities: Set<EntityId> = [],
+        entities: [EntityId: GameEntity] = [:],
         keyboardInput: [EntityId: KeyboardInputComponent] = [:]
     ) {
         self.entities = entities

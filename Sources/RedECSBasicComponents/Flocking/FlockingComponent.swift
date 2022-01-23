@@ -34,7 +34,7 @@ public struct FlockingComponent: GameComponent {
 }
 
 public struct FlockingReducerContext: GameState {
-    public var entities: Set<EntityId>
+    public var entities: [EntityId: GameEntity] = [:]
     
     public var position: [EntityId: PositionComponent]
     public var movement: [EntityId: MovementComponent]
@@ -42,7 +42,7 @@ public struct FlockingReducerContext: GameState {
     public var follow: [EntityId: FollowEntityComponent]
     
     public init(
-        entities: Set<EntityId>,
+        entities: [EntityId: GameEntity] = [:],
         position: [EntityId : PositionComponent],
         movement: [EntityId : MovementComponent],
         flocking: [EntityId : FlockingComponent],

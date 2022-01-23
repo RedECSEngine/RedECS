@@ -61,7 +61,7 @@ public class FollowSeparationAndPathingExampleScene: SKScene {
     }
     
     public func createPlayer() {
-        store.sendSystemAction(.addEntity(playerId))
+        store.sendSystemAction(.addEntity(playerId, []))
         
         let playerShape = ShapeComponent(entity: playerId, shape: .circle(Circle(radius: 30)))
         playerShape.node.addChild(SKLabelNode(text: "P"))
@@ -117,7 +117,7 @@ extension FollowSeparationAndPathingExampleScene {
         guard store.state.entities.count < 15 else { return }
         
         let entity = UUID().uuidString
-        store.sendSystemAction(.addEntity(entity))
+        store.sendSystemAction(.addEntity(entity, []))
         store.sendSystemAction(
             .addComponent(
                 ShapeComponent(entity: entity, shape: .circle(Circle(radius: 20))),
@@ -129,8 +129,8 @@ extension FollowSeparationAndPathingExampleScene {
                 PositionComponent(
                     entity: entity,
                     point: Point(
-                        x: Double(event.location(in: self).x),
-                        y: Double(event.location(in: self).y)
+                        x: event.location(in: self).x,
+                        y: event.location(in: self).y
                     )
                 ),
                 into: \.position
