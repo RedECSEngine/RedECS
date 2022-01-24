@@ -94,14 +94,14 @@ public final class GameStore<R: Reducer> {
     }
     
     public func addEntity(_ id: EntityId, tags: Set<String>) {
-        state.entities[id] = GameEntity(id: id, tags: tags)
+        state.entities.addEntity(GameEntity(id: id, tags: tags))
     }
     
     private func removeEntity(_ id: EntityId) {
         registeredComponentTypes.values.forEach { componentType in
             componentType.onEntityDestroyed(id, &state)
         }
-        state.entities[id] = nil
+        state.entities.removeEntity(id)
     }
     
     public func addComponent<C: GameComponent>(

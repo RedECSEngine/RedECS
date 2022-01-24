@@ -3,13 +3,13 @@ import RedECS
 import RedECSBasicComponents
 
 public struct ShapeReducerContext: GameState {
-    public var entities: [EntityId: GameEntity] = [:]
+    public var entities: EntityRepository = .init()
     public var position: [EntityId: PositionComponent]
     public var transform: [EntityId: TransformComponent]
     public var shape: [EntityId: ShapeComponent]
     
     public init(
-        entities: [EntityId: GameEntity] = [:],
+        entities: EntityRepository = .init(),
         position: [EntityId: PositionComponent],
         transform: [EntityId: TransformComponent],
         shape: [EntityId: ShapeComponent]

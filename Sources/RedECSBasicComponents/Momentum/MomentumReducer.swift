@@ -3,12 +3,12 @@ import RedECS
 import Geometry
 
 public struct MomentumReducerContext: GameState {
-    public var entities: [EntityId: GameEntity] = [:]
+    public var entities: EntityRepository = .init()
     public var momentum: [EntityId: MomentumComponent] = [:]
     public var movement: [EntityId: MovementComponent] = [:]
     
     public init(
-        entities: [EntityId: GameEntity] = [:],
+        entities: EntityRepository = .init(),
         momentum: [EntityId : MomentumComponent] = [:],
         movement: [EntityId : MovementComponent] = [:]
     ) {

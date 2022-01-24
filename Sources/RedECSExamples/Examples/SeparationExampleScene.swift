@@ -21,7 +21,7 @@ extension NSImage {
 }
 
 public struct SeparationExampleState: GameState {
-    public var entities: [EntityId: GameEntity] = [:]
+    public var entities: EntityRepository = .init()
     public var sprite: [EntityId: SpriteComponent] = [:]
     public var position: [EntityId: PositionComponent] = [:]
     public var movement: [EntityId: MovementComponent] = [:]

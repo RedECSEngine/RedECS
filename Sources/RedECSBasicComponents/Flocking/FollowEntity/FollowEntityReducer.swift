@@ -2,13 +2,13 @@ import RedECS
 import Geometry
 
 public struct FollowEntityReducerContext: GameState {
-    public var entities: [EntityId: GameEntity] = [:]
+    public var entities: EntityRepository = .init()
     public var position: [EntityId: PositionComponent]
     public var movement: [EntityId: MovementComponent]
     public var followEntity: [EntityId: FollowEntityComponent]
     
     public init(
-        entities: [EntityId: GameEntity] = [:],
+        entities: EntityRepository = .init(),
         position: [EntityId : PositionComponent],
         movement: [EntityId : MovementComponent],
         followEntity: [EntityId : FollowEntityComponent]

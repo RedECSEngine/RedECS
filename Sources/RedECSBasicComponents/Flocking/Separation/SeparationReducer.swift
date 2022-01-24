@@ -3,12 +3,12 @@ import RedECS
 import Geometry
 
 public struct SeparationReducerContext: GameState {
-    public var entities: [EntityId: GameEntity] = [:]
+    public var entities: EntityRepository = .init()
     public var positions: [EntityId: PositionComponent]
     public var movement: [EntityId: MovementComponent]
     public var separation: [EntityId: SeparationComponent]
     public init(
-        entities: [EntityId: GameEntity] = [:],
+        entities: EntityRepository = .init(),
         positions: [EntityId: PositionComponent],
         movement: [EntityId: MovementComponent],
         separation: [EntityId: SeparationComponent]

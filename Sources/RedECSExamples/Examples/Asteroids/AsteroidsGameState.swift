@@ -4,7 +4,7 @@ import RedECSBasicComponents
 import RedECSRenderingComponents
 
 public struct AsteroidsGameState: GameState {
-    public var entities: [EntityId: GameEntity] = [:]
+    public var entities: EntityRepository = .init()
     
     public var asteroid: [EntityId: AsteroidComponent] = [:]
     public var ship: [EntityId: ShipComponent] = [:]
