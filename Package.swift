@@ -30,7 +30,7 @@ let package = Package(
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
-         .package(url: "git@github.com:RedECSEngine/Geometry.git", from: "0.0.1"),
+         .package(url: "git@github.com:RedECSEngine/Geometry.git", from: "0.0.2"),
 //        .package(path: "../Geometry")
     ],
     targets: [

@@ -7,7 +7,7 @@ public indirect enum GameEffect<State: GameState, LogicAction: Equatable> {
     case waitFor(PendingGameEffect<State, LogicAction>)
     case many([Self])
     case none
-    
+
     func map<S: GameState, A>(
         stateTransform: WritableKeyPath<S, State>,
         actionTransform: @escaping (LogicAction) -> A
@@ -36,7 +36,7 @@ public enum SystemAction<State: GameState> {
     case removeEntity(EntityId)
     case addComponent(EntityId, AnyComponent<State>)
     case removeComponent(EntityId, RegisteredComponentId)
-    
+
     func map<S: GameState>(
         _ stateTransform: WritableKeyPath<S, State>
     ) -> SystemAction<S> {
@@ -51,14 +51,14 @@ public enum SystemAction<State: GameState> {
             return .removeComponent(e, registeredComponentId)
         }
     }
-    
+
     public static func addComponent<C: GameComponent>(
         _ component: C,
         into keyPath: WritableKeyPath<State, [EntityId: C]>
     ) -> Self {
         .addComponent(component.entity, AnyComponent(component, into: keyPath))
     }
-    
+
     public static func removeComponent<C: GameComponent>(
         ofType type: C.Type,
         forEntity entity: EntityId

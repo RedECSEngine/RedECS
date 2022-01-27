@@ -113,7 +113,7 @@ extension FollowFlockingPathingExampleScene {
     
     public override func mouseDragged(with event: NSEvent) {
         
-        guard store.state.entities.count < 15 else { return }
+        guard store.state.entities.entityIds.count < 15 else { return }
         
         let entity = UUID().uuidString
         store.sendSystemAction(.addEntity(entity, []))

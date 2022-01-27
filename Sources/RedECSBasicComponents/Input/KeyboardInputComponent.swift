@@ -19,23 +19,31 @@ public enum KeyboardInput: UInt16, Codable, Equatable {
     case leftKey = 123
 }
 
-public struct KeyboardInputComponent: GameComponent {
+public struct KeyboardInputComponent<Action: Equatable & Codable>: GameComponent {
+    public struct Mapping: Equatable, Codable {
+        public var keySet: Set<KeyboardInput>
+        public var action: Action
+    }
+    
     public var entity: EntityId
     public var pressedKeys: [KeyboardInput: Bool]
+    public var keyMap: [Mapping]
     
     public init(
         entity: EntityId,
-        pressedKeys: [KeyboardInput: Bool] = [:]
+        pressedKeys: [KeyboardInput: Bool] = [:],
+        keyMap: [(Set<KeyboardInput>, Action)] = []
     ) {
         self.entity = entity
         self.pressedKeys = pressedKeys
+        self.keyMap = keyMap.map(Mapping.init)
     }
     
     public func isKeyPressed(_ key: KeyboardInput) -> Bool {
        pressedKeys[key] == true
     }
     
-    public func isAnyKeyPressed(in keys: Set<KeyboardInput>) -> Bool {
-        return keys.contains(where: isKeyPressed)
+    public func isAnyKeyPressed(in keySet: Set<KeyboardInput>) -> Bool {
+        return keySet.contains(where: isKeyPressed)
     }
 }

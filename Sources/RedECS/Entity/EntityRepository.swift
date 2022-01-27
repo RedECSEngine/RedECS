@@ -6,7 +6,7 @@ public struct EntityRepository: Equatable, Codable {
     
     public init() { }
     
-    subscript(index: EntityId) -> GameEntity? {
+    public subscript(index: EntityId) -> GameEntity? {
         get {
             entities[index]
         }

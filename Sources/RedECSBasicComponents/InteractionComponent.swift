@@ -1,5 +1,4 @@
 import RedECS
-import RedECSBasicComponents
 
 public struct InteractionComponent<Action: Equatable & Codable>: GameComponent {
     public enum InteractionType: String, Codable, Equatable {

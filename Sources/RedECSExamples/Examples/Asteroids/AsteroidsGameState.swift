@@ -14,7 +14,9 @@ public struct AsteroidsGameState: GameState {
     public var movement: [EntityId: MovementComponent] = [:]
     public var momentum: [EntityId: MomentumComponent] = [:]
     
-    public var keyboardInput: [EntityId: KeyboardInputComponent] = [:]
+    public var keyboardInput: [EntityId: KeyboardInputComponent<AsteroidsGameAction>] = [:]
+    
+    var lastDelta: Double = 0
      
     /**
         
@@ -77,7 +79,7 @@ extension AsteroidsGameState {
 }
 
 extension AsteroidsGameState {
-    var keyboardInputContext: KeyboardInputReducerContext {
+    var keyboardInputContext: KeyboardInputReducerContext<AsteroidsGameAction> {
         get {
             KeyboardInputReducerContext(entities: entities, keyboardInput: keyboardInput)
         }

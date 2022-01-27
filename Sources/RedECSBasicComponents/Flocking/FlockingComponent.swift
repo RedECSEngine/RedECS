@@ -70,7 +70,7 @@ public struct FlockingReducer: Reducer {
             var alignment: Point = .zero
             var cohesion: Point = .zero
             var separation: Point = .zero
-            var neighborCount: Int = 0
+            var neighborCount: Int32 = 0
             
             state.flocking.forEach { (otherEntityId, _) in
                 guard id != otherEntityId,

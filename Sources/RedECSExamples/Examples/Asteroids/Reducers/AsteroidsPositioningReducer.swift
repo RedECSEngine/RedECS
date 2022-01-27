@@ -15,8 +15,9 @@ public struct AsteroidsPositioningReducer: Reducer {
         
         var gameEffects: [GameEffect<AsteroidsGameState, AsteroidsGameAction>] = []
         
-        for entity in state.entities.values {
-            guard var position = state.position[entity.id] else { continue }
+        for entityId in state.entities.entityIds {
+            guard let entity = state.entities[entityId],
+                    var position = state.position[entityId] else { continue }
             var shouldRemove = false
             if position.point.x > 480 {
                 if entity.tags.contains("bullet") {
@@ -46,28 +47,11 @@ public struct AsteroidsPositioningReducer: Reducer {
                     position.point.y = 480
                 }
             }
-            
-            if !shouldRemove && entity.tags.contains("bullet") {
-                for (asteroidId, asteroid) in state.asteroid {
-                    guard let asteroidPosition = state.position[asteroidId] else { continue }
-                    if asteroid.intersects(Circle(center: position.point, radius: 2), whenPositionedAt: asteroidPosition.point) {
-                        gameEffects.append(.system(.removeEntity(asteroidId)))
-                        if asteroid.size > 1 {
-                            gameEffects.append(.many([
-                                generateAsteroidCreationActions(size: asteroid.size - 1, point: asteroidPosition.point),
-                                generateAsteroidCreationActions(size: asteroid.size - 1, point: asteroidPosition.point),
-                                generateAsteroidCreationActions(size: asteroid.size - 1, point: asteroidPosition.point)
-                            ]))
-                        }
-                        shouldRemove = true
-                    }
-                }
-            }
-            
+                        
             if shouldRemove {
-                gameEffects.append(.system(.removeEntity(entity.id)))
+                gameEffects.append(.system(.removeEntity(entityId)))
             } else {
-                state.position[entity.id] = position
+                state.position[entityId] = position
             }
         }
         

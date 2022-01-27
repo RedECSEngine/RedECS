@@ -31,7 +31,7 @@ public struct SeparationReducer: Reducer {
             guard let position = state.positions[id] else { return }
             
             var velocity: Point = .zero
-            var neighborCount: Int = 0
+            var neighborCount: Int32 = 0
             
             state.positions.forEach { (otherEntityId, otherPosition) in
                 guard id != otherEntityId else { return }

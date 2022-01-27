@@ -5,7 +5,7 @@ public struct Throttle<
 > : Reducer {
     var reducer: AnyReducer<R.State, R.Action, R.Environment>
     var minimumDuration: Double
-    
+
     public init(reducer: R, minimumDuration: Double) {
         var accumulatedDelta: Double = 0
         self.reducer = AnyReducer(
@@ -20,7 +20,7 @@ public struct Throttle<
         )
         self.minimumDuration = minimumDuration
     }
-    
+
     public func reduce(
         state: inout R.State,
         action: R.Action,
@@ -32,7 +32,7 @@ public struct Throttle<
             environment: environment
         )
     }
-    
+
     public func reduce(
         state: inout R.State,
         delta: Double,

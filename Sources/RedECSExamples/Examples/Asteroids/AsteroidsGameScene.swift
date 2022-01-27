@@ -5,9 +5,13 @@ import RedECSBasicComponents
 import RedECSRenderingComponents
 import Geometry
 
-public enum AsteroidsGameAction: Equatable {
+public enum AsteroidsGameAction: Equatable & Codable {
     case newGame
     case keyboardInput(KeyboardInputAction)
+    case rotateLeft
+    case rotateRight
+    case propelForward
+    case fireBullet
 }
 
 public class AsteroidsGameScene: SKScene {
@@ -20,7 +24,7 @@ public class AsteroidsGameScene: SKScene {
             state: AsteroidsGameState(),
             environment: SpriteRenderingEnvironment(renderer: self),
             reducer: (
-                zip(AsteroidsPositioningReducer(), AsteroidsInputReducer())
+                zip(AsteroidsPositioningReducer(), AsteroidsInputReducer(), AsteroidsCollisionReducer())
                 + ShapeRenderingReducer()
                     .pullback(toLocalState: \.shapeContext)
                 + MovementReducer()
@@ -39,6 +43,10 @@ public class AsteroidsGameScene: SKScene {
                             }
                         },
                         toGlobalAction: { .keyboardInput($0) }
+                    )
+                + KeyboardKeyMapReducer()
+                    .pullback(
+                        toLocalState: \.keyboardInputContext
                     )
             ).eraseToAnyReducer(),
             registeredComponentTypes: [
