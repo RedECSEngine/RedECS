@@ -19,24 +19,24 @@ public final class GameStore<R: Reducer> {
         self.registeredComponentTypes = registeredComponentTypes.reduce(into: [:]) { $0[$1.id] = $1 }
     }
 
-    public convenience init(
-        data: Data,
-        environment: R.Environment,
-        reducer: R,
-        registeredComponentTypes: Set<RegisteredComponentType<R.State>>
-    ) throws {
-        let state = try JSONDecoder().decode(R.State.self, from: data)
-        self.init(
-            state: state,
-            environment: environment,
-            reducer: reducer,
-            registeredComponentTypes: registeredComponentTypes
-        )
-    }
-
-    public func saveState() throws -> Data {
-        try JSONEncoder().encode(state)
-    }
+//    public convenience init(
+//        data: Data,
+//        environment: R.Environment,
+//        reducer: R,
+//        registeredComponentTypes: Set<RegisteredComponentType<R.State>>
+//    ) throws {
+//        let state = try JSONDecoder().decode(R.State.self, from: data)
+//        self.init(
+//            state: state,
+//            environment: environment,
+//            reducer: reducer,
+//            registeredComponentTypes: registeredComponentTypes
+//        )
+//    }
+//
+//    public func saveState() throws -> Data {
+//        try JSONEncoder().encode(state)
+//    }
 
     public func sendDelta(_ delta: Double) {
         let effect = reducer.reduce(state: &state, delta: delta, environment: environment)
