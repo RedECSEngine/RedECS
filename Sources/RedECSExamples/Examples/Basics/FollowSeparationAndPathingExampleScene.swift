@@ -3,17 +3,19 @@ import RedECS
 import SpriteKit
 import RedECSBasicComponents
 import RedECSRenderingComponents
+import RedECSSpriteKitSupport
+import Geometry
 
 public class FollowSeparationAndPathingExampleScene: SKScene {
     
-    var store: GameStore<AnyReducer<ExampleGameState, PathingAction, SpriteRenderingEnvironment>>!
+    var store: GameStore<AnyReducer<ExampleGameState, PathingAction, ExampleGameEnvironment>>!
     
     public override init() {
         super.init(size: .init(width: 640, height: 480))
         
-        var reducers: AnyReducer<ExampleGameState, PathingAction, SpriteRenderingEnvironment> = (
-            ShapeRenderingReducer()
-                .pullback(toLocalState: \.shapeContext)
+        var reducers: AnyReducer<ExampleGameState, PathingAction, ExampleGameEnvironment> = (
+            SpriteKitShapeRenderingReducer()
+                .pullback(toLocalState: \.shapeContext, toLocalEnvironment: { $0 as ExampleGameEnvironment })
                 + MovementReducer()
                 .pullback(toLocalState: \.movementContext)
                 + SeparationReducer()
@@ -31,7 +33,7 @@ public class FollowSeparationAndPathingExampleScene: SKScene {
         
         store = GameStore(
             state: ExampleGameState(),
-            environment: SpriteRenderingEnvironment(renderer: self),
+            environment: ExampleGameEnvironment(renderer: .init(scene: self)),
             reducer: reducers,
             registeredComponentTypes: [
                 .init(keyPath: \.position),
@@ -64,7 +66,7 @@ public class FollowSeparationAndPathingExampleScene: SKScene {
         store.sendSystemAction(.addEntity(playerId, []))
         
         let playerShape = ShapeComponent(entity: playerId, shape: .circle(Circle(radius: 30)))
-        playerShape.node.addChild(SKLabelNode(text: "P"))
+//        playerShape.node.addChild(SKLabelNode(text: "P"))
         
         store.sendSystemAction(
             .addComponent(
@@ -114,7 +116,7 @@ extension FollowSeparationAndPathingExampleScene {
     
     public override func mouseDragged(with event: NSEvent) {
         
-        guard store.state.entities.count < 15 else { return }
+        guard store.state.entities.entityIds.count < 15 else { return }
         
         let entity = UUID().uuidString
         store.sendSystemAction(.addEntity(entity, []))

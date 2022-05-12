@@ -1,5 +1,3 @@
-import Foundation
-
 public final class GameStore<R: Reducer> {
     public private(set) var state: R.State
     public private(set) var environment: R.Environment
@@ -18,31 +16,12 @@ public final class GameStore<R: Reducer> {
         self.reducer = reducer
         self.registeredComponentTypes = registeredComponentTypes.reduce(into: [:]) { $0[$1.id] = $1 }
     }
-    
-    public convenience init(
-        data: Data,
-        environment: R.Environment,
-        reducer: R,
-        registeredComponentTypes: Set<RegisteredComponentType<R.State>>
-    ) throws {
-        let state = try JSONDecoder().decode(R.State.self, from: data)
-        self.init(
-            state: state,
-            environment: environment,
-            reducer: reducer,
-            registeredComponentTypes: registeredComponentTypes
-        )
-    }
-    
-    public func saveState() throws -> Data {
-        try JSONEncoder().encode(state)
-    }
-    
+
     public func sendDelta(_ delta: Double) {
         let effect = reducer.reduce(state: &state, delta: delta, environment: environment)
         handleEffect(effect)
     }
-    
+
     public func sendAction(_ action: R.Action) {
 //        print("[♦️] \(action)")
         var remainingAwaits: [PendingGameEffect<R.State, R.Action>] = []
@@ -57,7 +36,7 @@ public final class GameStore<R: Reducer> {
         let effect = reducer.reduce(state: &state, action: action, environment: environment)
         handleEffect(effect)
     }
-    
+
     public func handleEffect(_ effect: GameEffect<R.State, R.Action>) {
         switch effect {
         case .none:
@@ -76,7 +55,7 @@ public final class GameStore<R: Reducer> {
             awaitingEffects.append(pendingEffect)
         }
     }
-    
+
     public func sendSystemAction(_ action: SystemAction<R.State>) {
         switch action {
         case .addEntity(let entityId, let tags):
@@ -92,18 +71,20 @@ public final class GameStore<R: Reducer> {
             registeredComponentTypes[registeredComponentId]?.onEntityDestroyed(entityId, &state)
         }
     }
-    
+
     public func addEntity(_ id: EntityId, tags: Set<String>) {
         state.entities.addEntity(GameEntity(id: id, tags: tags))
+        reducer.reduce(state: &state, entityEvent: .added(id), environment: environment)
     }
-    
+
     private func removeEntity(_ id: EntityId) {
         registeredComponentTypes.values.forEach { componentType in
             componentType.onEntityDestroyed(id, &state)
         }
         state.entities.removeEntity(id)
+        reducer.reduce(state: &state, entityEvent: .removed(id), environment: environment)
     }
-    
+
     public func addComponent<C: GameComponent>(
         _ component: C,
         into keyPath: WritableKeyPath<R.State, [EntityId: C]>
@@ -112,16 +93,15 @@ public final class GameStore<R: Reducer> {
         assert(isComponentTypeRegistered(id: registration.id), "Attempting to add a component type that is not registered \(String(describing: registration.id))")
         registration.onAdd(component.entity, &state)
     }
-    
+
     public func removeComponent<C: GameComponent>(
         ofType type: C.Type,
         from keyPath: WritableKeyPath<R.State, [EntityId: C]>,
         forEntity entity: EntityId
     ) {
-        state[keyPath: keyPath][entity]?.prepareForDestruction()
         state[keyPath: keyPath][entity] = nil
     }
-    
+
     private func isComponentTypeRegistered(id: String) -> Bool {
         registeredComponentTypes[id] != nil
     }

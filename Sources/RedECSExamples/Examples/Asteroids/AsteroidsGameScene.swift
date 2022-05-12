@@ -3,26 +3,31 @@ import SpriteKit
 import RedECS
 import RedECSBasicComponents
 import RedECSRenderingComponents
+import RedECSSpriteKitSupport
 import Geometry
 
-public enum AsteroidsGameAction: Equatable {
+public enum AsteroidsGameAction: Equatable & Codable {
     case newGame
     case keyboardInput(KeyboardInputAction)
+    case rotateLeft
+    case rotateRight
+    case propelForward
+    case fireBullet
 }
 
 public class AsteroidsGameScene: SKScene {
     
-    var store: GameStore<AnyReducer<AsteroidsGameState, AsteroidsGameAction, SpriteRenderingEnvironment>>!
+    var store: GameStore<AnyReducer<AsteroidsGameState, AsteroidsGameAction, ExampleGameEnvironment>>!
     
     public override init() {
         super.init(size: .init(width: 640, height: 480))
         store = GameStore(
             state: AsteroidsGameState(),
-            environment: SpriteRenderingEnvironment(renderer: self),
+            environment: ExampleGameEnvironment(renderer: .init(scene: self)),
             reducer: (
-                zip(AsteroidsPositioningReducer(), AsteroidsInputReducer())
-                + ShapeRenderingReducer()
-                    .pullback(toLocalState: \.shapeContext)
+                zip(AsteroidsPositioningReducer(), AsteroidsInputReducer(), AsteroidsCollisionReducer())
+                + SpriteKitShapeRenderingReducer()
+                    .pullback(toLocalState: \.shapeContext, toLocalEnvironment: { $0 as SpriteKitRenderingEnvironment })
                 + MovementReducer()
                     .pullback(toLocalState: \.movementContext)
                 + MomentumReducer()
@@ -39,6 +44,10 @@ public class AsteroidsGameScene: SKScene {
                             }
                         },
                         toGlobalAction: { .keyboardInput($0) }
+                    )
+                + KeyboardKeyMapReducer()
+                    .pullback(
+                        toLocalState: \.keyboardInputContext
                     )
             ).eraseToAnyReducer(),
             registeredComponentTypes: [

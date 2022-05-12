@@ -3,7 +3,7 @@ import Foundation
 
 struct TestGlobalState: GameState {
     var entities: Set<EntityId> = []
-    var count: Int = 0
+    var count: Int32 = 0
     var text: String = ""
     
     var positions: [EntityId: TestPositionComponent] = [:]
@@ -62,7 +62,7 @@ struct TestGlobalReducer: Reducer {
 
 struct TestLocalState: GameState {
     var entities: Set<EntityId> = []
-    var count: Int
+    var count: Int32
 }
 
 struct TestLocalReducer: Reducer {

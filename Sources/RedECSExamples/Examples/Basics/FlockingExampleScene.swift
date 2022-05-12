@@ -3,19 +3,23 @@ import RedECS
 import SpriteKit
 import RedECSBasicComponents
 import RedECSRenderingComponents
+import RedECSSpriteKitSupport
+import Geometry
 
 public class FlockingExampleScene: SKScene {
     
-    var store: GameStore<AnyReducer<ExampleGameState, Never, SpriteRenderingEnvironment>>!
+    var store: GameStore<AnyReducer<ExampleGameState, Never, ExampleGameEnvironment>>!
     
     public override init() {
         super.init(size: .init(width: 640, height: 480))
         store = GameStore(
             state: ExampleGameState(),
-            environment: SpriteRenderingEnvironment(renderer: self),
+            environment: ExampleGameEnvironment(renderer: SpriteKitRenderer(scene: self)),
             reducer: (
-                ShapeRenderingReducer()
-                    .pullback(toLocalState: \.shapeContext)
+                SpriteKitShapeRenderingReducer()
+                    .pullback(toLocalState: \.shapeContext, toLocalEnvironment: {
+                        $0 as ExampleGameEnvironment
+                    })
                     + MovementReducer()
                     .pullback(toLocalState: \.movementContext)
                 + FlockingReducer()

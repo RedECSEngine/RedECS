@@ -4,11 +4,11 @@ import Geometry
 
 public struct AsteroidComponent: GameComponent {
     public let entity: EntityId
-    public let size: Int
+    public let size: Int32
     public let path: Path
     
-    var edges: Int {
-        size * 4
+    var edges: Int32 {
+        size * 6
     }
     
     var radius: Double {
@@ -18,7 +18,7 @@ public struct AsteroidComponent: GameComponent {
     var radiusRangeLow: Double = 0.8
     var radiusRangeHigh: Double = 1.2
     
-    public init(entity: EntityId, size: Int, path: Path? = nil) {
+    public init(entity: EntityId, size: Int32, path: Path? = nil) {
         self.entity = entity
         self.size = size
         if let path = path {

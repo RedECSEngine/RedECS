@@ -9,63 +9,20 @@ public struct AsteroidsInputReducer: Reducer {
     public func reduce(
         state: inout AsteroidsGameState,
         delta: Double,
-        environment: SpriteRenderingEnvironment
+        environment: ExampleGameEnvironment
     ) -> GameEffect<AsteroidsGameState, AsteroidsGameAction> {
-        
-        guard var ship = state.ship["ship"],
-              let position = state.position[ship.entity],
-              var momentum = state.momentum[ship.entity],
-              var transform = state.transform[ship.entity] else {
-                  fatalError("dafuk!?")
-              }
-        
-        var gameEffects: [GameEffect<AsteroidsGameState, AsteroidsGameAction>] = []
-        
-        ship.bulletTimeout = max(0, ship.bulletTimeout - delta)
-        
-        if let keyboardInput = state.keyboardInput[ship.entity] {
-            if keyboardInput.isAnyKeyPressed(in: [.upKey, .w]) {
-                let y = cos(transform.rotate.degreesToRadians())
-                let x = -sin(transform.rotate.degreesToRadians())
-                let vector = Point(x: x, y: y) * (Double(delta) / 50)
-                momentum.velocity.x += vector.x
-                momentum.velocity.y += vector.y
-                if momentum.velocity.distanceFrom(.zero) > 2 {
-                    momentum.velocity.normalize(to: 2)
-                }
-            }
-            if keyboardInput.isAnyKeyPressed(in: [.leftKey, .a]) {
-                transform.rotate += 5
-            }
-            if keyboardInput.isAnyKeyPressed(in: [.rightKey, .d]) {
-                transform.rotate -= 5
-            }
-            if keyboardInput.isKeyPressed(.space) && ship.bulletTimeout == 0 {
-                let y = cos(transform.rotate.degreesToRadians())
-                let x = -sin(transform.rotate.degreesToRadians())
-                let bulletDirection = Point(x: x, y: y)
-                let bulletVelocity = bulletDirection * 1.2
-                gameEffects += [generateBulletCreationActions(
-                    position: position.point.offsetBy(bulletDirection * 25),
-                    velocity: momentum.velocity + bulletVelocity
-                )]
-                ship.bulletTimeout = 30
-                print("entity count", state.entities.count)
-            }
+        state.lastDelta = delta
+        if var ship = state.ship["ship"] {
+            ship.bulletTimeout = max(0, ship.bulletTimeout - delta)
+            state.ship[ship.entity] = ship
         }
-        
-        state.ship[ship.entity] = ship
-        state.position[ship.entity] = position
-        state.momentum[ship.entity] = momentum
-        state.transform[ship.entity] = transform
-        
-        return .many(gameEffects)
+        return .none
     }
     
     public func reduce(
         state: inout AsteroidsGameState,
         action: AsteroidsGameAction,
-        environment: SpriteRenderingEnvironment
+        environment: ExampleGameEnvironment
     ) -> GameEffect<AsteroidsGameState, AsteroidsGameAction> {
         switch action {
         case .newGame:
@@ -73,7 +30,60 @@ public struct AsteroidsInputReducer: Reducer {
                 generateShipCreationActions(),
                 generateAsteroidCreationActions(size: 4, point: .init(x: 300, y: 300))
             ])
-        case .keyboardInput:
+        case .propelForward:
+            guard let ship = state.ship["ship"],
+                  var momentum = state.momentum[ship.entity],
+                  let transform = state.transform[ship.entity] else {
+                      fatalError("dafuk!?")
+                  }
+            let y = cos(transform.rotate.degreesToRadians())
+            let x = -sin(transform.rotate.degreesToRadians())
+            let vector = Point(x: x, y: y) * (Double(state.lastDelta) / 50)
+            momentum.velocity.x += vector.x
+            momentum.velocity.y += vector.y
+            if momentum.velocity.distanceFrom(.zero) > 2 {
+                momentum.velocity.normalize(to: 2)
+            }
+            state.momentum[ship.entity] = momentum
+            return .none
+        case .rotateLeft:
+            guard let ship = state.ship["ship"],
+                  var transform = state.transform[ship.entity] else {
+                      fatalError("dafuk!?")
+                  }
+            transform.rotate += 5
+            state.transform[ship.entity] = transform
+            return .none
+        case .rotateRight:
+            guard let ship = state.ship["ship"],
+                  var transform = state.transform[ship.entity] else {
+                      fatalError("dafuk!?")
+                  }
+            transform.rotate -= 5
+            state.transform[ship.entity] = transform
+            return .none
+        case .fireBullet:
+            guard var ship = state.ship["ship"],
+                  let position = state.position[ship.entity],
+                  let momentum = state.momentum[ship.entity],
+                  let transform = state.transform[ship.entity] else {
+                      fatalError("dafuk!?")
+                  }
+            
+            guard ship.bulletTimeout == 0 else { return .none }
+            
+            let y = cos(transform.rotate.degreesToRadians())
+            let x = -sin(transform.rotate.degreesToRadians())
+            let bulletDirection = Point(x: x, y: y)
+            let bulletVelocity = bulletDirection * 2
+            ship.bulletTimeout = 15
+            
+            state.ship[ship.entity] = ship
+            return .many([generateBulletCreationActions(
+                position: position.point.offsetBy(bulletDirection * 25),
+                velocity: momentum.velocity + bulletVelocity
+            )])
+        default:
             return .none
         }
     }
@@ -87,7 +97,15 @@ func generateShipCreationActions() -> GameEffect<AsteroidsGameState, AsteroidsGa
     let movement = MovementComponent(entity: shipId, velocity: .zero, travelSpeed: 1)
     let transform = TransformComponent(entity: shipId)
     let momentum = MomentumComponent(entity: shipId, velocity: .zero)
-    let keyboard = KeyboardInputComponent(entity: shipId)
+    let keyboard = KeyboardInputComponent<AsteroidsGameAction>(
+        entity: shipId,
+        keyMap: [
+            ([.a, .leftKey], .rotateLeft),
+            ([.d, .rightKey], .rotateRight),
+            ([.space], .fireBullet),
+            ([.w, .upKey], .propelForward),
+        ]
+    )
     return .many([
         .system(.addEntity(shipId, [])),
         .system(.addComponent(ship, into: \.ship)),
@@ -100,7 +118,7 @@ func generateShipCreationActions() -> GameEffect<AsteroidsGameState, AsteroidsGa
     ])
 }
 
-func generateAsteroidCreationActions(size: Int, point: Point) -> GameEffect<AsteroidsGameState, AsteroidsGameAction> {
+func generateAsteroidCreationActions(size: Int32, point: Point) -> GameEffect<AsteroidsGameState, AsteroidsGameAction> {
     let asteroidId: EntityId = UUID().uuidString
     let asteroid = AsteroidComponent(entity: asteroidId, size: size, path: nil)
     let shape = ShapeComponent(entity: asteroidId, shape: .polygon(asteroid.path))

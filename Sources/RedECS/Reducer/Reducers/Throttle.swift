@@ -5,7 +5,7 @@ public struct Throttle<
 > : Reducer {
     var reducer: AnyReducer<R.State, R.Action, R.Environment>
     var minimumDuration: Double
-    
+
     public init(reducer: R, minimumDuration: Double) {
         var accumulatedDelta: Double = 0
         self.reducer = AnyReducer(
@@ -16,31 +16,44 @@ public struct Throttle<
                 accumulatedDelta = 0
                 return reducer.reduce(state: &state, delta: nextDelta, environment: env)
             },
-            reducer.reduce(state:action:environment:)
+            reducer.reduce(state:action:environment:),
+            reducer.reduce(state:entityEvent:environment:)
         )
         self.minimumDuration = minimumDuration
     }
-    
+
     public func reduce(
         state: inout R.State,
         action: R.Action,
         environment: R.Environment
     ) -> GameEffect<R.State,  R.Action> {
-        return reducer.reduce(
+        reducer.reduce(
             state: &state,
             action: action,
+            environment: environment
+        )
+    }
+
+    public func reduce(
+        state: inout R.State,
+        delta: Double,
+        environment: R.Environment
+    ) -> GameEffect<R.State, R.Action> {
+        reducer.reduce(
+            state: &state,
+            delta: delta,
             environment: environment
         )
     }
     
     public func reduce(
         state: inout R.State,
-        delta: Double,
+        entityEvent: EntityEvent,
         environment: R.Environment
-    ) -> GameEffect<R.State, R.Action> {
-        return reducer.reduce(
+    ) {
+        reducer.reduce(
             state: &state,
-            delta: delta,
+            entityEvent: entityEvent,
             environment: environment
         )
     }

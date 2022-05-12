@@ -5,11 +5,10 @@ public typealias RegisteredComponentId = String
 public struct RegisteredComponentType<S: GameState>: Identifiable {
     public let id: RegisteredComponentId
     public let onEntityDestroyed: (EntityId, inout S) -> Void
-    
+
     public init<C: GameComponent>(keyPath: WritableKeyPath<S, [EntityId: C]>) {
         id = String(describing: C.self)
         onEntityDestroyed = { entity, state in
-            state[keyPath: keyPath][entity]?.prepareForDestruction()
             state[keyPath: keyPath][entity] = nil
         }
     }

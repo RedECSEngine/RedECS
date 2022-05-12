@@ -1,8 +1,7 @@
-import Foundation
 import RedECS
 import RedECSBasicComponents
 
-public struct ShapeReducerContext: GameState {
+public struct ShapeRenderingContext: GameState {
     public var entities: EntityRepository = .init()
     public var position: [EntityId: PositionComponent]
     public var transform: [EntityId: TransformComponent]

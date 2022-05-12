@@ -1,9 +1,7 @@
-import Foundation
-
 public struct PendingGameEffect<State: GameState, Action: Equatable> {
     public var outstandingActions: [Action]
     public let effect: GameEffect<State, Action>
-    
+
     public init(
         outstandingActions: [Action],
         effect: GameEffect<State, Action>
@@ -11,7 +9,7 @@ public struct PendingGameEffect<State: GameState, Action: Equatable> {
         self.outstandingActions = outstandingActions
         self.effect = effect
     }
-    
+
     public init(
         outstandingAction: Action,
         effect: GameEffect<State, Action>
@@ -19,7 +17,7 @@ public struct PendingGameEffect<State: GameState, Action: Equatable> {
         self.outstandingActions = [outstandingAction]
         self.effect = effect
     }
-    
+
     public mutating func evaluateCompleteness(_ action: Action) -> Bool {
         guard let index = outstandingActions.firstIndex(where: { $0 == action }) else { return false }
         outstandingActions.remove(at: index)
@@ -29,7 +27,7 @@ public struct PendingGameEffect<State: GameState, Action: Equatable> {
             return false
         }
     }
-    
+
     public func map<S: GameState, A>(
         stateTransform: WritableKeyPath<S, State>,
         actionTransform: @escaping (Action) -> A
