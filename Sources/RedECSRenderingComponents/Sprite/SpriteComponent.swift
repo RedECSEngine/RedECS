@@ -1,5 +1,3 @@
-import Foundation
-import SpriteKit
 import RedECS
 
 public struct SpriteComponent: GameComponent {
@@ -8,15 +6,10 @@ public struct SpriteComponent: GameComponent {
     }
     
     public var entity: EntityId
-    public var node: SKSpriteNode = .init()
     
     public init(
         entity: EntityId
     ) {
         self.entity = entity
-    }
-    
-    public func prepareForDestruction() {
-        node.removeFromParent()
     }
 }

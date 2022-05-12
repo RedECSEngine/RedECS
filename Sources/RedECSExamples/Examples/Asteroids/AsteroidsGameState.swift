@@ -29,9 +29,9 @@ public struct AsteroidsGameState: GameState {
 }
 
 extension AsteroidsGameState {
-    var shapeContext: ShapeReducerContext {
+    var shapeContext: ShapeRenderingContext {
         get {
-            ShapeReducerContext(
+            ShapeRenderingContext(
                 entities: entities,
                 position: position,
                 transform: transform,

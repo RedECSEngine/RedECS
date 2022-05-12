@@ -22,18 +22,3 @@ public struct FollowedByCameraReducerContext: GameState {
         self.followedByCamera = followedByCamera
     }
 }
-
-public struct FollowedByCameraReducer: Reducer {
-    public init() {}
-    public func reduce(
-        state: inout FollowedByCameraReducerContext,
-        delta: Double,
-        environment: SpriteRenderingEnvironment
-    ) -> GameEffect<FollowedByCameraReducerContext, Never> {
-        if let id = state.followedByCamera.values.first?.entity,
-              let position = state.position[id]  {
-            environment.renderer.setCameraPosition(.init(x: position.point.x, y: position.point.y))
-        }
-        return .none
-    }
-}

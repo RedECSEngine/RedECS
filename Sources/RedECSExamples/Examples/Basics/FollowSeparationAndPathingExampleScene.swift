@@ -3,21 +3,23 @@ import RedECS
 import SpriteKit
 import RedECSBasicComponents
 import RedECSRenderingComponents
+import RedECSSpriteKitSupport
+import Geometry
 
-public class FollowFlockingPathingExampleScene: SKScene {
+public class FollowSeparationAndPathingExampleScene: SKScene {
     
-    var store: GameStore<AnyReducer<ExampleGameState, PathingAction, SpriteRenderingEnvironment>>!
+    var store: GameStore<AnyReducer<ExampleGameState, PathingAction, ExampleGameEnvironment>>!
     
     public override init() {
         super.init(size: .init(width: 640, height: 480))
         
-        var reducers: AnyReducer<ExampleGameState, PathingAction, SpriteRenderingEnvironment> = (
-            ShapeRenderingReducer()
-                .pullback(toLocalState: \.shapeContext)
+        var reducers: AnyReducer<ExampleGameState, PathingAction, ExampleGameEnvironment> = (
+            SpriteKitShapeRenderingReducer()
+                .pullback(toLocalState: \.shapeContext, toLocalEnvironment: { $0 as ExampleGameEnvironment })
                 + MovementReducer()
                 .pullback(toLocalState: \.movementContext)
-                + FlockingReducer()
-                .pullback(toLocalState: \.flockingContext)
+                + SeparationReducer()
+                .pullback(toLocalState: \.separationContext)
         )
         .eraseToAnyReducer()
         reducers = (
@@ -31,13 +33,13 @@ public class FollowFlockingPathingExampleScene: SKScene {
         
         store = GameStore(
             state: ExampleGameState(),
-            environment: SpriteRenderingEnvironment(renderer: self),
+            environment: ExampleGameEnvironment(renderer: .init(scene: self)),
             reducer: reducers,
             registeredComponentTypes: [
                 .init(keyPath: \.position),
                 .init(keyPath: \.movement),
                 .init(keyPath: \.shape),
-                .init(keyPath: \.flocking),
+                .init(keyPath: \.separation),
                 .init(keyPath: \.following),
                 .init(keyPath: \.pathing)
             ]
@@ -53,6 +55,7 @@ public class FollowFlockingPathingExampleScene: SKScene {
     var playerId = UUID().uuidString
     
     public override func update(_ currentTime: TimeInterval) {
+        
         if let lastTime = lastTime {
             store.sendDelta((currentTime - lastTime) * 100)
         }
@@ -63,7 +66,7 @@ public class FollowFlockingPathingExampleScene: SKScene {
         store.sendSystemAction(.addEntity(playerId, []))
         
         let playerShape = ShapeComponent(entity: playerId, shape: .circle(Circle(radius: 30)))
-        playerShape.node.addChild(SKLabelNode(text: "P"))
+//        playerShape.node.addChild(SKLabelNode(text: "P"))
         
         store.sendSystemAction(
             .addComponent(
@@ -101,7 +104,7 @@ public class FollowFlockingPathingExampleScene: SKScene {
 
 #if os(OSX)
 // Mouse-based event handling
-extension FollowFlockingPathingExampleScene {
+extension FollowSeparationAndPathingExampleScene {
 
     public override func mouseDown(with event: NSEvent) {
         let point = event.location(in: self)
@@ -119,10 +122,7 @@ extension FollowFlockingPathingExampleScene {
         store.sendSystemAction(.addEntity(entity, []))
         store.sendSystemAction(
             .addComponent(
-                ShapeComponent(
-                    entity: entity,
-                    shape:  .circle(Circle(radius: 20))
-                ),
+                ShapeComponent(entity: entity, shape: .circle(Circle(radius: 20))),
                 into: \.shape
             )
         )
@@ -131,8 +131,8 @@ extension FollowFlockingPathingExampleScene {
                 PositionComponent(
                     entity: entity,
                     point: Point(
-                        x: Double(event.location(in: self).x),
-                        y: Double(event.location(in: self).y)
+                        x: event.location(in: self).x,
+                        y: event.location(in: self).y
                     )
                 ),
                 into: \.position
@@ -146,8 +146,8 @@ extension FollowFlockingPathingExampleScene {
         )
         store.sendSystemAction(
             .addComponent(
-                FlockingComponent(entity: entity),
-                into: \.flocking
+                SeparationComponent(entity: entity, radius: 60),
+                into: \.separation
             )
         )
         store.sendSystemAction(

@@ -20,9 +20,9 @@ public struct ExampleGameState: GameState {
 }
 
 extension ExampleGameState {
-    var shapeContext: ShapeReducerContext {
+    var shapeContext: ShapeRenderingContext {
         get {
-            ShapeReducerContext(
+            ShapeRenderingContext(
                 entities: entities,
                 position: position,
                 transform: transform,

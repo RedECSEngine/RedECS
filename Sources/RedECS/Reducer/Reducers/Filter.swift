@@ -36,6 +36,19 @@ public struct Filter<
             environment: environment
         )
     }
+    
+    public func reduce(
+        state: inout R.State,
+        entityEvent: EntityEvent,
+        environment: R.Environment
+    ) {
+        guard predicate(state, nil) else { return }
+        reducer.reduce(
+            state: &state,
+            entityEvent: entityEvent,
+            environment: environment
+        )
+    }
 }
 
 public extension Reducer {

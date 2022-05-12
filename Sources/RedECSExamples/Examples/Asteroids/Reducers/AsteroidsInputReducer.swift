@@ -9,17 +9,20 @@ public struct AsteroidsInputReducer: Reducer {
     public func reduce(
         state: inout AsteroidsGameState,
         delta: Double,
-        environment: SpriteRenderingEnvironment
+        environment: ExampleGameEnvironment
     ) -> GameEffect<AsteroidsGameState, AsteroidsGameAction> {
         state.lastDelta = delta
-        state.ship[ship.entity]?.bulletTimeout = max(0, ship.bulletTimeout - delta)
+        if var ship = state.ship["ship"] {
+            ship.bulletTimeout = max(0, ship.bulletTimeout - delta)
+            state.ship[ship.entity] = ship
+        }
         return .none
     }
     
     public func reduce(
         state: inout AsteroidsGameState,
         action: AsteroidsGameAction,
-        environment: SpriteRenderingEnvironment
+        environment: ExampleGameEnvironment
     ) -> GameEffect<AsteroidsGameState, AsteroidsGameAction> {
         switch action {
         case .newGame:
@@ -72,8 +75,8 @@ public struct AsteroidsInputReducer: Reducer {
             let y = cos(transform.rotate.degreesToRadians())
             let x = -sin(transform.rotate.degreesToRadians())
             let bulletDirection = Point(x: x, y: y)
-            let bulletVelocity = bulletDirection * 1.2
-            ship.bulletTimeout = 30
+            let bulletVelocity = bulletDirection * 2
+            ship.bulletTimeout = 15
             
             state.ship[ship.entity] = ship
             return .many([generateBulletCreationActions(

@@ -1,5 +1,3 @@
-import Foundation
-
 public final class GameStore<R: Reducer> {
     public private(set) var state: R.State
     public private(set) var environment: R.Environment
@@ -17,25 +15,6 @@ public final class GameStore<R: Reducer> {
         self.environment = environment
         self.reducer = reducer
         self.registeredComponentTypes = registeredComponentTypes.reduce(into: [:]) { $0[$1.id] = $1 }
-    }
-
-    public convenience init(
-        data: Data,
-        environment: R.Environment,
-        reducer: R,
-        registeredComponentTypes: Set<RegisteredComponentType<R.State>>
-    ) throws {
-        let state = try JSONDecoder().decode(R.State.self, from: data)
-        self.init(
-            state: state,
-            environment: environment,
-            reducer: reducer,
-            registeredComponentTypes: registeredComponentTypes
-        )
-    }
-
-    public func saveState() throws -> Data {
-        try JSONEncoder().encode(state)
     }
 
     public func sendDelta(_ delta: Double) {
@@ -95,6 +74,7 @@ public final class GameStore<R: Reducer> {
 
     public func addEntity(_ id: EntityId, tags: Set<String>) {
         state.entities.addEntity(GameEntity(id: id, tags: tags))
+        reducer.reduce(state: &state, entityEvent: .added(id), environment: environment)
     }
 
     private func removeEntity(_ id: EntityId) {
@@ -102,6 +82,7 @@ public final class GameStore<R: Reducer> {
             componentType.onEntityDestroyed(id, &state)
         }
         state.entities.removeEntity(id)
+        reducer.reduce(state: &state, entityEvent: .removed(id), environment: environment)
     }
 
     public func addComponent<C: GameComponent>(
@@ -118,7 +99,6 @@ public final class GameStore<R: Reducer> {
         from keyPath: WritableKeyPath<R.State, [EntityId: C]>,
         forEntity entity: EntityId
     ) {
-        state[keyPath: keyPath][entity]?.prepareForDestruction()
         state[keyPath: keyPath][entity] = nil
     }
 

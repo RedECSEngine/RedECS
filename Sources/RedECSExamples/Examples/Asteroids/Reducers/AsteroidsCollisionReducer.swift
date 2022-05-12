@@ -9,7 +9,7 @@ public struct AsteroidsCollisionReducer: Reducer {
     public func reduce(
         state: inout AsteroidsGameState,
         delta: Double,
-        environment: SpriteRenderingEnvironment
+        environment: ExampleGameEnvironment
     ) -> GameEffect<AsteroidsGameState, AsteroidsGameAction> {
         var gameEffects: [GameEffect<AsteroidsGameState, AsteroidsGameAction>] = []
         for entityId in state.entities.entityIds {
@@ -43,7 +43,7 @@ public struct AsteroidsCollisionReducer: Reducer {
     public func reduce(
         state: inout AsteroidsGameState,
         action: AsteroidsGameAction,
-        environment: SpriteRenderingEnvironment
+        environment: ExampleGameEnvironment
     ) -> GameEffect<AsteroidsGameState, AsteroidsGameAction> {
         return .none
     }

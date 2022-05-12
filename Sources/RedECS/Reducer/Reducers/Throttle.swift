@@ -16,7 +16,8 @@ public struct Throttle<
                 accumulatedDelta = 0
                 return reducer.reduce(state: &state, delta: nextDelta, environment: env)
             },
-            reducer.reduce(state:action:environment:)
+            reducer.reduce(state:action:environment:),
+            reducer.reduce(state:entityEvent:environment:)
         )
         self.minimumDuration = minimumDuration
     }
@@ -26,7 +27,7 @@ public struct Throttle<
         action: R.Action,
         environment: R.Environment
     ) -> GameEffect<R.State,  R.Action> {
-        return reducer.reduce(
+        reducer.reduce(
             state: &state,
             action: action,
             environment: environment
@@ -38,9 +39,21 @@ public struct Throttle<
         delta: Double,
         environment: R.Environment
     ) -> GameEffect<R.State, R.Action> {
-        return reducer.reduce(
+        reducer.reduce(
             state: &state,
             delta: delta,
+            environment: environment
+        )
+    }
+    
+    public func reduce(
+        state: inout R.State,
+        entityEvent: EntityEvent,
+        environment: R.Environment
+    ) {
+        reducer.reduce(
+            state: &state,
+            entityEvent: entityEvent,
             environment: environment
         )
     }

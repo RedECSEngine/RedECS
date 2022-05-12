@@ -1,5 +1,3 @@
-import Foundation
-
 public struct PendingGameEffect<State: GameState, Action: Equatable> {
     public var outstandingActions: [Action]
     public let effect: GameEffect<State, Action>

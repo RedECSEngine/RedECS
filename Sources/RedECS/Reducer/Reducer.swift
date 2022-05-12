@@ -7,7 +7,13 @@ public protocol Reducer {
 
     func reduce(state: inout State, delta: Double, environment: Environment) -> GameEffect<State, Action>
     func reduce(state: inout State, action: Action, environment: Environment) -> GameEffect<State, Action>
+    func reduce(state: inout State, entityEvent: EntityEvent, environment: Environment)
 }
+
+public extension Reducer {
+    func reduce(state: inout State, entityEvent: EntityEvent, environment: Environment) { }
+}
+
 
 public extension Reducer where Action == Never {
     func reduce(state: inout State, action: Action, environment: Environment) -> GameEffect<State, Action> {

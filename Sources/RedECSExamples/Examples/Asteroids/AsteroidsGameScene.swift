@@ -3,6 +3,7 @@ import SpriteKit
 import RedECS
 import RedECSBasicComponents
 import RedECSRenderingComponents
+import RedECSSpriteKitSupport
 import Geometry
 
 public enum AsteroidsGameAction: Equatable & Codable {
@@ -16,17 +17,17 @@ public enum AsteroidsGameAction: Equatable & Codable {
 
 public class AsteroidsGameScene: SKScene {
     
-    var store: GameStore<AnyReducer<AsteroidsGameState, AsteroidsGameAction, SpriteRenderingEnvironment>>!
+    var store: GameStore<AnyReducer<AsteroidsGameState, AsteroidsGameAction, ExampleGameEnvironment>>!
     
     public override init() {
         super.init(size: .init(width: 640, height: 480))
         store = GameStore(
             state: AsteroidsGameState(),
-            environment: SpriteRenderingEnvironment(renderer: self),
+            environment: ExampleGameEnvironment(renderer: .init(scene: self)),
             reducer: (
                 zip(AsteroidsPositioningReducer(), AsteroidsInputReducer(), AsteroidsCollisionReducer())
-                + ShapeRenderingReducer()
-                    .pullback(toLocalState: \.shapeContext)
+                + SpriteKitShapeRenderingReducer()
+                    .pullback(toLocalState: \.shapeContext, toLocalEnvironment: { $0 as SpriteKitRenderingEnvironment })
                 + MovementReducer()
                     .pullback(toLocalState: \.movementContext)
                 + MomentumReducer()

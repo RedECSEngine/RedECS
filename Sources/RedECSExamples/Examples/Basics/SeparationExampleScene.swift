@@ -3,6 +3,8 @@ import RedECS
 import SpriteKit
 import RedECSBasicComponents
 import RedECSRenderingComponents
+import RedECSSpriteKitSupport
+import Geometry
 
 extension NSImage {
     func tint(color: NSColor) -> NSImage {
@@ -62,11 +64,12 @@ extension SeparationExampleState {
 }
 
 extension SeparationExampleState {
-    var spriteRenderingContext: SpriteReducerContext {
+    var spriteRenderingContext: SpriteRenderingContext {
         get {
-            return SpriteReducerContext(
+            return SpriteRenderingContext(
                 entities: entities,
                 position: position,
+                transform: .init(),
                 sprite: sprite
             )
         }
@@ -79,16 +82,16 @@ extension SeparationExampleState {
 
 public class SeparationExampleScene: SKScene {
     
-    var store: GameStore<AnyReducer<SeparationExampleState, Never, SpriteRenderingEnvironment>>!
+    var store: GameStore<AnyReducer<SeparationExampleState, Never, ExampleGameEnvironment>>!
     
     public override init() {
         super.init(size: .init(width: 640, height: 480))
         store = GameStore(
             state: SeparationExampleState(),
-            environment: SpriteRenderingEnvironment(renderer: self),
+            environment: ExampleGameEnvironment(renderer: .init(scene: self)),
             reducer: (
-                SpriteRenderingReducer()
-                    .pullback(toLocalState: \.spriteRenderingContext)
+                SpriteKitSpriteRenderingReducer()
+                    .pullback(toLocalState: \.spriteRenderingContext, toLocalEnvironment: { $0 as SpriteKitRenderingEnvironment })
                     + MovementReducer()
                     .pullback(toLocalState: \.movementContext)
                     + SeparationReducer()
@@ -143,8 +146,8 @@ extension SeparationExampleScene {
                         blue: .random(in: 0...1), alpha: 1
                 ))
             let texture = SKTexture(image: image ?? NSImage())
-            sprite.node.texture = texture
-            sprite.node.size = .init(width: 60, height: 60)
+//            sprite.node.texture = texture
+//            sprite.node.size = .init(width: 60, height: 60)
         }
         store.sendSystemAction(
             .addComponent(

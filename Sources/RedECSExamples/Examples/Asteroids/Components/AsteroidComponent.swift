@@ -8,7 +8,7 @@ public struct AsteroidComponent: GameComponent {
     public let path: Path
     
     var edges: Int32 {
-        size * 4
+        size * 6
     }
     
     var radius: Double {

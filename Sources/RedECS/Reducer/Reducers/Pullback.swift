@@ -38,6 +38,18 @@ public struct Pullback<
         )
         .map(stateTransform: toLocalState, actionTransform: toGlobalAction)
     }
+    
+    public func reduce(
+        state: inout GlobalState,
+        entityEvent: EntityEvent,
+        environment: GlobalEnvironment
+    ) {
+        reducer.reduce(
+            state: &state[keyPath: toLocalState],
+            entityEvent: entityEvent,
+            environment: toLocalEnvironment(environment)
+        )
+    }
 }
 
 public extension Reducer {

@@ -30,6 +30,15 @@ where A.State == B.State,
             b.reduce(state: &state, delta: delta, environment: environment)
         ])
     }
+    
+    public func reduce(
+        state: inout A.State,
+        entityEvent: EntityEvent,
+        environment: A.Environment
+    ) {
+        a.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        b.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+    }
 }
 
 public func + <A: Reducer, B: Reducer> (_ lhs: A, _ rhs: B) -> Zip2<A, B>
@@ -80,6 +89,12 @@ where A.State == B.State,
             c.reduce(state: &state, delta: delta, environment: environment)
         ])
     }
+    
+    public func reduce(state: inout A.State, entityEvent: EntityEvent, environment: A.Environment) {
+        a.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        b.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        c.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+    }
 }
 
 public func zip<A: Reducer, B: Reducer, C: Reducer>(_ a: A, _ b: B, _ c: C) -> Zip3<A, B, C> {
@@ -129,6 +144,13 @@ where A.State == B.State,
             c.reduce(state: &state, delta: delta, environment: environment),
             d.reduce(state: &state, delta: delta, environment: environment)
         ])
+    }
+    
+    public func reduce(state: inout A.State, entityEvent: EntityEvent, environment: A.Environment) {
+        a.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        b.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        c.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        d.reduce(state: &state, entityEvent: entityEvent, environment: environment)
     }
 }
 
@@ -191,6 +213,14 @@ where A.State == B.State,
             d.reduce(state: &state, delta: delta, environment: environment),
             e.reduce(state: &state, delta: delta, environment: environment)
         ])
+    }
+    
+    public func reduce(state: inout A.State, entityEvent: EntityEvent, environment: A.Environment) {
+        a.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        b.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        c.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        d.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        e.reduce(state: &state, entityEvent: entityEvent, environment: environment)
     }
 }
 
@@ -261,6 +291,15 @@ where A.State == B.State,
             e.reduce(state: &state, delta: delta, environment: environment),
             f.reduce(state: &state, delta: delta, environment: environment),
         ])
+    }
+    
+    public func reduce(state: inout A.State, entityEvent: EntityEvent, environment: A.Environment) {
+        a.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        b.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        c.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        d.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        e.reduce(state: &state, entityEvent: entityEvent, environment: environment)
+        f.reduce(state: &state, entityEvent: entityEvent, environment: environment)
     }
 }
 

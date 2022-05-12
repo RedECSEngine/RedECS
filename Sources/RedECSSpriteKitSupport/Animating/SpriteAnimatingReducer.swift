@@ -2,6 +2,7 @@ import SpriteKit
 import Geometry
 import RedECS
 import RedECSBasicComponents
+import RedECSRenderingComponents
 
 public struct SpriteAnimatingContext: GameState {
     public var entities: EntityRepository = .init()
@@ -38,9 +39,14 @@ public enum SpriteAnimatingAction: Equatable {
     case animationComplete(UUID)
 }
 
-public struct SpriteAnimatingEnvironment {
+public struct SpriteAnimatingEnvironment: SpriteKitRenderingEnvironment {
+    public var renderer: SpriteKitRenderer
     public var animations: [String: AnimationDictionary]
-    public init(animations: [String: AnimationDictionary]) {
+    public init(
+        renderer: SpriteKitRenderer,
+        animations: [String: AnimationDictionary]
+    ) {
+        self.renderer = renderer
         self.animations = animations
     }
 }
@@ -63,20 +69,22 @@ public struct SpriteAnimatingReducer: Reducer {
         switch action {
         case let .run(entityId, animationName, config):
             guard let spriteAnimating = state.spriteAnimating[entityId],
-                  let sprite = state.sprite[entityId],
+                  state.sprite[entityId] != nil,
+                  let spriteNode = environment.renderer.scene.childNode(withName: entityId) as? SKSpriteNode,
                   let animationsMap = environment.animations[spriteAnimating.atlasName] else {
                 return .none
             }
-            runAnimationForever(sprite: sprite.node, name: animationName, animationsMap: animationsMap, config: config)
+            runAnimationForever(sprite: spriteNode, name: animationName, animationsMap: animationsMap, config: config)
         case let .runOnce(animationId, entityId, animationName, config):
             guard let spriteAnimating = state.spriteAnimating[entityId],
-                  let sprite = state.sprite[entityId],
+                  state.sprite[entityId] != nil,
+                  let spriteNode = environment.renderer.scene.childNode(withName: entityId) as? SKSpriteNode,
                   let animationsMap = environment.animations[spriteAnimating.atlasName] else {
                 return .none
             }
             return .deferred(.init { resolver in
                 runAnimationOnce(
-                    sprite: sprite.node,
+                    sprite: spriteNode,
                     name: animationName,
                     animationsMap: animationsMap,
                     config: config
