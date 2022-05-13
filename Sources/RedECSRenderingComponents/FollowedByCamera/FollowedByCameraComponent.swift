@@ -10,15 +10,15 @@ public struct FollowedByCameraComponent: GameComponent {
 
 public struct FollowedByCameraReducerContext: GameState {
     public var entities: EntityRepository
-    public var position: [EntityId: PositionComponent]
+    public var transform: [EntityId: TransformComponent]
     public var followedByCamera: [EntityId: FollowedByCameraComponent]
     public init(
         entities: EntityRepository,
-        position: [EntityId: PositionComponent],
+        transform: [EntityId: TransformComponent],
         followedByCamera: [EntityId: FollowedByCameraComponent]
     ) {
         self.entities = entities
-        self.position = position
+        self.transform = transform
         self.followedByCamera = followedByCamera
     }
 }

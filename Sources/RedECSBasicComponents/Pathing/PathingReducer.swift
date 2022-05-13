@@ -3,18 +3,18 @@ import Geometry
 
 public struct PathingReducerContext: GameState {
     public var entities: EntityRepository = .init()
-    public var position: [EntityId: PositionComponent]
+    public var transform: [EntityId: TransformComponent]
     public var movement: [EntityId: MovementComponent]
     public var pathing: [EntityId: PathingComponent]
     
     public init(
         entities: EntityRepository = .init(),
-        position: [EntityId : PositionComponent],
+        transform: [EntityId: TransformComponent],
         movement: [EntityId : MovementComponent],
         pathing: [EntityId : PathingComponent]
     ) {
         self.entities = entities
-        self.position = position
+        self.transform = transform
         self.movement = movement
         self.pathing = pathing
     }
@@ -37,16 +37,16 @@ public struct PathingReducer: Reducer {
         var effects: [GameEffect<PathingReducerContext, PathingAction>] = []
         state.pathing.forEach { (id, pathing) in
             guard let firstLocation = pathing.travelPath.first,
-                  let position = state.position[id] else { return }
+                  let position = state.transform[id] else { return }
             
-            if position.point.distanceFrom(firstLocation) < pathing.allowableProximityVariance {
+            if position.position.distanceFrom(firstLocation) < pathing.allowableProximityVariance {
                 state.pathing[id]?.travelPath.removeFirst()
                 if state.pathing[id]?.travelPath.isEmpty == true {
                     effects.append(.game(.pathingComplete(id)))
                 }
             } else {
                 var velocity: Point = .zero
-                let diffPos = position.point.diffOf(firstLocation)
+                let diffPos = position.position.diffOf(firstLocation)
                 let maxDirectionalDistance = max(abs(diffPos.x), abs(diffPos.y))
 
                 velocity.x -= diffPos.x != 0 ? max(min(diffPos.x / maxDirectionalDistance, 1) , -1) : 0

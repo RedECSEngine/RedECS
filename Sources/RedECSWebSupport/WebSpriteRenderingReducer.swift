@@ -9,7 +9,7 @@ public struct WebSpriteRenderingReducer: Reducer {
         environment: WebRenderingEnvironment
     ) -> GameEffect<SpriteRenderingContext, Never> {
         state.sprite.forEach { (id, shapeComponent) in
-            guard let position = state.position[id] else { return }
+            guard let position = state.transform[id] else { return }
             // TODO: yo
             
 //            let sprite: SKNode
@@ -21,7 +21,7 @@ public struct WebSpriteRenderingReducer: Reducer {
 //                sprite = node
 //            }
 //
-//            sprite.position = .init(x: position.point.x, y: position.point.y)
+//            sprite.position = .init(x: position.position.x, y: position.position.y)
 //            if let transform = state.transform[id] {
 //                sprite.zRotation = transform.rotate.degreesToRadians()
 //                sprite.position.x += transform.translate.x

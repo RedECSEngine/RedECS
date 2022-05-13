@@ -15,7 +15,6 @@ open class WebBrowserWindow {
     }
     
     open func onWebRendererReady() {
-        print("web rendering ready")
         addListeners()
         requestAnimationFrame()
     }
@@ -36,6 +35,32 @@ open class WebBrowserWindow {
             }
             return .undefined
         })
+        
+        _ = renderer.canvasElement.addEventListener("mousedown", JSClosure { [weak self] args in
+            guard let self = self, let event = args.first else { return .undefined }
+            self.mouseDown(self.position(for: event, in: self.renderer.canvasElement))
+            return .undefined
+        }, false)
+        
+        _ = renderer.canvasElement.addEventListener("mousemove", JSClosure { [weak self] args in
+            guard let self = self,  let event = args.first else { return .undefined }
+            self.mouseMove(self.position(for: event, in: self.renderer.canvasElement))
+            return .undefined
+        }, false)
+        
+        _ = renderer.canvasElement.addEventListener("mouseup", JSClosure { [weak self] args in
+            guard let self = self,  let event = args.first else { return .undefined }
+            self.mouseUp(self.position(for: event, in: self.renderer.canvasElement))
+            return .undefined
+        }, false)
+    }
+    
+    private func position(for event: JSValue, in canvasElement: JSValue) -> Point {
+        let rect = canvasElement.getBoundingClientRect()
+        return .init(
+            x: (event.clientX.number ?? 0) - (rect.left.number ?? 0),
+            y: (event.clientY.number ?? 0) - (rect.top.number ?? 0)
+        )
     }
     
     private func requestAnimationFrame() {
@@ -46,15 +71,32 @@ open class WebBrowserWindow {
         })
     }
     
-    open func onKeyDown(_ key: KeyboardInput) {
-        print("onKeyDown", key)
-    }
-    
-    open func onKeyUp(_ key: KeyboardInput) {
-        print("onKeyUp", key)
-    }
-    
     open func update(_ currentTime: Double) {
         requestAnimationFrame()
     }
+    
+    // MARK: - Keyboard
+    
+    open func onKeyDown(_ key: KeyboardInput) {
+//        print("onKeyDown", key)
+    }
+    
+    open func onKeyUp(_ key: KeyboardInput) {
+//        print("onKeyUp", key)
+    }
+    
+    // MARK: - Mouse
+    
+    open func mouseDown(_ location: Point) {
+//        print("mouseDown", location)
+    }
+    
+    open func mouseMove(_ location: Point) {
+//        print("mouseMove", location)
+    }
+    
+    open func mouseUp(_ location: Point) {
+//        print("mouseMove", location)
+    }
+    
 }

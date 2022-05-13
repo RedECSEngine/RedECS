@@ -13,7 +13,7 @@ public struct SpriteKitShapeRenderingReducer: Reducer {
         environment: SpriteKitRenderingEnvironment
     ) -> GameEffect<ShapeRenderingContext, Never> {
         state.shape.forEach { (id, shapeComponent) in
-            guard let position = state.position[id] else { return }
+            guard let transform = state.transform[id] else { return }
             
             let shape: SKNode
             if let shapeNode = environment.renderer.scene.childNode(withName: id) {
@@ -31,11 +31,11 @@ public struct SpriteKitShapeRenderingReducer: Reducer {
                 shape = shapeNode
             }
             
-            shape.position = .init(x: position.point.x, y: position.point.y)
+            shape.position = .init(x: transform.position.x, y: transform.position.y)
             if let transform = state.transform[id] {
                 shape.zRotation = transform.rotate.degreesToRadians()
-                shape.position.x += transform.translate.x
-                shape.position.y += transform.translate.y
+                shape.position.x += transform.position.x
+                shape.position.y += transform.position.y
             }
         }
         return .none

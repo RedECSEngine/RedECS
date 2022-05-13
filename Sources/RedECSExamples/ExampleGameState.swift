@@ -7,7 +7,7 @@ import RedECSRenderingComponents
 public struct ExampleGameState: GameState {
     public var entities: EntityRepository = .init()
     public var shape: [EntityId: ShapeComponent] = [:]
-    public var position: [EntityId: PositionComponent] = [:]
+    public var transform: [EntityId: TransformComponent] = [:]
     public var transform: [EntityId: TransformComponent] = [:]
     public var movement: [EntityId: MovementComponent] = [:]
     public var pathing: [EntityId: PathingComponent] = [:]

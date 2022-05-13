@@ -8,7 +8,7 @@ struct TestMovementComponent: GameComponent {
 
 struct TestMovementComponentState: GameState {
     var entities: Set<EntityId>
-    var positions: [EntityId: TestPositionComponent]
+    var positions: [EntityId: TestTransformComponent]
     var movement: [EntityId: TestMovementComponent]
 }
 
@@ -30,12 +30,12 @@ struct TestMovementReducer: Reducer {
         case .tick:
             state.movement.forEach { (id, movement) in
                 guard movement.velocity != .zero else { return }
-                guard var position = state.positions[id] else { return }
+                guard var position = state.transforms[id] else { return }
                 
                 position.x += movement.velocity.x
                 position.y += movement.velocity.y
                 
-                state.positions[id] = position
+                state.transforms[id] = position
             }
         case .updateVelocity(let entity, let velocity):
             state.movement[entity]?.velocity = velocity

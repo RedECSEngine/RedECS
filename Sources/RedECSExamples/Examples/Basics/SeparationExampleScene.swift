@@ -25,7 +25,7 @@ extension NSImage {
 public struct SeparationExampleState: GameState {
     public var entities: EntityRepository = .init()
     public var sprite: [EntityId: SpriteComponent] = [:]
-    public var position: [EntityId: PositionComponent] = [:]
+    public var transform: [EntityId: TransformComponent] = [:]
     public var movement: [EntityId: MovementComponent] = [:]
     public var separation: [EntityId: SeparationComponent] = [:]
     
@@ -157,7 +157,7 @@ extension SeparationExampleScene {
         )
         store.sendSystemAction(
             .addComponent(
-                PositionComponent(
+                TransformComponent(
                     entity: entity,
                     point: Point(
                         x: Double(event.location(in: self).x),

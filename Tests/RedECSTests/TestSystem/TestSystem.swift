@@ -6,7 +6,7 @@ struct TestGlobalState: GameState {
     var count: Int32 = 0
     var text: String = ""
     
-    var positions: [EntityId: TestPositionComponent] = [:]
+    var positions: [EntityId: TestTransformComponent] = [:]
     var movement: [EntityId: TestMovementComponent] = [:]
     
     var containedState: TestLocalState {

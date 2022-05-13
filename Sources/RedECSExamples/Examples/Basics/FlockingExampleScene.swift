@@ -73,7 +73,7 @@ extension FlockingExampleScene {
         )
         store.sendSystemAction(
             .addComponent(
-                PositionComponent(
+                TransformComponent(
                     entity: entity,
                     point: Point(
                         x: Double(event.location(in: self).x),

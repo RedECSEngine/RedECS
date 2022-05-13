@@ -3,17 +3,17 @@ import Geometry
 
 public struct SeparationReducerContext: GameState {
     public var entities: EntityRepository = .init()
-    public var positions: [EntityId: PositionComponent]
+    public var transform: [EntityId: TransformComponent]
     public var movement: [EntityId: MovementComponent]
     public var separation: [EntityId: SeparationComponent]
     public init(
         entities: EntityRepository = .init(),
-        positions: [EntityId: PositionComponent],
+        transform: [EntityId: TransformComponent],
         movement: [EntityId: MovementComponent],
         separation: [EntityId: SeparationComponent]
     ) {
         self.entities = entities
-        self.positions = positions
+        self.transform = transform
         self.movement = movement
         self.separation = separation
     }
@@ -27,15 +27,15 @@ public struct SeparationReducer: Reducer {
         environment: Void
     ) -> GameEffect<SeparationReducerContext, Never> {
         state.separation.forEach { (id, separation) in
-            guard let position = state.positions[id] else { return }
+            guard let transform = state.transform[id] else { return }
             
             var velocity: Point = .zero
             var neighborCount: Int32 = 0
             
-            state.positions.forEach { (otherEntityId, otherPosition) in
+            state.transform.forEach { (otherEntityId, otherTransform) in
                 guard id != otherEntityId else { return }
                 
-                var distance = position.point.distanceFrom(otherPosition.point)
+                var distance = transform.position.distanceFrom(otherTransform.position)
                 
                 guard distance <= separation.radius else {
                     return
@@ -45,7 +45,7 @@ public struct SeparationReducer: Reducer {
                     distance = 0.01
                 }
                 
-                let headingVector = position.point.diffOf(otherPosition.point)
+                let headingVector = transform.position.diffOf(otherTransform.position)
                 let scale = 1 - (distance / separation.radius)
                 let relativeHeadingVector = headingVector / distance
                 let finalHeadingVector = relativeHeadingVector / scale

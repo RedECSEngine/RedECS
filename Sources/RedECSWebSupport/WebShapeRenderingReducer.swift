@@ -11,7 +11,7 @@ public struct WebShapeRenderingReducer: Reducer {
         environment: WebRenderingEnvironment
     ) -> GameEffect<ShapeRenderingContext, Never> {
         state.shape.forEach { (id, shapeComponent) in
-            guard let position = state.position[id] else { return }
+            guard let transform = state.transform[id] else { return }
             
             let shape: JSObject
             if let shapeNode = environment.renderer.stagedObjects[id] {
@@ -25,31 +25,30 @@ public struct WebShapeRenderingReducer: Reducer {
                     path.points.forEach {
                         _ = pointsArray.push?(
                             JSObject.global.PIXI.Point.function!.new(
-                                $0.x.jsValue(), $0.y.jsValue()
+                                $0.x.jsValue, $0.y.jsValue
                             )
                         )
                     }
                     _ = shape.drawShape!(JSObject.global.PIXI.Polygon.function!.new(pointsArray))
                 case .rect(let rect):
                     _ = shape.drawRect!(
-                        rect.origin.x.jsValue(),
-                        rect.origin.y.jsValue(),
-                        rect.size.width.jsValue(),
-                        rect.size.height.jsValue()
+                        rect.origin.x.jsValue,
+                        rect.origin.y.jsValue,
+                        rect.size.width.jsValue,
+                        rect.size.height.jsValue
                     )
                 case .circle(let circle):
-                    _ = shape.drawCircle!(circle.center.x.jsValue(), circle.center.y.jsValue(), circle.radius.jsValue())
+                    _ = shape.drawCircle!(circle.center.x.jsValue, circle.center.y.jsValue, circle.radius.jsValue)
                 }
                 
                 _ = environment.renderer.container.addChild!(shape)
                 environment.renderer.stagedObjects[id] = shape
             }
             
-            let translate = state.transform[id]?.translate ?? .zero
-            shape.x = (position.point.x + translate.x).jsValue()
-            shape.y = (position.point.y + translate.y).jsValue()
+            shape.x = (transform.position.x).jsValue
+            shape.y = (transform.position.y).jsValue
             if let transform = state.transform[id] {
-                shape.rotation = transform.rotate.degreesToRadians().jsValue()
+                shape.rotation = transform.rotate.degreesToRadians().jsValue
             }
         }
         return .none
