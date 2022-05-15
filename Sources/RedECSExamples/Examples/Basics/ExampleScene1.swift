@@ -60,7 +60,7 @@ extension ExampleScene1 {
         store.sendSystemAction(.addComponent(ShapeComponent(entity: entity, shape: .circle(Circle(radius: 8))), into: \.shape))
         store.sendSystemAction(
             .addComponent(
-                PositionComponent(
+                TransformComponent(
                     entity: entity,
                     point: Point(
                         x: Double(event.location(in: self).x),

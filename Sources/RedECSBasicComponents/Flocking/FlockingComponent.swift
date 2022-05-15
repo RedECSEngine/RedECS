@@ -35,20 +35,20 @@ public struct FlockingComponent: GameComponent {
 public struct FlockingReducerContext: GameState {
     public var entities: EntityRepository = .init()
     
-    public var position: [EntityId: PositionComponent]
+    public var transform: [EntityId: TransformComponent]
     public var movement: [EntityId: MovementComponent]
     public var flocking: [EntityId: FlockingComponent]
     public var follow: [EntityId: FollowEntityComponent]
     
     public init(
         entities: EntityRepository = .init(),
-        position: [EntityId : PositionComponent],
+        transform: [EntityId: TransformComponent],
         movement: [EntityId : MovementComponent],
         flocking: [EntityId : FlockingComponent],
         follow: [EntityId: FollowEntityComponent]
     ) {
         self.entities = entities
-        self.position = position
+        self.transform = transform
         self.movement = movement
         self.flocking = flocking
         self.follow = follow
@@ -63,7 +63,7 @@ public struct FlockingReducer: Reducer {
         environment: Void
     ) -> GameEffect<FlockingReducerContext, Never> {
         state.flocking.forEach { (id, flocking) in
-            guard let position = state.position[id] else { return }
+            guard let position = state.transform[id] else { return }
             let follow = state.follow[id]
             
             var alignment: Point = .zero
@@ -73,10 +73,10 @@ public struct FlockingReducer: Reducer {
             
             state.flocking.forEach { (otherEntityId, _) in
                 guard id != otherEntityId,
-                      let otherPosition = state.position[otherEntityId],
+                      let otherTransform = state.transform[otherEntityId],
                       let otherMovement = state.movement[otherEntityId] else { return }
                 
-                let distance = position.point.distanceFrom(otherPosition.point)
+                let distance = position.position.distanceFrom(otherTransform.position)
                 guard distance <= flocking.separationRadius
 //                        || (otherEntityId == follow?.leaderId && distance > (follow?.maxDistance ?? .greatestFiniteMagnitude))
                 else {
@@ -84,8 +84,8 @@ public struct FlockingReducer: Reducer {
                 }
                 
                 alignment += otherMovement.velocity
-                cohesion += otherPosition.point
-                separation += (otherPosition.point - position.point)
+                cohesion += otherTransform.position
+                separation += (otherTransform.position - position.position)
                 neighborCount += 1
             }
             
@@ -96,7 +96,7 @@ public struct FlockingReducer: Reducer {
             alignment /= Double(neighborCount)
             
             cohesion /= Double(neighborCount)
-            cohesion -= position.point
+            cohesion -= position.position
             
             separation /= Double(neighborCount)
             separation *= -1

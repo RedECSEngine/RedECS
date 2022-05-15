@@ -74,7 +74,7 @@ public class FollowFlockingPathingExampleScene: SKScene {
         )
         store.sendSystemAction(
             .addComponent(
-                PositionComponent(
+                TransformComponent(
                     entity: playerId,
                     point: Point(
                         x: 320,
@@ -129,7 +129,7 @@ extension FollowFlockingPathingExampleScene {
         )
         store.sendSystemAction(
             .addComponent(
-                PositionComponent(
+                TransformComponent(
                     entity: entity,
                     point: Point(
                         x: Double(event.location(in: self).x),

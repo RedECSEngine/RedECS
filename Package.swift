@@ -45,13 +45,12 @@ let package = Package(
         .package(
             name: "JavaScriptKit",
             url: "https://github.com/swiftwasm/JavaScriptKit",
-            from: "0.11.1"
+            from: "0.13.0"
         ),
         .package(
             url: "git@github.com:RedECSEngine/Geometry.git",
-            from: "0.0.2"
+            from: "0.0.3"
         ),
-        //        .package(path: "../Geometry")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.

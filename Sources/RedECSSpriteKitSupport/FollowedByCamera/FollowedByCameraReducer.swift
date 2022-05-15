@@ -9,10 +9,10 @@ public struct FollowedByCameraReducer: Reducer {
         environment: SpriteKitRenderingEnvironment
     ) -> GameEffect<FollowedByCameraReducerContext, Never> {
         if let id = state.followedByCamera.values.first?.entity,
-              let position = state.position[id]  {
+              let position = state.transform[id]  {
             environment.renderer.scene.camera?.position = .init(
-                x: position.point.x,
-                y: position.point.y
+                x: position.position.x,
+                y: position.position.y
             )
         }
         return .none

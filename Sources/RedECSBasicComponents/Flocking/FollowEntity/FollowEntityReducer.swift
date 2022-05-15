@@ -3,18 +3,18 @@ import Geometry
 
 public struct FollowEntityReducerContext: GameState {
     public var entities: EntityRepository = .init()
-    public var position: [EntityId: PositionComponent]
+    public var transform: [EntityId: TransformComponent]
     public var movement: [EntityId: MovementComponent]
     public var followEntity: [EntityId: FollowEntityComponent]
     
     public init(
         entities: EntityRepository = .init(),
-        position: [EntityId : PositionComponent],
+        transform: [EntityId: TransformComponent],
         movement: [EntityId : MovementComponent],
         followEntity: [EntityId : FollowEntityComponent]
     ) {
         self.entities = entities
-        self.position = position
+        self.transform = transform
         self.movement = movement
         self.followEntity = followEntity
     }
@@ -28,13 +28,13 @@ public struct FollowEntityReducer: Reducer {
         environment: Void
     ) -> GameEffect<FollowEntityReducerContext, Never> {
         state.followEntity.forEach { (id, following) in
-            guard let entityPosition = state.position[id],
-                  let followingPosition = state.position[following.leaderId]
+            guard let entityTransform = state.transform[id],
+                  let followingTransform = state.transform[following.leaderId]
             else { return }
             
-            let distance: Double = entityPosition.point.distanceFrom(followingPosition.point)
+            let distance: Double = entityTransform.position.distanceFrom(followingTransform.position)
             if distance >= following.maxDistance {
-                var vector = followingPosition.point.diffOf(entityPosition.point)
+                var vector = followingTransform.position.diffOf(entityTransform.position)
                 vector.normalize(to: 1)
                 state.movement[id]?.velocity += vector
             }

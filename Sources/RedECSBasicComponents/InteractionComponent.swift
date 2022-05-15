@@ -28,15 +28,15 @@ public struct InteractionComponent<Action: Equatable & Codable>: GameComponent {
 
 public struct InteractionContext<Action: Equatable & Codable>: GameState {
     public var entities: EntityRepository
-    public var position: [EntityId: PositionComponent]
+    public var transform: [EntityId: TransformComponent]
     public var interaction: [EntityId: InteractionComponent<Action>]
     public init(
         entities: EntityRepository,
-        position: [EntityId : PositionComponent],
+        transform: [EntityId: TransformComponent],
         interaction: [EntityId: InteractionComponent<Action>]
     ) {
         self.entities = entities
-        self.position = position
+        self.transform = transform
         self.interaction = interaction
     }
 }
@@ -59,18 +59,18 @@ public struct InteractionWhenNearbyReducer<Action: Equatable & Codable>: Reducer
         state.interaction
             .filter { $1.interactionType == .proximity }
             .forEach { interactionId, interaction in
-            guard let interactionPosition = state.position[interactionId] else {
+            guard let interactionTransform = state.transform[interactionId] else {
                 return
             }
                 
             for triggerTag in interaction.triggerTags {
                 state.entities.tags[triggerTag]?.forEach({ triggererEntityId in
-                    guard let triggererPosition = state.position[triggererEntityId]
+                    guard let triggererTransform = state.transform[triggererEntityId]
                     else {
                         assertionFailure("missing position component for triggerer")
                         return
                     }
-                    if interactionPosition.point.distanceFrom(triggererPosition.point) <= interaction.radius {
+                    if interactionTransform.position.distanceFrom(triggererTransform.position) <= interaction.radius {
                         effects.append(.game(interaction.action))
                     }
                 })

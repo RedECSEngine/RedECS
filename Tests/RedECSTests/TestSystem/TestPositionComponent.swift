@@ -8,7 +8,7 @@ struct Point: Codable, Equatable {
     static let zero = Point(x: 0, y: 0)
 }
 
-struct TestPositionComponent: GameComponent {
+struct TestTransformComponent: GameComponent {
     var entity: EntityId
     private var position: Point
     
@@ -24,6 +24,6 @@ struct TestPositionComponent: GameComponent {
     
     init(entity: EntityId, position: Point) {
         self.entity = entity
-        self.position = position
+        self.transform = transform
     }
 }

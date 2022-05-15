@@ -76,7 +76,7 @@ public class FollowSeparationAndPathingExampleScene: SKScene {
         )
         store.sendSystemAction(
             .addComponent(
-                PositionComponent(
+                TransformComponent(
                     entity: playerId,
                     point: Point(
                         x: 320,
@@ -128,7 +128,7 @@ extension FollowSeparationAndPathingExampleScene {
         )
         store.sendSystemAction(
             .addComponent(
-                PositionComponent(
+                TransformComponent(
                     entity: entity,
                     point: Point(
                         x: event.location(in: self).x,
