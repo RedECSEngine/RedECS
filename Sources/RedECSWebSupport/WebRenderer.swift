@@ -17,7 +17,8 @@ open class WebRenderer {
     
     public private(set) var size: Size
     private var app: JSObject!
-    public var container: JSObject!
+    public var gameObjectContainer: JSObject!
+    public var hudContainer: JSObject!
     public private(set) var canvasElement: JSValue!
     
     public var stagedObjects: [EntityId: JSObject] = [:]
@@ -41,11 +42,14 @@ open class WebRenderer {
             options.view = self.canvasElement
             
             self.app = JSObject.global.PIXI.Application.function!.new(options)
-            self.container = JSObject.global.PIXI.Container.function!.new();
-            self.container.position.y = self.size.height.jsValue
-            self.container.scale.y = -1
+            self.gameObjectContainer = JSObject.global.PIXI.Container.function!.new();
+            self.gameObjectContainer.position.y = self.size.height.jsValue
+            self.gameObjectContainer.scale.y = -1
+            _ = self.app.stage.addChild(self.gameObjectContainer)
             
-            _ = self.app.stage.addChild(self.container)
+            self.hudContainer = JSObject.global.PIXI.Container.function!.new();
+            _ = self.app.stage.addChild(self.hudContainer)
+            
             _ = document.body.appendChild(self.app.view)
             self.state = .ready
             return .null

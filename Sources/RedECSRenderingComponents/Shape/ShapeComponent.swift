@@ -2,25 +2,30 @@ import RedECS
 import Geometry
 
 public struct ShapeComponent: GameComponent {
-    enum CodingKeys: String, CodingKey {
-        case entity
-        case shape
-    }
-
     public let entity: EntityId
-    public let shape: Shape
+    public var shape: Shape {
+        didSet {
+            if oldValue != shape {
+                needsRedraw = true
+            }
+        }
+    }
+    public var fillColor: Color {
+        didSet {
+            if oldValue != fillColor {
+                needsRedraw = true
+            }
+        }
+    }
+    public var needsRedraw: Bool = true
     
     public init(
         entity: EntityId,
-        shape: Shape
+        shape: Shape,
+        fillColor: Color = .white
     ) {
         self.entity = entity
         self.shape = shape
-    }
-    
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.entity = try container.decode(EntityId.self, forKey: .entity)
-        self.shape = try container.decode(Shape.self, forKey: .shape)
+        self.fillColor = fillColor
     }
 }

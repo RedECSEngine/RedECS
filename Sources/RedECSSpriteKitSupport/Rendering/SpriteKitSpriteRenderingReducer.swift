@@ -23,11 +23,7 @@ public struct SpriteKitSpriteRenderingReducer: Reducer {
             }
             
             sprite.position = .init(x: transform.position.x, y: transform.position.y)
-            if let transform = state.transform[id] {
-                sprite.zRotation = transform.rotate.degreesToRadians()
-                sprite.position.x += transform.position.x
-                sprite.position.y += transform.position.y
-            }
+            sprite.zRotation = transform.rotate.degreesToRadians()
         }
         return .none
     }

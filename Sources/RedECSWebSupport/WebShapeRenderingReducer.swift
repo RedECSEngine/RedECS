@@ -13,12 +13,17 @@ public struct WebShapeRenderingReducer: Reducer {
         state.shape.forEach { (id, shapeComponent) in
             guard let transform = state.transform[id] else { return }
             
+            if shapeComponent.needsRedraw {
+                removeStagedObjectIfNeeded(id, environment: environment)
+                state.shape[id]?.needsRedraw = false
+            }
+            
             let shape: JSObject
             if let shapeNode = environment.renderer.stagedObjects[id] {
                 shape = shapeNode
             } else {
                 shape = JSObject.global.PIXI.Graphics.function!.new()
-                _ = shape.beginFill!(JSValue(0xff0000))
+                _ = shape.beginFill!(shapeComponent.fillColor.hexValue)
                 switch shapeComponent.shape {
                 case .polygon(let path):
                     let pointsArray = JSArray.constructor.new()
@@ -41,12 +46,13 @@ public struct WebShapeRenderingReducer: Reducer {
                     _ = shape.drawCircle!(circle.center.x.jsValue, circle.center.y.jsValue, circle.radius.jsValue)
                 }
                 
-                _ = environment.renderer.container.addChild!(shape)
+                _ = environment.renderer.gameObjectContainer.addChild!(shape)
                 environment.renderer.stagedObjects[id] = shape
             }
             
             shape.x = (transform.position.x).jsValue
             shape.y = (transform.position.y).jsValue
+            
             if let transform = state.transform[id] {
                 shape.rotation = transform.rotate.degreesToRadians().jsValue
             }
@@ -59,9 +65,13 @@ public struct WebShapeRenderingReducer: Reducer {
         entityEvent: EntityEvent,
         environment: WebRenderingEnvironment
     ) {
-        guard case let .removed(id) = entityEvent,
-              let shapeNode = environment.renderer.stagedObjects[id] else { return }
-        _ = environment.renderer.container.removeChild!(shapeNode)
+        guard case let .removed(id) = entityEvent else { return }
+        removeStagedObjectIfNeeded(id, environment: environment)
+    }
+    
+    public func removeStagedObjectIfNeeded(_ id: EntityId, environment: WebRenderingEnvironment) {
+        guard let shapeNode = environment.renderer.stagedObjects[id] else { return }
+        _ = environment.renderer.gameObjectContainer.removeChild!(shapeNode)
         environment.renderer.stagedObjects[id] = nil
     }
 }
