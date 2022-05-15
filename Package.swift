@@ -45,7 +45,7 @@ let package = Package(
         .package(
             name: "JavaScriptKit",
             url: "https://github.com/swiftwasm/JavaScriptKit",
-            from: "0.11.1"
+            from: "0.13.0"
         ),
         .package(
             url: "git@github.com:RedECSEngine/Geometry.git",
