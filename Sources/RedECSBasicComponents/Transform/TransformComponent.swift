@@ -6,6 +6,7 @@ public struct TransformComponent: GameComponent {
     public var position: Point = .zero
     public var rotate: Double = 0
     public var scale: Double = 1
+    public var zIndex: Int = 0
     
     public var parentId: EntityId?
     
@@ -14,12 +15,14 @@ public struct TransformComponent: GameComponent {
         position: Point = .zero,
         rotate: Double = 0,
         scale: Double = 1,
+        zIndex: Int = 0,
         parentId: EntityId? = nil
     ) {
         self.entity = entity
         self.position = position
         self.rotate = rotate
         self.scale = scale
+        self.zIndex = zIndex
         self.parentId = parentId
     }
 }

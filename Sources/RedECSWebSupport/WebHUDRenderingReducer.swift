@@ -1,7 +1,7 @@
 import RedECS
 import RedECSRenderingComponents
 import JavaScriptKit
-
+/*
 public struct WebHUDRenderingReducer<State: HUDRenderingCapable>: Reducer {
     public init() {}
     
@@ -134,5 +134,4 @@ public struct WebHUDRenderingReducer<State: HUDRenderingCapable>: Reducer {
     }
     
 }
-
-
+*/

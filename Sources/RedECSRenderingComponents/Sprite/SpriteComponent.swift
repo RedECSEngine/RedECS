@@ -1,15 +1,14 @@
 import RedECS
 
 public struct SpriteComponent: GameComponent {
-    enum CodingKeys: String, CodingKey {
-        case entity
-    }
-    
     public var entity: EntityId
+    public var texture: TextureReference
     
     public init(
-        entity: EntityId
+        entity: EntityId,
+        texture: TextureReference
     ) {
         self.entity = entity
+        self.texture = texture
     }
 }

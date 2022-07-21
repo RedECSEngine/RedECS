@@ -1,5 +1,3 @@
-import Foundation
-
 public struct EntityRepository: Equatable, Codable {
     public private(set) var entities: [EntityId: GameEntity] = [:]
     public private(set) var tags: [String: Set<EntityId>] = [:]

@@ -1,5 +1,3 @@
-import Foundation
-
 public typealias EntityId = String
 
 public func newEntityId(prefix: String? = nil) -> EntityId {

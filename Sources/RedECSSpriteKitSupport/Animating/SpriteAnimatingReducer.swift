@@ -41,10 +41,10 @@ public enum SpriteAnimatingAction: Equatable {
 
 public struct SpriteAnimatingEnvironment: SpriteKitRenderingEnvironment {
     public var renderer: SpriteKitRenderer
-    public var animations: [String: AnimationDictionary]
+    public var animations: [String: SpriteAnimationDictionary]
     public init(
         renderer: SpriteKitRenderer,
-        animations: [String: AnimationDictionary]
+        animations: [String: SpriteAnimationDictionary]
     ) {
         self.renderer = renderer
         self.animations = animations
@@ -101,7 +101,7 @@ public struct SpriteAnimatingReducer: Reducer {
     public func runAnimationOnce(
         sprite: SKSpriteNode,
         name: String,
-        animationsMap: AnimationDictionary,
+        animationsMap: SpriteAnimationDictionary,
         config: SpriteAnimationConfiguration,
         completion: (() -> Void)? = nil
     ) {
@@ -119,7 +119,7 @@ public struct SpriteAnimatingReducer: Reducer {
     public func runAnimationForever(
         sprite: SKSpriteNode,
         name: String,
-        animationsMap: AnimationDictionary,
+        animationsMap: SpriteAnimationDictionary,
         config: SpriteAnimationConfiguration
     ) {
         let action = actionForAnimation(name: name, animationsMap: animationsMap)
@@ -128,13 +128,14 @@ public struct SpriteAnimatingReducer: Reducer {
         sprite.run(.repeatForever(action), withKey: "name")
     }
     
-    fileprivate func actionForAnimation(name: String, animationsMap: AnimationDictionary) -> SKAction {
+    fileprivate func actionForAnimation(name: String, animationsMap: SpriteAnimationDictionary) -> SKAction {
         guard let animation = animationsMap[name] else {
             fatalError("Can not find animation by name \(name)")
         }
         let actions = animation.frames.map {
             animationFrame -> SKAction in
-            SKAction.animate(with: [animationFrame.texture], timePerFrame: animationFrame.duration)
+//            SKAction.animate(with: [animationFrame.name], timePerFrame: animationFrame.duration)
+            fatalError("todo: reimplement")
         }
         return SKAction.sequence(actions)
     }

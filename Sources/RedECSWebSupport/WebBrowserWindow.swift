@@ -7,15 +7,11 @@ open class WebBrowserWindow {
     public var renderer: WebRenderer!
     
     public required init(size: Size) {
-        self.renderer = WebRenderer(size: size, stateChangeHandler: { [weak self] _, newValue in
-            if newValue == .ready {
-                self?.onWebRendererReady()
-            }
-        })
+        self.renderer = WebRenderer(size: size)
     }
     
     /// If overriding, either call super or add listeners and request animation frame manually
-    open func onWebRendererReady() {
+    open func startWebRenderer() {
         addAllInputListeners()
         requestAnimationFrame()
     }
@@ -109,10 +105,13 @@ open class WebBrowserWindow {
         )
     }
     
+    /// This functions draws the enqueued work and calls update upon the next animation frame
     public func requestAnimationFrame() {
         _ = JSObject.global.requestAnimationFrame!(JSClosure { [weak self] args in
             guard let time = args.first?.number else { return .null }
+            self?.renderer.clearTriangleQueue()
             self?.update(time)
+            self?.renderer.draw()
             return .undefined
         })
     }

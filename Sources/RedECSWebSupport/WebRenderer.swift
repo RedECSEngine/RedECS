@@ -1,6 +1,12 @@
 import JavaScriptKit
 import RedECS
 import Geometry
+import RedECSRenderingComponents
+
+public enum WebRendererProgram {
+    case color
+    case texture
+}
 
 open class WebRenderer {
     public enum State {
@@ -8,54 +14,93 @@ open class WebRenderer {
         case ready
     }
     
-    public var state: State = .loading {
-        didSet {
-            stateChangeHandler?(oldValue, state)
+    public private(set) var size: Size
+    public private(set) var canvasElement: JSValue = .undefined
+    public private(set) var glContext: JSValue = .undefined
+    
+    private var queuedTriangles: [RenderTriangle] = []
+    
+    public init(size: Size) {
+        self.size = size
+        setUp()
+    }
+    
+    private func setUp() {
+        let document = JSObject.global.document
+        self.canvasElement = document.createElement("canvas")
+        canvasElement.id = "webgl-canvas"
+        canvasElement.width = size.width.jsValue
+        canvasElement.height = size.height.jsValue
+        _ = document.body.appendChild(canvasElement)
+        glContext = webGLContext()
+    }
+    
+    public func draw() {
+        do {
+            let work = groupEnqueuedWork()
+            for job in work {
+                switch job.program {
+                case .color:
+                    try DrawTrianglesProgram(triangles: queuedTriangles).execute(with: self)
+                case .texture:
+                    fatalError("not implemented")
+                }
+            }
+        } catch {
+            print("⚠️ Draw error:", error)
         }
     }
-    public var stateChangeHandler: ((State, State) -> Void)?
-    
-    public private(set) var size: Size
-    private var app: JSObject!
-    public var gameObjectContainer: JSObject!
-    public var hudContainer: JSObject!
-    public private(set) var canvasElement: JSValue!
-    
-    public var stagedObjects: [EntityId: JSObject] = [:]
-    
-    public init(size: Size, stateChangeHandler: ((State, State) -> Void)? = nil) {
-        self.size = size
-        self.stateChangeHandler = stateChangeHandler
-        embedRenderingLibrary()
+
+    private func webGLContext() -> JSValue {
+        let document = JSObject.global.document
+        let canvas = document.querySelector("#webgl-canvas")
+        let gl = canvas.getContext("webgl")
+        if gl.isNull {
+            print("gl is null")
+            fatalError()
+        }
+        return gl
     }
     
-    private func embedRenderingLibrary() {
-        let document = JSObject.global.document
-        let scriptUrl = "https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.2.2/browser/pixi.js"
-        self.canvasElement = document.createElement("canvas")
-        canvasElement.id = "redecs-canvas"
-        let scriptEle = document.createElement("script")
-        _ = scriptEle.setAttribute("src", scriptUrl)
-        _ = scriptEle.addEventListener("load", JSClosure({ [weak self] _ in
-            guard let self = self else { return .null }
-            var options = JSObject.global.JSON.parse.function!("{\"width\": \(self.size.width), \"height\": \(self.size.height)}")
-            options.view = self.canvasElement
-            
-            self.app = JSObject.global.PIXI.Application.function!.new(options)
-            self.gameObjectContainer = JSObject.global.PIXI.Container.function!.new();
-            self.gameObjectContainer.position.y = self.size.height.jsValue
-            self.gameObjectContainer.scale.y = -1
-            _ = self.app.stage.addChild(self.gameObjectContainer)
-            
-            self.hudContainer = JSObject.global.PIXI.Container.function!.new();
-            _ = self.app.stage.addChild(self.hudContainer)
-            
-            _ = document.body.appendChild(self.app.view)
-            self.state = .ready
-            return .null
-        }))
+    private func groupEnqueuedWork() -> [(program: WebRendererProgram, triangles: [RenderTriangle])] {
+        var batches: [(WebRendererProgram, [RenderTriangle])] = []
         
-        _ = document.body.appendChild(canvasElement)
-        _ = document.body.appendChild(scriptEle)
+        var lastTextureId: TextureId?
+        var currentBatch: [RenderTriangle] = []
+        
+        for triangle in queuedTriangles {
+            if lastTextureId == triangle.textureId {
+                currentBatch.append(triangle)
+            } else {
+                let batchProgram: WebRendererProgram = (triangle.textureId == nil ? .color : .texture)
+                batches.append((batchProgram, currentBatch))
+                
+                lastTextureId = triangle.textureId
+                currentBatch = []
+                currentBatch.append(triangle)
+            }
+        }
+        
+        return batches
+    }
+}
+
+extension WebRenderer: Renderer {
+    public func clearTriangleQueue() {
+        queuedTriangles.removeAll()
+    }
+    public func enqueueTriangles(_ triangles: [RenderTriangle]) {
+        queuedTriangles.append(contentsOf: triangles)
+    }
+}
+
+extension RenderTriangle {
+    var textureId: TextureId? {
+        switch fragmentType {
+        case .texture(let id, _):
+            return id
+        case .color:
+            return nil
+        }
     }
 }
