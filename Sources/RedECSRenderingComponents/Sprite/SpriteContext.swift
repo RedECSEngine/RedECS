@@ -1,7 +1,7 @@
 import RedECS
 import RedECSBasicComponents
 
-public struct SpriteRenderingContext: GameState {
+public struct SpriteContext: GameState {
     public var entities: EntityRepository = .init()
     public var transform: [EntityId: TransformComponent]
     public var sprite: [EntityId: SpriteComponent]

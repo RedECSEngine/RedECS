@@ -20,7 +20,8 @@ public struct ShapeRenderingReducer: Reducer {
                             .rotated(around: transform.position, degrees: -transform.rotate)
                         return RenderTriangle(
                             triangle: triangle,
-                            fragmentType: .color(shapeComponent.fillColor)
+                            fragmentType: .color(shapeComponent.fillColor),
+                            zIndex: transform.zIndex
                         )
                     }
                 environment.renderer.enqueueTriangles(triangles)

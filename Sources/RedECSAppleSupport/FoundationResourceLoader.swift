@@ -1,7 +1,7 @@
 import Foundation
 import RedECS
 
-public struct FoundationResourceLoader: ResourceLoader {
+public struct FoundationResourceLoader: ResourceManager {
     public enum Error: Swift.Error {
         case fileNotFound
         case fileLoadFailure
@@ -17,8 +17,8 @@ public struct FoundationResourceLoader: ResourceLoader {
     public func loadJSONFile<T: Decodable>(
         _ name: String,
         decodedAs: T.Type
-    ) -> Promise<T, Swift.Error> {
-        Promise { resolve in
+    ) -> Future<T, Swift.Error> {
+        Future { resolve in
             guard let path = resourceBundle.path(forResource: name, ofType: "json") else {
                 resolve(.failure(Error.fileNotFound))
                 return

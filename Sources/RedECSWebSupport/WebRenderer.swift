@@ -15,13 +15,22 @@ open class WebRenderer {
     }
     
     public private(set) var size: Size
+    public private(set) var cameraPosition: Point
+    
     public private(set) var canvasElement: JSValue = .undefined
     public private(set) var glContext: JSValue = .undefined
     
+    public var webResourceManager: WebResourceManager
+    
     private var queuedTriangles: [RenderTriangle] = []
     
-    public init(size: Size) {
+    public init(
+        size: Size,
+        resourceLoader: WebResourceManager
+    ) {
         self.size = size
+        self.cameraPosition = Point(x: size.width / 2, y: size.height / 2)
+        self.webResourceManager = resourceLoader
         setUp()
     }
     
@@ -37,17 +46,28 @@ open class WebRenderer {
     
     public func draw() {
         do {
+            clearCanvas()
             let work = groupEnqueuedWork()
             for job in work {
                 switch job.program {
                 case .color:
-                    try DrawTrianglesProgram(triangles: queuedTriangles).execute(with: self)
+                    try DrawTrianglesProgram(triangles: job.triangles)
+                        .execute(with: self)
                 case .texture:
-                    fatalError("not implemented")
+                    guard let textureId = job.triangles.first?.textureId else { break }
+                    
+                    if let textureMap = webResourceManager.getTexture(textureId: textureId),
+                        let image = webResourceManager.textureImages[textureId] {
+                        try DrawTextureProgram(triangles: job.triangles, textureMap: textureMap, image: image)
+                            .execute(with: self)
+                    } else {
+                        webResourceManager.startTextureLoadIfNeeded(textureId: textureId)
+                    }
                 }
             }
         } catch {
             print("⚠️ Draw error:", error)
+            fatalError()
         }
     }
 
@@ -62,23 +82,35 @@ open class WebRenderer {
         return gl
     }
     
+    private func clearCanvas() {
+        // Clear the canvas
+        _ = glContext.clearColor(0, 0, 0, 0.1)
+        _ = glContext.clear(glContext.COLOR_BUFFER_BIT)
+    }
+    
     private func groupEnqueuedWork() -> [(program: WebRendererProgram, triangles: [RenderTriangle])] {
         var batches: [(WebRendererProgram, [RenderTriangle])] = []
-        
         var lastTextureId: TextureId?
         var currentBatch: [RenderTriangle] = []
         
-        for triangle in queuedTriangles {
+        for triangle in queuedTriangles.sorted(by: { $0.zIndex < $1.zIndex }) {
             if lastTextureId == triangle.textureId {
                 currentBatch.append(triangle)
             } else {
-                let batchProgram: WebRendererProgram = (triangle.textureId == nil ? .color : .texture)
+                //append last batch
+                let batchProgram: WebRendererProgram = (lastTextureId == nil ? .color : .texture)
                 batches.append((batchProgram, currentBatch))
-                
+                //prepare new batch
                 lastTextureId = triangle.textureId
                 currentBatch = []
                 currentBatch.append(triangle)
             }
+        }
+        
+        // append remaining from last batch
+        if let triangle = currentBatch.first {
+            let batchProgram: WebRendererProgram = (triangle.textureId == nil ? .color : .texture)
+            batches.append((batchProgram, currentBatch))
         }
         
         return batches
@@ -86,6 +118,14 @@ open class WebRenderer {
 }
 
 extension WebRenderer: Renderer {
+    public var cameraFrame: Rect {
+        Rect(center: cameraPosition, size: size)
+    }
+    
+    public func setCameraPosition(_ position: Point) {
+        cameraPosition = position
+    }
+    
     public func clearTriangleQueue() {
         queuedTriangles.removeAll()
     }

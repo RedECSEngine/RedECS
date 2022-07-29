@@ -23,7 +23,7 @@ public struct EntityRepository: Equatable, Codable {
     }
     
     public mutating func removeEntity(_ id: EntityId) {
-        assert(entities[id] != nil, "removing already removed entity")
+//        assert(entities[id] != nil, "removing already removed entity")
         entities[id]?.tags.forEach { tag in
             tags[tag]?.remove(id)
         }

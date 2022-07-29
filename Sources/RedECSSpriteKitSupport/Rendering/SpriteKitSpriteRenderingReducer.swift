@@ -6,10 +6,10 @@ import RedECSRenderingComponents
 public struct SpriteKitSpriteRenderingReducer: Reducer {
     public init() {}
     public func reduce(
-        state: inout SpriteRenderingContext,
+        state: inout SpriteContext,
         delta: Double,
         environment: SpriteKitRenderingEnvironment
-    ) -> GameEffect<SpriteRenderingContext, Never> {
+    ) -> GameEffect<SpriteContext, Never> {
         state.sprite.forEach { (id, shapeComponent) in
             guard let transform = state.transform[id] else { return }
             

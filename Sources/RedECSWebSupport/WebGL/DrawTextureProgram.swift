@@ -1,6 +1,6 @@
 import JavaScriptKit
 import Geometry
-import RedECSRenderingComponents
+import RedECS
 
 struct DrawTextureProgram {
     var triangles: [RenderTriangle]
@@ -67,6 +67,13 @@ extension DrawTextureProgram: WebGLProgram {
         _ = gl.bindTexture(gl.TEXTURE_2D, texture)
         
         // Set the parameters so we can render any size image.
+        _ = gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // flip Y
+        
+        // alpha transparency support
+        _ = gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        _ = gl.enable(gl.BLEND);
+        
+        // other texture parameters, nearest neighbour
         _ = gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
         _ = gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
         _ = gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
@@ -78,10 +85,6 @@ extension DrawTextureProgram: WebGLProgram {
         // Tell WebGL how to convert from clip space to pixels
         _ = gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 
-        // Clear the canvas
-        _ = gl.clearColor(0, 0, 0, 0)
-        _ = gl.clear(gl.COLOR_BUFFER_BIT)
-        
         // Tell it to use our program (pair of shaders)
         _ = gl.useProgram(program)
 
@@ -96,7 +99,6 @@ extension DrawTextureProgram: WebGLProgram {
         let stride = 0        // 0 = move forward size * sizeof(type) each iteration to get the next position
         let offset = 0        // start at the beginning of the buffer
         _ = gl.vertexAttribPointer(positionLocation, size, type, normalize, stride, offset)
-        
         
         // Turn on the texcoord attribute
         _ = gl.enableVertexAttribArray(texcoordLocation);
@@ -137,14 +139,12 @@ extension DrawTextureProgram: WebGLProgram {
         vec2 zeroToTwoPosition = zeroToOnePosition * 2.0;
         // convert from 0->2 to -1->+1 (clipspace)
         vec2 clipSpacePosition = zeroToTwoPosition - 1.0;
-        gl_Position = vec4(clipSpacePosition * vec2(1, -1), 0, 1);
+        gl_Position = vec4(clipSpacePosition, 0, 1);
     
         vec2 zeroToOneTexture = a_texCoord / u_textureSize;
-        vec2 zeroToTwoTexture = zeroToOneTexture * 2.0;
-        vec2 clipSpaceTexture = zeroToTwoTexture - 1.0;
         // pass the texCoord to the fragment shader
         // The GPU will interpolate this value between points.
-        v_texCoord = vec4(clipSpaceTexture * vec2(1, -1), 0, 1);
+        v_texCoord = zeroToOneTexture;
     }
     """
     }

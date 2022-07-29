@@ -1,6 +1,6 @@
 import JavaScriptKit
 import Geometry
-import RedECSRenderingComponents
+import RedECS
 
 struct DrawTrianglesProgram {
     var triangles: [RenderTriangle]
@@ -31,10 +31,6 @@ extension DrawTrianglesProgram: WebGLProgram {
 
         // Tell WebGL how to convert from clip space to pixels
         _ = gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
-
-        // Clear the canvas
-        _ = gl.clearColor(0, 0, 0, 0.1)
-        _ = gl.clear(gl.COLOR_BUFFER_BIT)
 
         // Tell it to use our program (pair of shaders)
         _ = gl.useProgram(program)

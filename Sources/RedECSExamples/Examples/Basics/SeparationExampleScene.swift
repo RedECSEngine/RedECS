@@ -64,9 +64,9 @@ extension SeparationExampleState {
 }
 
 extension SeparationExampleState {
-    var spriteRenderingContext: SpriteRenderingContext {
+    var spriteRenderingContext: SpriteContext {
         get {
-            return SpriteRenderingContext(
+            return SpriteContext(
                 entities: entities,
                 position: position,
                 transform: .init(),

@@ -3,7 +3,7 @@ import Foundation
 public indirect enum GameEffect<State: GameState, LogicAction: Equatable> {
     case system(SystemAction<State>)
     case game(LogicAction)
-    case deferred(Promise<Self, Never>)
+    case deferred(Future<Self, Never>)
     case waitFor(PendingGameEffect<State, LogicAction>)
     case many([Self])
     case none

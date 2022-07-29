@@ -5,9 +5,11 @@ import Geometry
 open class WebBrowserWindow {
     
     public var renderer: WebRenderer!
+    public var resourceManager: WebResourceManager
     
     public required init(size: Size) {
-        self.renderer = WebRenderer(size: size)
+        self.resourceManager = WebResourceManager(resourcePath: "Resources")
+        self.renderer = WebRenderer(size: size, resourceLoader: resourceManager)
     }
     
     /// If overriding, either call super or add listeners and request animation frame manually

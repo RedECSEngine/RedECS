@@ -12,18 +12,18 @@ public struct TextureMap: Codable {
     }
     
     public struct Frame: Codable {
-        var filename: String
-        var frame: TextureRect
-        var rotated: Bool
-        var trimmed: Bool
-        var spriteSourceSize: TextureRect
-        var sourceSize: TextureSize
-        var duration: Double
+        public var filename: String
+        public var frame: TextureRect
+        public var rotated: Bool
+        public var trimmed: Bool
+        public var spriteSourceSize: TextureRect
+        public var sourceSize: TextureSize
+        public var duration: Double?
     }
     
     public struct Metadata: Codable {
         public var image: String?
-        public var size: TextureRect
+        public var size: TextureSize
         public var format: String?
         public var frameTags: [FrameTag]?
     }

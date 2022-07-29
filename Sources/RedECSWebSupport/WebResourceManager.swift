@@ -1,28 +1,59 @@
 import JavaScriptKit
 import RedECS
+import RedECSRenderingComponents
 
-public struct WebResourceLoader: ResourceLoader {
+public final class WebResourceManager: ResourceManager {
+    
     public enum Error: Swift.Error {
         case fileNotFound
         case fileLoadFailure
         case fileDecodeFailure
+        case windowLocationOriginNotAvailable
         case jsFetchFunctionNotAvailable
         case jsError(JSValue)
     }
     
     let resourcePath: String
+    public var textures: [TextureId: Resource<TextureMap>] = [:]
+    public var animations: [TextureId: SpriteAnimationDictionary] = [:]
+    var textureImages: [TextureId: JSValue] = [:]
     
     public init(resourcePath: String) {
         self.resourcePath = resourcePath
     }
     
+    public func startTextureLoadIfNeeded(textureId: TextureId) {
+        guard textures[textureId] == nil else {
+            return
+        }
+        
+        textures[textureId] = .loading
+        print("starting texture load: \(textureId)")
+        loadImageFile(name: textureId)
+            .flatMap { value -> Future<TextureMap, Swift.Error> in
+                self.textureImages[textureId] = value
+                return self.loadJSONFile(textureId, decodedAs: TextureMap.self)
+            }
+            .subscribe { result in
+                switch result {
+                case .success(let value):
+                    print("texture loaded: \(textureId)")
+                    self.textures[textureId] = .loaded(value)
+                case .failure(let error):
+                    self.textureImages[textureId] = nil
+                    self.textures[textureId] = .failedToLoad(error)
+                    print("error loading texture", error)
+                }
+            }
+    }
+    
     public func loadJSONFile<T: Decodable>(
         _ name: String,
         decodedAs: T.Type
-    ) -> Promise<T, Swift.Error> {
-        Promise { (resolve: @escaping (Result<T, Swift.Error>) -> Void) in
+    ) -> Future<T, Swift.Error> {
+        Future { (resolve: @escaping (Result<T, Swift.Error>) -> Void) in
             guard let origin = JSObject.global.window.object?.location.object?.origin.string else {
-                resolve(.failure(Error.fileNotFound))
+                resolve(.failure(Error.windowLocationOriginNotAvailable))
                 return
             }
             guard let fetchFunc = JSObject.global.fetch.function else {
@@ -30,7 +61,7 @@ public struct WebResourceLoader: ResourceLoader {
                 return
             }
             
-            let url = origin + "/" + resourcePath + "/" + name
+            let url = origin + "/" + self.resourcePath + "/" + name + ".json"
             
             (JSPromise(from: fetchFunc(url)))?
                 .then(success: { response in
@@ -54,8 +85,13 @@ public struct WebResourceLoader: ResourceLoader {
     
     public func loadImageFile(
         name: String
-    ) -> Promise<JSValue, Swift.Error> {
-        Promise { (resolve: @escaping (Result<JSValue, Swift.Error>) -> Void) in
+    ) -> Future<JSValue, Swift.Error> {
+        Future { (resolve: @escaping (Result<JSValue, Swift.Error>) -> Void) in
+            if let image = self.textureImages[name] {
+                resolve(.success(image))
+                return
+            }
+            
             guard let origin = JSObject.global.window.object?.location.object?.origin.string else {
                 resolve(.failure(Error.fileNotFound))
                 return
@@ -65,7 +101,9 @@ public struct WebResourceLoader: ResourceLoader {
                 return
             }
             
-            let url = origin + "/" + resourcePath + "/" + name
+            let url = origin + "/" + self.resourcePath + "/" + name + ".png"
+            
+            print("Load image: \(url)")
             
             (JSPromise(from: fetchFunc(url)))?
                 .then(success: { response in
@@ -76,7 +114,12 @@ public struct WebResourceLoader: ResourceLoader {
                     let image = JSObject.global.Image.function?.new()
                     image?.src = url ?? .null
                     image?.onload = JSClosure({ args in
-                        resolve(.success(image?.jsValue ?? .null))
+                        guard let value = image?.jsValue else {
+                            resolve(.failure(Error.jsError(.undefined)))
+                            return .undefined
+                        }
+                        self.textureImages[name] = value
+                        resolve(.success(value))
                         return .undefined
                     }).jsValue
                     return JSValue.null
