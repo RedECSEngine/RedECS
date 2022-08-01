@@ -29,7 +29,14 @@ public struct SpriteRenderingReducer: Reducer {
                 textureRect = Rect(x: 0, y: 0, width: size.w, height: size.h)
             }
             
-            let renderRect = Rect(center: transform.position, size: textureRect.size)
+            let renderRect = Rect(center: .zero, size: textureRect.size)
+            let matrix = Matrix3
+                .identity
+                .translatedBy(tx: transform.position.x, ty: transform.position.y)
+                .rotatedBy(angleInRadians: transform.rotate.degreesToRadians())
+                .scaledBy(sx: transform.scale, sy: transform.scale)
+                .translatedBy(tx: textureRect.size.width / 2, ty: textureRect.size.height / 2)
+            
             let topRenderTri = RenderTriangle(
                 triangle: Triangle(
                     a: Point(x: renderRect.minX, y: renderRect.maxY),
@@ -44,6 +51,7 @@ public struct SpriteRenderingReducer: Reducer {
                         c: Point(x: textureRect.maxX, y: textureRect.maxY)
                     )
                 ),
+                transformMatrix: matrix,
                 zIndex: transform.zIndex
             )
             let bottomRenderTri = RenderTriangle(
@@ -60,6 +68,7 @@ public struct SpriteRenderingReducer: Reducer {
                         c: Point(x: textureRect.minX, y: textureRect.maxY)
                     )
                 ),
+                transformMatrix: matrix,
                 zIndex: transform.zIndex
             )
             

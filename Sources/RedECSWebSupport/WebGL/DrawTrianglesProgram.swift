@@ -16,6 +16,7 @@ extension DrawTrianglesProgram: WebGLProgram {
 
         // look up where data locations
         let positionAttributeLocation = gl.getAttribLocation(program, "a_position")
+        let matrixLocation = gl.getAttribLocation(program, "a_matrix")
         let colorLocation = gl.getAttribLocation(program, "a_color");
         let resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution")
         
@@ -23,6 +24,7 @@ extension DrawTrianglesProgram: WebGLProgram {
         // Create a buffer and put three 2d clip space points in it
         let positionBuffer = gl.createBuffer()
         let colorBuffer = gl.createBuffer()
+        let matrixBuffer = gl.createBuffer()
         
         //
         // code above this line is initialization code.
@@ -64,6 +66,13 @@ extension DrawTrianglesProgram: WebGLProgram {
         let offsetC = 0        // start at the beginning of the buffer
         _ = gl.vertexAttribPointer(colorLocation, sizeC, typeC, normalizeC, strideC, offsetC)
         
+        // MARK: Matrix
+        for i in 0..<3 {
+            _ = gl.enableVertexAttribArray(matrixLocation.number! + Double(i))
+            _ = gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer)
+            _ = gl.vertexAttribPointer(matrixLocation.number! + Double(i), 3, gl.FLOAT, 0, 36, i * 12);
+        }
+        
         let allTriangles = triangles.flatMap { renderTriangle in
             [
                 renderTriangle.triangle.a.x, renderTriangle.triangle.a.y,
@@ -81,11 +90,19 @@ extension DrawTrianglesProgram: WebGLProgram {
             ]
         }
         
+        let allMatrixTransforms = triangles.flatMap {
+            [$0.transformMatrix.values, $0.transformMatrix.values, $0.transformMatrix.values].flatMap { $0 }
+        }
+
         guard let trianglesArrayData = JSObject.global.Float32Array.function?.new(allTriangles) else {
             throw WebGLError.couldNotCreateArray
         }
         
         guard let colorsArrayData = JSObject.global.Float32Array.function?.new(allColors) else {
+            throw WebGLError.couldNotCreateArray
+        }
+        
+        guard let matrixArrayData = JSObject.global.Float32Array.function?.new(allMatrixTransforms) else {
             throw WebGLError.couldNotCreateArray
         }
         
@@ -96,12 +113,16 @@ extension DrawTrianglesProgram: WebGLProgram {
         _ = gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
         _ = gl.bufferData(gl.ARRAY_BUFFER, colorsArrayData, gl.STATIC_DRAW)
         
+        _ = gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer)
+        _ = gl.bufferData(gl.ARRAY_BUFFER, matrixArrayData, gl.STATIC_DRAW)
+        
         _ = gl.drawArrays(gl.TRIANGLES, 0, triangles.count * 3);
     }
     
     var vertexShader: String {
     """
                     attribute vec2 a_position;
+                    attribute mat3 a_matrix;
                     attribute vec4 a_color;
             
                     varying vec4 v_color;
@@ -112,8 +133,12 @@ extension DrawTrianglesProgram: WebGLProgram {
             //
             // POSITION
             //
+    
+            // Multiply the position by the matrix.
+            vec2 position = (a_matrix * vec3(a_position, 1)).xy;
+    
                         // convert the position from pixels to 0.0 to 1.0
-                        vec2 zeroToOne = a_position / u_resolution;
+                        vec2 zeroToOne = position / u_resolution;
                     
                         // convert from 0->1 to 0->2
                         vec2 zeroToTwo = zeroToOne * 2.0;

@@ -13,14 +13,16 @@ public struct ShapeRenderingReducer: Reducer {
         state.shape.forEach { (id, shapeComponent) in
             guard let transform = state.transform[id] else { return }
             do {
+                let matrix = Matrix3
+                    .identity
+                    .rotatedBy(angleInRadians: -transform.rotate.degreesToRadians())
+                    .translatedBy(tx: transform.position.x, ty: transform.position.y)
                 let triangles = try shapeComponent.shape.triangulate().enumerated()
                     .map { (i, triangle) -> RenderTriangle in
-                        let triangle = triangle
-                            .offset(by: transform.position)
-                            .rotated(around: transform.position, degrees: -transform.rotate)
-                        return RenderTriangle(
+                        RenderTriangle(
                             triangle: triangle,
                             fragmentType: .color(shapeComponent.fillColor),
+                            transformMatrix: matrix,
                             zIndex: transform.zIndex
                         )
                     }

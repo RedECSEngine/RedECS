@@ -1,5 +1,6 @@
 import RedECS
 import Geometry
+import GeometryAlgorithms
 
 public struct TileMapRenderingReducer: Reducer {
     public init() {}
@@ -36,8 +37,7 @@ public struct TileMapRenderingReducer: Reducer {
                             size: tileSize
                         )
                         
-                        let renderRect = rectForTile.offset(by: transform.position)
-                        guard cameraRect.contains(renderRect) else { continue }
+//                        guard cameraRect.contains(rectForTile.offset(by: transform.position)) else { continue }
                         
                         guard let tileIndex = layer.tileDataAt(column: c, row: r, flipY: true) else { continue }
                         
@@ -54,11 +54,17 @@ public struct TileMapRenderingReducer: Reducer {
                             size: tileSize
                         )
                         
+                        let matrix = Matrix3.identity
+                            .translatedBy(tx: transform.position.x, ty: transform.position.y)
+                            .rotatedBy(angleInRadians: transform.rotate.degreesToRadians())
+                            .scaledBy(sx: transform.scale, sy: transform.scale)
+                            .translatedBy(tx: tileMap.tileMap.totalWidth / 2, ty: tileMap.tileMap.totalHeight / 2)
+                        
                         let topRenderTri = RenderTriangle(
                             triangle: Triangle(
-                                a: Point(x: renderRect.minX, y: renderRect.maxY),
-                                b: Point(x: renderRect.maxX, y: renderRect.minY),
-                                c: Point(x: renderRect.maxX, y: renderRect.maxY)
+                                a: Point(x: rectForTile.minX, y: rectForTile.maxY),
+                                b: Point(x: rectForTile.maxX, y: rectForTile.minY),
+                                c: Point(x: rectForTile.maxX, y: rectForTile.maxY)
                             ),
                             fragmentType: .texture(
                                 tileSet.image,
@@ -68,13 +74,14 @@ public struct TileMapRenderingReducer: Reducer {
                                     c: Point(x: textureRect.maxX, y: textureRect.maxY)
                                 )
                             ),
+                            transformMatrix: matrix,
                             zIndex: transform.zIndex
                         )
                         let bottomRenderTri = RenderTriangle(
                             triangle: Triangle(
-                                a: Point(x: renderRect.minX, y: renderRect.minY),
-                                b: Point(x: renderRect.maxX, y: renderRect.minY),
-                                c: Point(x: renderRect.minX, y: renderRect.maxY)
+                                a: Point(x: rectForTile.minX, y: rectForTile.minY),
+                                b: Point(x: rectForTile.maxX, y: rectForTile.minY),
+                                c: Point(x: rectForTile.minX, y: rectForTile.maxY)
                             ),
                             fragmentType: .texture(
                                 tileSet.image,
@@ -84,6 +91,7 @@ public struct TileMapRenderingReducer: Reducer {
                                     c: Point(x: textureRect.minX, y: textureRect.maxY)
                                 )
                             ),
+                            transformMatrix: matrix,
                             zIndex: transform.zIndex
                         )
                         

@@ -23,6 +23,7 @@ extension DrawTextureProgram: WebGLProgram {
         let program = try createProgram(with: webRenderer)
         
         let positionLocation = gl.getAttribLocation(program, "a_position")
+        let matrixLocation = gl.getAttribLocation(program, "a_matrix")
         let texcoordLocation = gl.getAttribLocation(program, "a_texCoord")
         let resolutionLocation = gl.getUniformLocation(program, "u_resolution")
         let textureSizeLocation = gl.getUniformLocation(program, "u_textureSize")
@@ -44,6 +45,17 @@ extension DrawTextureProgram: WebGLProgram {
         // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
         _ = gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
         _ = gl.bufferData(gl.ARRAY_BUFFER, trianglesArrayData, gl.STATIC_DRAW)
+        
+        let allMatrixTransforms = triangles.flatMap {
+            [$0.transformMatrix.values, $0.transformMatrix.values, $0.transformMatrix.values].flatMap { $0 }
+        }
+        guard let matrixArrayData = JSObject.global.Float32Array.function?.new(allMatrixTransforms) else {
+            throw WebGLError.couldNotCreateArray
+        }
+        
+        let matrixBuffer = gl.createBuffer()
+        _ = gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer)
+        _ = gl.bufferData(gl.ARRAY_BUFFER, matrixArrayData, gl.STATIC_DRAW)
         
         let allTextureTriangles = triangles.flatMap { renderTriangle -> [Double] in
             guard case let .texture(_ , triangle) = renderTriangle.fragmentType else { return [] }
@@ -100,6 +112,38 @@ extension DrawTextureProgram: WebGLProgram {
         let offset = 0        // start at the beginning of the buffer
         _ = gl.vertexAttribPointer(positionLocation, size, type, normalize, stride, offset)
         
+        // Turn on the matrix attribute
+//        _ = gl.enableVertexAttribArray(matrixLocation)
+//         Bind the matrix buffer.
+//        _ = gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer)
+//        // Tell the attribute how to get data out of matrixBuffer (ARRAY_BUFFER)
+//        let sizeM = 9          // 9 components per iteration
+//        let typeM: JSValue = gl.FLOAT   // the data is 32bit floats
+//        let normalizeM = false // don't normalize the data
+//        let strideM = 0        // 0 = move forward size * sizeof(type) each iteration to get the next matrix
+//        let offsetM = 0        // start at the beginning of the buffer
+//        _ = gl.vertexAttribPointer(matrixLocation, sizeM, typeM, normalizeM, strideM, offsetM)
+        
+        for i in 0..<3 {
+            _ = gl.enableVertexAttribArray(matrixLocation.number! + Double(i))
+            _ = gl.bindBuffer(gl.ARRAY_BUFFER, matrixBuffer)
+            _ = gl.vertexAttribPointer(matrixLocation.number! + Double(i), 3, gl.FLOAT, 0, 36, i * 12);
+        }
+        
+        /*
+        gl.vertexAttribPointer(loc  , 4, gl.FLOAT, false, 64, 0);
+        gl.vertexAttribPointer(loc+1, 4, gl.FLOAT, false, 64, 16);
+        gl.vertexAttribPointer(loc+2, 4, gl.FLOAT, false, 64, 32);
+        gl.vertexAttribPointer(loc+3, 4, gl.FLOAT, false, 64, 48);
+         
+         gl.bindBuffer(gl.ARRAY_BUFFER, buffers.matrices);
+         for (var ii = 0; ii < 4; ++ii) {
+           gl.enableVertexAttribArray(matrixLoc + ii);
+           gl.vertexAttribPointer(matrixLoc + ii, 4, gl.FLOAT, 0, 64, ii * 16);
+         }
+         */
+        
+        
         // Turn on the texcoord attribute
         _ = gl.enableVertexAttribArray(texcoordLocation);
         // bind the texcoord buffer.
@@ -125,6 +169,7 @@ extension DrawTextureProgram: WebGLProgram {
     var vertexShader: String {
     """
     attribute vec2 a_position;
+    attribute mat3 a_matrix;
     attribute vec2 a_texCoord;
     
     uniform vec2 u_resolution;
@@ -133,8 +178,11 @@ extension DrawTextureProgram: WebGLProgram {
     varying vec2 v_texCoord;
     
     void main() {
+        // Multiply the position by the matrix.
+        vec2 position = (a_matrix * vec3(a_position, 1)).xy;
+    
         // convert the rectangle from pixels to 0.0 to 1.0
-        vec2 zeroToOnePosition = a_position / u_resolution;
+        vec2 zeroToOnePosition = position / u_resolution;
         // convert from 0->1 to 0->2
         vec2 zeroToTwoPosition = zeroToOnePosition * 2.0;
         // convert from 0->2 to -1->+1 (clipspace)

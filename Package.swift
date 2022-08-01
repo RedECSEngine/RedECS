@@ -74,6 +74,10 @@ let package = Package(
                 .product(
                     name: "Geometry",
                     package: "Geometry"
+                ),
+                .product(
+                    name: "GeometryAlgorithms",
+                    package: "Geometry"
                 )
             ]
         ),
@@ -96,11 +100,7 @@ let package = Package(
             name: "RedECSRenderingComponents",
             dependencies: [
                 "RedECS",
-                "RedECSBasicComponents",
-                .product(
-                    name: "GeometryAlgorithms",
-                    package: "Geometry"
-                )
+                "RedECSBasicComponents"
             ]
         ),
         
