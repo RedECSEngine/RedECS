@@ -70,6 +70,7 @@ let package = Package(
         .target(
             name: "RedECS",
             dependencies: [
+                "TiledInterpreter",
                 .product(
                     name: "Geometry",
                     package: "Geometry"
@@ -96,7 +97,6 @@ let package = Package(
             dependencies: [
                 "RedECS",
                 "RedECSBasicComponents",
-                "TiledInterpreter",
                 .product(
                     name: "GeometryAlgorithms",
                     package: "Geometry"

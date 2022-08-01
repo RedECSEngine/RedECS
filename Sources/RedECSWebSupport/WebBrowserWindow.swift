@@ -1,15 +1,39 @@
 import JavaScriptKit
+import RedECS
 import RedECSBasicComponents
 import Geometry
 
-open class WebBrowserWindow {
+open class WebBrowserWindow<State: GameState, Action: Equatable, Environment> {
     
-    public var renderer: WebRenderer!
-    public var resourceManager: WebResourceManager
+    public private(set) var resourceManager: WebResourceManager
+    public private(set) var renderer: WebRenderer
+    public private(set) var store: GameStore<AnyReducer<State, Action, Environment>>!
+    
+    public private(set) var lastTime: Double?
     
     public required init(size: Size) {
         self.resourceManager = WebResourceManager(resourcePath: "Resources")
         self.renderer = WebRenderer(size: size, resourceLoader: resourceManager)
+    }
+    
+    open func setStoreAndBegin(
+        _ store: GameStore<AnyReducer<State, Action, Environment>>,
+        preloading assets: [(String, ResourceType)],
+        onReady: (() -> Void)? = nil
+    ) {
+        self.store = store
+        resourceManager
+            .preload(assets)
+            .subscribe { [weak self] result in
+                switch result {
+                case .success:
+                    self?.startWebRenderer()
+                    onReady?()
+                case .failure(let e):
+                    print(e)
+                    fatalError(e.localizedDescription)
+                }
+            }
     }
     
     /// If overriding, either call super or add listeners and request animation frame manually
@@ -118,8 +142,12 @@ open class WebBrowserWindow {
         })
     }
     
-    /// If overriding, either call `requestAnimationFrame` yourself or call super
-    open func update(_ currentTime: Double) {
+    public func update(_ currentTime: Double) {
+        if let lastTime = lastTime {
+            let delta = (currentTime - lastTime) / 100
+            store.sendDelta(delta)
+        }
+        lastTime = currentTime
         requestAnimationFrame()
     }
     

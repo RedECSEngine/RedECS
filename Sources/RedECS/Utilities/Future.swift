@@ -10,7 +10,7 @@ public struct Future<T, E: Error> {
         self.observer = observer
     }
 
-    public func subscribe(_ resolve: @escaping ResolutionBlock) -> Void {
+    public func subscribe(_ resolve: @escaping ResolutionBlock) {
         observer { result in
             resolve(result)
         }
@@ -19,6 +19,15 @@ public struct Future<T, E: Error> {
     public func map<A>(_ transform: @escaping (T) -> A) -> Future<A, E> {
         return .init { resolve in
             self.subscribe { resolve($0.map(transform)) }
+        }
+    }
+    
+    public func readValue(_ readClosure: @escaping (Result<T, E>) -> Void) -> Future<T, E> {
+        return .init { resolve in
+            self.subscribe {
+                readClosure($0)
+                resolve($0)
+            }
         }
     }
     
@@ -44,7 +53,7 @@ public struct Future<T, E: Error> {
             }
         }
     }
-   
+    
 }
 
 public extension Future {
@@ -95,7 +104,10 @@ public extension Future {
     }
     
     static func zip<A, E: Error>(_ all: [Future<A, E>]) -> Future<[A], E> {
-        Future<[A], E> { resolver in
+        if all.isEmpty {
+            return .just([])
+        }
+        return Future<[A], E> { resolver in
             var cumulative: [A] = []
             var cumulativeCount = 0
             cumulative.reserveCapacity(all.count)
@@ -120,13 +132,21 @@ public extension Future {
             }
         }
     }
+    
+    func toVoid() -> Future<Void, E> {
+        map { _ in () }
+    }
+    
+    static func just(_ value: T) -> Future<T, E> {
+        Future(observer: { resolve in resolve(.success(value)) })
+    }
+    
+    static func fail(_ error: E) -> Future<T, E> {
+        Future(observer: { resolve in resolve(.failure(error)) })
+    }
 }
 
 public extension Future where E == Never {
-    static func just(_ value: T) -> Future<T, Never> {
-        Future(observer: { resolve in resolve(.success(value)) })
-    }
-
     func onDone(_ completion: @escaping (T) -> Void) {
         self.subscribe { result in
             switch result {

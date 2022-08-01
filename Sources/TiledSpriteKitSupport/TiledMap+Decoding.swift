@@ -9,8 +9,8 @@ public extension TiledMap {
         tileSetXMLData: Data
     ) throws {
         try self.init(
-            mapInfo: try JSONDecoder().decode(TiledMapInfoJSON<TOT>.self, from: mapJSONData),
-            tileSetInfo: try XMLDecoder().decode(TiledTilesetXML<TTC>.self, from: tileSetXMLData).toJSONFormat()
+            mapInfo: try JSONDecoder().decode(TiledMapJSON.self, from: mapJSONData),
+            tileSetInfo: try XMLDecoder().decode(TiledTilesetXML.self, from: tileSetXMLData).toJSONFormat()
         )
     }
 }

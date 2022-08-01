@@ -4,15 +4,15 @@ import RedECS
 
 struct DrawTextureProgram {
     var triangles: [RenderTriangle]
-    var textureMap: TextureMap
+    var textureSize: Size
     var image: JSValue
     init(
         triangles: [RenderTriangle],
-        textureMap: TextureMap,
+        textureSize: Size,
         image: JSValue
     ) {
         self.triangles = triangles
-        self.textureMap = textureMap
+        self.textureSize = textureSize
         self.image = image
     }
 }
@@ -116,7 +116,7 @@ extension DrawTextureProgram: WebGLProgram {
         _ = gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
         
         // set the textureSize
-        _ = gl.uniform2f(textureSizeLocation, textureMap.meta.size.w, textureMap.meta.size.h);
+        _ = gl.uniform2f(textureSizeLocation, textureSize.width, textureSize.height);
 
         // Draw the rectangle.
         _ = gl.drawArrays(gl.TRIANGLES, 0, triangles.count * 3);

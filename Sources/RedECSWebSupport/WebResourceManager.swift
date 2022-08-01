@@ -1,9 +1,9 @@
 import JavaScriptKit
 import RedECS
 import RedECSRenderingComponents
+import TiledInterpreter
 
 public final class WebResourceManager: ResourceManager {
-    
     public enum Error: Swift.Error {
         case fileNotFound
         case fileLoadFailure
@@ -14,27 +14,33 @@ public final class WebResourceManager: ResourceManager {
     }
     
     let resourcePath: String
+    
     public var textures: [TextureId: Resource<TextureMap>] = [:]
     public var animations: [TextureId: SpriteAnimationDictionary] = [:]
-    var textureImages: [TextureId: JSValue] = [:]
+    public var tileMaps: [String: TiledMapJSON] = [:]
+    public var tileSets: [String: TiledTilesetJSON] = [:]
+    
+    /// Web Specific Storage for image resources
+    public var textureImages: [TextureId: JSValue] = [:]
     
     public init(resourcePath: String) {
         self.resourcePath = resourcePath
     }
     
-    public func startTextureLoadIfNeeded(textureId: TextureId) {
+    @discardableResult
+    public func startTextureLoadIfNeeded(textureId: TextureId) -> Future<Void, Swift.Error> {
         guard textures[textureId] == nil else {
-            return
+            return .just(())
         }
         
         textures[textureId] = .loading
         print("starting texture load: \(textureId)")
-        loadImageFile(name: textureId)
+        return loadImageFile(name: textureId + ".png")
             .flatMap { value -> Future<TextureMap, Swift.Error> in
                 self.textureImages[textureId] = value
-                return self.loadJSONFile(textureId, decodedAs: TextureMap.self)
+                return self.loadJSONFile(textureId + ".json", decodedAs: TextureMap.self)
             }
-            .subscribe { result in
+            .readValue { result in
                 switch result {
                 case .success(let value):
                     print("texture loaded: \(textureId)")
@@ -45,6 +51,7 @@ public final class WebResourceManager: ResourceManager {
                     print("error loading texture", error)
                 }
             }
+            .toVoid()
     }
     
     public func loadJSONFile<T: Decodable>(
@@ -61,7 +68,7 @@ public final class WebResourceManager: ResourceManager {
                 return
             }
             
-            let url = origin + "/" + self.resourcePath + "/" + name + ".json"
+            let url = origin + "/" + self.resourcePath + "/" + name
             
             (JSPromise(from: fetchFunc(url)))?
                 .then(success: { response in
@@ -70,8 +77,10 @@ public final class WebResourceManager: ResourceManager {
                 .then(success: { json in
                     do {
                         let parsed = try JSValueDecoder().decode(T.self, from: json)
+                        print("Loaded \(name)")
                         resolve(.success(parsed))
                     } catch {
+                        print("couldn't decode \(T.self)", error)
                         resolve(.failure(Error.fileDecodeFailure))
                     }
                     return JSValue.null
@@ -101,10 +110,7 @@ public final class WebResourceManager: ResourceManager {
                 return
             }
             
-            let url = origin + "/" + self.resourcePath + "/" + name + ".png"
-            
-            print("Load image: \(url)")
-            
+            let url = origin + "/" + self.resourcePath + "/" + name
             (JSPromise(from: fetchFunc(url)))?
                 .then(success: { response in
                     JSPromise(from: response.blob())
@@ -129,6 +135,54 @@ public final class WebResourceManager: ResourceManager {
                     return JSValue.null
                 })
         }
-       
     }
+    
+    public func loadTiledMap(_ name: String) -> Future<TiledMapJSON, Swift.Error> {
+        return loadJSONFile(
+            name,
+            decodedAs: TiledMapJSON.self
+        )
+        .flatMap { mapInfo in
+            let tileSetSources = Set(mapInfo.tileSets.map { $0.source })
+            let tileSetFutures: [Future<Void, Swift.Error>] = tileSetSources
+                .map { filename -> Future<Void, Swift.Error>  in
+                    self.loadJSONFile(filename, decodedAs: TiledTilesetJSON.self)
+                        .flatMap { tileSet -> Future<JSValue, Swift.Error> in
+                            self.tileSets[filename] = tileSet
+                            return self.loadImageFile(name: tileSet.image)
+                        }
+                        .toVoid()
+                }
+            return .zip(tileSetFutures)
+                .flatMap { tileSets in
+                    self.tileMaps[name] = mapInfo
+                    return .just(mapInfo)
+                }
+        }
+    }
+    
+    public func preload(_ assets: [(String, ResourceType)]) -> Future<Void, Swift.Error> {
+        let futures = assets.map { (id, type) -> Future<Void, Swift.Error> in
+            switch type {
+            case .image:
+                return self.startTextureLoadIfNeeded(textureId: id)
+            case .sound:
+                return .just(())
+            case .tilemap:
+                return self.loadTiledMap(id).toVoid()
+            }
+        }
+        if futures.isEmpty {
+            return .just(())
+        }
+        print("⚙️ -- Starting assets preload")
+        return .zip(futures)
+            .readValue({ result in
+                if case .success = result {
+                    print("⚙️ -- Assets preloading complete")
+                }
+            })
+            .toVoid()
+    }
+    
 }

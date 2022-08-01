@@ -1,5 +1,13 @@
 { "columns":20,
- "image":"tiles_dungeon.png",
+ "editorsettings":
+    {
+     "export":
+        {
+         "format":"json",
+         "target":"..\/..\/..\/RedECS-Tests\/Sources\/WebSupport\/Resources\/dungeon.tsj"
+        }
+    },
+ "image":"..\/..\/..\/RedECS-Tests\/Sources\/WebSupport\/Resources\/tiles_dungeon.png",
  "imageheight":304,
  "imagewidth":320,
  "margin":0,

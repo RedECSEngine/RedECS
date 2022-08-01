@@ -1,18 +1,33 @@
+import TiledInterpreter
+
 public enum Resource<T> {
     case loading
     case failedToLoad(Error)
     case loaded(T)
 }
 
+public enum ResourceType {
+    case image
+    case sound
+    case tilemap
+}
+
 public protocol ResourceManager: AnyObject {
     var textures: [TextureId: Resource<TextureMap>] { get }
     var animations: [TextureId: SpriteAnimationDictionary] { get set }
+    var tileMaps: [String: TiledMapJSON] { get set }
+    var tileSets: [String: TiledTilesetJSON] { get set }
     
-    func startTextureLoadIfNeeded(textureId: TextureId)
+    func preload(_ assets: [(String, ResourceType)]) -> Future<Void, Error>
+    
+    @discardableResult
+    func startTextureLoadIfNeeded(textureId: TextureId) -> Future<Void, Error>
+    
     func getTexture(textureId: TextureId) -> TextureMap?
     func animationsForTexture(_ textureId: TextureId) -> SpriteAnimationDictionary?
     
     func loadJSONFile<T: Decodable>(_ name: String, decodedAs: T.Type) -> Future<T, Error>
+    func loadTiledMap(_ name: String) -> Future<TiledMapJSON, Error>
 }
 
 public extension ResourceManager {

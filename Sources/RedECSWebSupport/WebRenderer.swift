@@ -54,13 +54,26 @@ open class WebRenderer {
                     try DrawTrianglesProgram(triangles: job.triangles)
                         .execute(with: self)
                 case .texture:
-                    guard let textureId = job.triangles.first?.textureId else { break }
-                    
-                    if let textureMap = webResourceManager.getTexture(textureId: textureId),
-                        let image = webResourceManager.textureImages[textureId] {
-                        try DrawTextureProgram(triangles: job.triangles, textureMap: textureMap, image: image)
-                            .execute(with: self)
+                    guard let textureId = job.triangles.first?.textureId else {
+                        print("no texture")
+                        fatalError()
+                        break
+                    }
+                    if let image = webResourceManager.textureImages[textureId],
+                       let imageObject = image.object,
+                       let width = imageObject.width.number,
+                       let height = imageObject.height.number {
+                        try DrawTextureProgram(
+                            triangles: job.triangles,
+                            textureSize: .init(
+                                width: width,
+                                height: height
+                            ),
+                            image: image
+                        )
+                        .execute(with: self)
                     } else {
+                        print("no texture loaded for", textureId)
                         webResourceManager.startTextureLoadIfNeeded(textureId: textureId)
                     }
                 }

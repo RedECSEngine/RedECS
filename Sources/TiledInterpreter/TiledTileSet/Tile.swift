@@ -1,4 +1,4 @@
-public struct Tile<TTC: TiledTileClass>: Codable, Equatable {
+public struct Tile: Codable, Equatable {
     public var id: Int
-    public var `class`: TTC
+    public var `class`: String
 }
