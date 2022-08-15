@@ -47,7 +47,7 @@ let package = Package(
         .library(
             name: "TiledSpriteKitSupport",
             targets: ["TiledSpriteKitSupport"]
-        )
+        ),
     ],
     dependencies: [
         .package(
@@ -59,7 +59,8 @@ let package = Package(
 //            url: "git@github.com:RedECSEngine/Geometry.git",
 //            from: "0.0.3"
 //        ),
-        .package(path: "../Geometry"),
+//        .package(path: "../Geometry"),
+        .package(url: "git@github.com:RedECSEngine/Geometry.git", .branch("develop")),
         
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.9.0"),
         .package(url: "https://github.com/MaxDesiatov/XMLCoder.git", from: "0.13.0")
@@ -88,7 +89,9 @@ let package = Package(
         
         .target(
             name: "RedECSAppleSupport",
-            dependencies: ["RedECS"]
+            dependencies: [
+                "RedECS"
+            ]
         ),
         
         .target(

@@ -3,11 +3,6 @@ import RedECS
 import Geometry
 import RedECSRenderingComponents
 
-public enum WebRendererProgram {
-    case color
-    case texture
-}
-
 open class WebRenderer {
     public enum State {
         case loading
@@ -22,7 +17,7 @@ open class WebRenderer {
     
     public var webResourceManager: WebResourceManager
     
-    private var queuedTriangles: [RenderTriangle] = []
+    public var queuedTriangles: [RenderTriangle] = []
     
     public init(
         size: Size,
@@ -100,34 +95,6 @@ open class WebRenderer {
         _ = glContext.clearColor(0, 0, 0, 0.1)
         _ = glContext.clear(glContext.COLOR_BUFFER_BIT)
     }
-    
-    private func groupEnqueuedWork() -> [(program: WebRendererProgram, triangles: [RenderTriangle])] {
-        var batches: [(WebRendererProgram, [RenderTriangle])] = []
-        var lastTextureId: TextureId?
-        var currentBatch: [RenderTriangle] = []
-        
-        for triangle in queuedTriangles.sorted(by: { $0.zIndex < $1.zIndex }) {
-            if lastTextureId == triangle.textureId {
-                currentBatch.append(triangle)
-            } else {
-                //append last batch
-                let batchProgram: WebRendererProgram = (lastTextureId == nil ? .color : .texture)
-                batches.append((batchProgram, currentBatch))
-                //prepare new batch
-                lastTextureId = triangle.textureId
-                currentBatch = []
-                currentBatch.append(triangle)
-            }
-        }
-        
-        // append remaining from last batch
-        if let triangle = currentBatch.first {
-            let batchProgram: WebRendererProgram = (triangle.textureId == nil ? .color : .texture)
-            batches.append((batchProgram, currentBatch))
-        }
-        
-        return batches
-    }
 }
 
 extension WebRenderer: Renderer {
@@ -137,23 +104,5 @@ extension WebRenderer: Renderer {
     
     public func setCameraPosition(_ position: Point) {
         cameraPosition = position
-    }
-    
-    public func clearTriangleQueue() {
-        queuedTriangles.removeAll()
-    }
-    public func enqueueTriangles(_ triangles: [RenderTriangle]) {
-        queuedTriangles.append(contentsOf: triangles)
-    }
-}
-
-extension RenderTriangle {
-    var textureId: TextureId? {
-        switch fragmentType {
-        case .texture(let id, _):
-            return id
-        case .color:
-            return nil
-        }
     }
 }

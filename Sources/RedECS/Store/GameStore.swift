@@ -18,6 +18,7 @@ public final class GameStore<R: Reducer> {
     }
 
     public func sendDelta(_ delta: Double) {
+        assert(delta > 0, "Delta should be greater than 0")
         let effect = reducer.reduce(state: &state, delta: delta, environment: environment)
         handleEffect(effect)
     }

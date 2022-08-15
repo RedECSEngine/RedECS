@@ -15,18 +15,20 @@ public struct ShapeRenderingReducer: Reducer {
             do {
                 let matrix = Matrix3
                     .identity
-                    .rotatedBy(angleInRadians: -transform.rotate.degreesToRadians())
                     .translatedBy(tx: transform.position.x, ty: transform.position.y)
+                    .rotatedBy(angleInRadians: -transform.rotate.degreesToRadians())
                 let triangles = try shapeComponent.shape.triangulate().enumerated()
                     .map { (i, triangle) -> RenderTriangle in
-                        RenderTriangle(
-                            triangle: triangle,
-                            fragmentType: .color(shapeComponent.fillColor),
-                            transformMatrix: matrix,
-                            zIndex: transform.zIndex
-                        )
+                        RenderTriangle(triangle: triangle)
                     }
-                environment.renderer.enqueueTriangles(triangles)
+                environment.renderer.enqueue([
+                    RenderGroup(
+                        triangles: triangles,
+                        transformMatrix: matrix,
+                        fragmentType: .color(shapeComponent.fillColor),
+                        zIndex: transform.zIndex
+                    )
+                ])
             } catch {
                 print("⚠️ couldn't render shape", error)
             }

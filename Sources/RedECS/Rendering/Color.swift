@@ -53,6 +53,8 @@ public extension Color {
     static let green: Color = .init(red: 0, green: 1, blue: 0, alpha: 1)
     static let blue: Color = .init(red: 0, green: 0, blue: 1, alpha: 1)
     
+    static let clear: Color = .init(red: 0, green: 0, blue: 0, alpha: 0)
+    
     static func random() -> Color {
         Color(
             red: .random(in: 0...1),

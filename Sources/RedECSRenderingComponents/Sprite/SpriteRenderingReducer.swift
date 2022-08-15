@@ -43,16 +43,11 @@ public struct SpriteRenderingReducer: Reducer {
                     b: Point(x: renderRect.maxX, y: renderRect.minY),
                     c: Point(x: renderRect.maxX, y: renderRect.maxY)
                 ),
-                fragmentType: .texture(
-                    spriteComponent.texture.textureId,
-                    Triangle(
-                        a: Point(x: textureRect.minX, y: textureRect.maxY),
-                        b: Point(x: textureRect.maxX, y: textureRect.minY),
-                        c: Point(x: textureRect.maxX, y: textureRect.maxY)
-                    )
-                ),
-                transformMatrix: matrix,
-                zIndex: transform.zIndex
+                textureTriangle: Triangle(
+                    a: Point(x: textureRect.minX, y: textureRect.maxY),
+                    b: Point(x: textureRect.maxX, y: textureRect.minY),
+                    c: Point(x: textureRect.maxX, y: textureRect.maxY)
+                )
             )
             let bottomRenderTri = RenderTriangle(
                 triangle: Triangle(
@@ -60,21 +55,20 @@ public struct SpriteRenderingReducer: Reducer {
                     b: Point(x: renderRect.maxX, y: renderRect.minY),
                     c: Point(x: renderRect.minX, y: renderRect.maxY)
                 ),
-                fragmentType: .texture(
-                    spriteComponent.texture.textureId,
-                    Triangle(
-                        a: Point(x: textureRect.minX, y: textureRect.minY),
-                        b: Point(x: textureRect.maxX, y: textureRect.minY),
-                        c: Point(x: textureRect.minX, y: textureRect.maxY)
-                    )
-                ),
-                transformMatrix: matrix,
-                zIndex: transform.zIndex
+                textureTriangle: Triangle(
+                    a: Point(x: textureRect.minX, y: textureRect.minY),
+                    b: Point(x: textureRect.maxX, y: textureRect.minY),
+                    c: Point(x: textureRect.minX, y: textureRect.maxY)
+                )
             )
             
-            environment.renderer.enqueueTriangles([
-                bottomRenderTri,
-                topRenderTri,
+            environment.renderer.enqueue([
+                RenderGroup(
+                    triangles: [topRenderTri, bottomRenderTri],
+                    transformMatrix: matrix,
+                    fragmentType: .texture(spriteComponent.texture.textureId),
+                    zIndex: transform.zIndex
+                )
             ])
         }
         return .none

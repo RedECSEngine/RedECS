@@ -66,16 +66,11 @@ public struct TileMapRenderingReducer: Reducer {
                                 b: Point(x: rectForTile.maxX, y: rectForTile.minY),
                                 c: Point(x: rectForTile.maxX, y: rectForTile.maxY)
                             ),
-                            fragmentType: .texture(
-                                tileSet.image,
-                                Triangle(
-                                    a: Point(x: textureRect.minX, y: textureRect.maxY),
-                                    b: Point(x: textureRect.maxX, y: textureRect.minY),
-                                    c: Point(x: textureRect.maxX, y: textureRect.maxY)
-                                )
-                            ),
-                            transformMatrix: matrix,
-                            zIndex: transform.zIndex
+                            textureTriangle: Triangle(
+                                a: Point(x: textureRect.minX, y: textureRect.maxY),
+                                b: Point(x: textureRect.maxX, y: textureRect.minY),
+                                c: Point(x: textureRect.maxX, y: textureRect.maxY)
+                            )
                         )
                         let bottomRenderTri = RenderTriangle(
                             triangle: Triangle(
@@ -83,21 +78,22 @@ public struct TileMapRenderingReducer: Reducer {
                                 b: Point(x: rectForTile.maxX, y: rectForTile.minY),
                                 c: Point(x: rectForTile.minX, y: rectForTile.maxY)
                             ),
-                            fragmentType: .texture(
-                                tileSet.image,
-                                Triangle(
-                                    a: Point(x: textureRect.minX, y: textureRect.minY),
-                                    b: Point(x: textureRect.maxX, y: textureRect.minY),
-                                    c: Point(x: textureRect.minX, y: textureRect.maxY)
-                                )
-                            ),
-                            transformMatrix: matrix,
-                            zIndex: transform.zIndex
+                            textureTriangle: Triangle(
+                                a: Point(x: textureRect.minX, y: textureRect.minY),
+                                b: Point(x: textureRect.maxX, y: textureRect.minY),
+                                c: Point(x: textureRect.minX, y: textureRect.maxY)
+                            )
                         )
                         
-                        environment.renderer.enqueueTriangles([
-                            bottomRenderTri,
-                            topRenderTri,
+                        let textureId = tileSet.image.split(separator: ".").dropLast().joined(separator: ".")
+                        
+                        environment.renderer.enqueue([
+                            RenderGroup(
+                                triangles: [topRenderTri, bottomRenderTri],
+                                transformMatrix: matrix,
+                                fragmentType: .texture(textureId),
+                                zIndex: transform.zIndex
+                            )
                         ])
                     }
                 }
