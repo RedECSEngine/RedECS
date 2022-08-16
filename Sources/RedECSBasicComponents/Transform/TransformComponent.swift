@@ -9,6 +9,7 @@ public struct TransformComponent: GameComponent {
     public var zIndex: Int = 0
     
     public var parentId: EntityId?
+    public var isHidden: Bool = false
     
     public init(
         entity: EntityId,
@@ -16,7 +17,8 @@ public struct TransformComponent: GameComponent {
         rotate: Double = 0,
         scale: Double = 1,
         zIndex: Int = 0,
-        parentId: EntityId? = nil
+        parentId: EntityId? = nil,
+        isHidden: Bool = false
     ) {
         self.entity = entity
         self.position = position
@@ -24,5 +26,6 @@ public struct TransformComponent: GameComponent {
         self.scale = scale
         self.zIndex = zIndex
         self.parentId = parentId
+        self.isHidden = isHidden
     }
 }

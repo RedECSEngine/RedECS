@@ -8,7 +8,7 @@ public indirect enum GameEffect<State: GameState, LogicAction: Equatable> {
     case many([Self])
     case none
 
-    func map<S: GameState, A>(
+    public func map<S: GameState, A>(
         stateTransform: WritableKeyPath<S, State>,
         actionTransform: @escaping (LogicAction) -> A
     ) -> GameEffect<S, A> {
@@ -37,7 +37,7 @@ public enum SystemAction<State: GameState> {
     case addComponent(EntityId, AnyComponent<State>)
     case removeComponent(EntityId, RegisteredComponentId)
 
-    func map<S: GameState>(
+    public func map<S: GameState>(
         _ stateTransform: WritableKeyPath<S, State>
     ) -> SystemAction<S> {
         switch self {
