@@ -44,7 +44,7 @@ public extension TiledTilesetXML {
             tileHeight: tileHeight,
             tileCount: tileCount,
             columns: columns,
-            tiles: tiles
+            tiles: tiles ?? []
         )
     }
 }

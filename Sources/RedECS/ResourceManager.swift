@@ -10,6 +10,7 @@ public enum ResourceType {
     case image
     case sound
     case tilemap
+    // TODO: preload sprite animation dictionary
 }
 
 public protocol ResourceManager: AnyObject {

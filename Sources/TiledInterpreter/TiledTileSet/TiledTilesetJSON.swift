@@ -8,7 +8,7 @@ public struct TiledTilesetJSON: Codable, Equatable {
         case tileHeight = "tileheight"
         case tileCount = "tilecount"
         case columns
-        case tiles = "tile"
+        case tiles = "tiles"
     }
     
     public var name: String
@@ -19,7 +19,7 @@ public struct TiledTilesetJSON: Codable, Equatable {
     public var tileHeight: Int
     public var tileCount: Int
     public var columns: Int
-    public var tiles: [Tile]?
+    public var tiles: [Tile]
     
     public var rows: Int {
         imageHeight / tileHeight
@@ -34,7 +34,7 @@ public struct TiledTilesetJSON: Codable, Equatable {
         tileHeight: Int,
         tileCount: Int,
         columns: Int,
-        tiles: [Tile]? = nil
+        tiles: [Tile]
     ) {
         self.name = name
         self.image = image
@@ -48,9 +48,7 @@ public struct TiledTilesetJSON: Codable, Equatable {
     }
     
     public func makeTileInfoDictionary() -> [Int: Tile] {
-        tiles.map {
-            // we add 1 to the id to compensate for the difference between tile data ids (where 0 == nothing) and the tile id (where 0 is the first tile)
-            $0.reduce(into: [Int: Tile]()) { $0[$1.id + 1] = $1 }
-        } ?? [:]
+        // we add 1 to the id to compensate for the difference between tile data ids (where 0 == nothing) and the tile id (where 0 is the first tile)
+        tiles.reduce(into: [Int: Tile]()) { $0[$1.id + 1] = $1 }
     }
 }

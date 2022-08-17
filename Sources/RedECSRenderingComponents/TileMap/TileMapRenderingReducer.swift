@@ -27,6 +27,12 @@ public struct TileMapRenderingReducer: Reducer {
                     return
                 }
                 
+                let matrix = Matrix3.identity
+                    .translatedBy(tx: transform.position.x, ty: transform.position.y)
+                    .rotatedBy(angleInRadians: transform.rotate.degreesToRadians())
+                    .scaledBy(sx: transform.scale, sy: transform.scale)
+                    .translatedBy(tx: tileMap.tileMap.totalWidth / 2, ty: tileMap.tileMap.totalHeight / 2)
+                
                 for r in 0..<layerRows {
                     for c in 0..<layerCols {
                         let rectForTile = Rect(
@@ -44,7 +50,7 @@ public struct TileMapRenderingReducer: Reducer {
                         guard tileIndex != 0 else { continue } // empty
                         
                         let tileSetCol = (tileIndex) % tileSet.columns - 1
-                        let tileSetRow = ((tileIndex) / tileSet.columns) - tileSet.rows
+                        let tileSetRow = ((tileIndex) / tileSet.columns)
                         
                         let textureRect = Rect(
                             center: .init(
@@ -53,12 +59,6 @@ public struct TileMapRenderingReducer: Reducer {
                             ),
                             size: tileSize
                         )
-                        
-                        let matrix = Matrix3.identity
-                            .translatedBy(tx: transform.position.x, ty: transform.position.y)
-                            .rotatedBy(angleInRadians: transform.rotate.degreesToRadians())
-                            .scaledBy(sx: transform.scale, sy: transform.scale)
-                            .translatedBy(tx: tileMap.tileMap.totalWidth / 2, ty: tileMap.tileMap.totalHeight / 2)
                         
                         let topRenderTri = RenderTriangle(
                             triangle: Triangle(
@@ -86,7 +86,6 @@ public struct TileMapRenderingReducer: Reducer {
                         )
                         
                         let textureId = tileSet.image.split(separator: ".").dropLast().joined(separator: ".")
-                        
                         environment.renderer.enqueue([
                             RenderGroup(
                                 triangles: [topRenderTri, bottomRenderTri],
@@ -98,7 +97,6 @@ public struct TileMapRenderingReducer: Reducer {
                     }
                 }
             }
-            
         }
         return .none
     }

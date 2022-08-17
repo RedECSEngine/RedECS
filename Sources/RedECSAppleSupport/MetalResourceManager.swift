@@ -5,9 +5,9 @@ import MetalKit
 
 public final class MetalResourceManager: ResourceManager {
     public enum Error: Swift.Error {
-        case fileNotFound
-        case fileLoadFailure
-        case fileDecodeFailure
+        case fileNotFound(String)
+        case fileLoadFailure(String)
+        case fileDecodeFailure(String)
     }
     
     public var textures: [TextureId: Resource<TextureMap>]  = [:]
@@ -37,23 +37,25 @@ public final class MetalResourceManager: ResourceManager {
         }
         return Future { resolve in
             guard let path = self.resourceBundle.path(forResource: name, ofType: ext) else {
-                resolve(.failure(Error.fileNotFound))
+                resolve(.failure(Error.fileNotFound("\(name).\(ext) in \(self.resourceBundle.description)")))
                 return
             }
 
             let url = URL(fileURLWithPath: path)
 
             guard let jsonData = try? Data(contentsOf: url, options: .mappedIfSafe) else {
-                resolve(.failure(Error.fileLoadFailure))
+                resolve(.failure(Error.fileLoadFailure(url.absoluteString)))
                 return
             }
 
-            guard let decoded = try? JSONDecoder().decode(T.self, from: jsonData) else {
-                resolve(.failure(Error.fileDecodeFailure))
-                return
+            do {
+                let decoded = try JSONDecoder().decode(T.self, from: jsonData)
+                resolve(.success(decoded))
+            } catch {
+                print(String(data: jsonData, encoding: .utf8))
+                resolve(.failure(Error.fileDecodeFailure("\(name).\(ext):" + String(describing: error))))
             }
             
-            resolve(.success(decoded))
         }
     }
     
@@ -144,9 +146,10 @@ public final class MetalResourceManager: ResourceManager {
             }
             
             let textureLoader = MTKTextureLoader(device: self.metalDevice)
-            let textureLoaderOptions = [
-                MTKTextureLoader.Option.textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
-                MTKTextureLoader.Option.textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue)
+            let textureLoaderOptions: [MTKTextureLoader.Option: NSNumber] = [
+                .textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
+                .textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue),
+                .SRGB: NSNumber(value: false)
             ]
             
             do {

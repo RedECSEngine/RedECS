@@ -130,6 +130,24 @@ public extension Reducer where Action == Never, Environment == Void {
     }
 }
 
+public extension Reducer {
+    func pullback<
+        GlobalState,
+        GlobalAction,
+        GlobalEnvironment
+    >(
+        toLocalEnvironment: @escaping (GlobalEnvironment) -> Environment
+    ) -> Pullback<GlobalState, GlobalAction, GlobalEnvironment, Self> where Action == GlobalAction, State == GlobalState {
+        return Pullback(
+            toLocalState: \.self,
+            toLocalAction: { $0 },
+            toGlobalAction: { $0 },
+            toLocalEnvironment: toLocalEnvironment,
+            reducer: self
+        )
+    }
+}
+
 public extension Reducer where Action == Never {
     func pullback<
         GlobalState,
