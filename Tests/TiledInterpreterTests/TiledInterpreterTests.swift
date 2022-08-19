@@ -2,9 +2,9 @@ import XCTest
 @testable import TiledInterpreter
 import SpriteKit
 import SnapshotTesting
-import XMLCoder
+//import XMLCoder
 
-enum TestTiledObjectType: String, TiledObjectType {
+enum TestTiledObjectType: String {
     case enemy
     case start
     case door
@@ -44,13 +44,13 @@ final class TiledInterpreterTests: XCTestCase {
     }
     
     func testLoadingJSON() throws {
-        let map = try JSONDecoder().decode(TiledMapJSON<TestTiledObjectType>.self, from: mapData)
+        let map = try JSONDecoder().decode(TiledMapJSON.self, from: mapData)
         
         XCTAssertEqual(map.layers.count, 3)
         XCTAssertEqual(map.layers.first?.type, .tileLayer)
         XCTAssertEqual(map.layers.last?.type, .objectGroup)
-        XCTAssertEqual(map.layers.last?.objects?.first?.type, .unknown)
-        XCTAssertEqual(map.layers.last?.objects?[1].type, .start)
+        XCTAssertEqual(map.layers.last?.objects?.first?.type, "")
+        XCTAssertEqual(map.layers.last?.objects?[1].type, "start")
     }
     
     func testSplittingImage() {
@@ -73,7 +73,7 @@ final class TiledInterpreterTests: XCTestCase {
     }
     
     func testMapGeneration() throws {
-        let tiledMap = try TiledMap<TestTiledObjectType>(
+        let tiledMap = try TiledMap(
             mapData: mapData,
             tileSetImageData: tileMapImageData,
             tileSetData: tileSetData

@@ -84,7 +84,16 @@ let package = Package(
         ),
         .testTarget(
             name: "RedECSTests",
-            dependencies: ["RedECS"]
+            dependencies: ["RedECS", "RedECSBasicComponents", "RedECSAppleSupport"]
+        ),
+        .testTarget(
+            name: "RenderingTests",
+            dependencies: [
+                "RedECS",
+                "RedECSRenderingComponents",
+                "RedECSAppleSupport",
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
+            ]
         ),
         
         .target(

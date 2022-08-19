@@ -70,20 +70,9 @@ vertexShader(uint vertexID [[vertex_id]],
              constant Uniforms & uniforms [[ buffer(BufferIndexUniforms) ]])
 {
     RasterizerData out;
-
-    // Index into the array of positions to get the current vertex.
-    // The positions are specified in pixel dimensions (i.e. a value of 100
-    // is 100 pixels from the origin).
-    float2 pixelSpacePosition = vertices[vertexID].position.xy;
-
-    // Get the viewport size and cast to float.
-    vector_float2 viewportSize = vector_float2(*viewportSizePointer);
-    
-    // To convert from positions in pixel space to positions in clip-space,
-    //  divide the pixel coordinates by half the size of the viewport.
-    float4 position = float4(pixelSpacePosition, 0.0, 1.0);
-    out.position = uniforms.modelViewMatrix * position; // * uniforms.projectionMatrix
-    out.position.xy = ((out.position.xy / viewportSize) * 4);
+    float4 position = float4(vertices[vertexID].position.xy, 0.0, 1.0);
+    out.position = (uniforms.projectionMatrix * uniforms.modelViewMatrix) * position;
+//    out.position.xy = ((out.position.xy / viewportSize) * 4) - 1;
 
     vector_float2 texCoord = textureInfo[vertexID].texCoord;
     texCoord.y = textureInfo[vertexID].texSize.y - texCoord.y;

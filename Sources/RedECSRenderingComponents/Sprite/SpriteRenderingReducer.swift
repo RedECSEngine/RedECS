@@ -13,6 +13,7 @@ public struct SpriteRenderingReducer: Reducer {
         state.sprite.forEach { (id, spriteComponent) in
             guard let transform = state.transform[id] else { return }
             guard let textureMap = environment.resourceManager.getTexture(textureId: spriteComponent.texture.textureId) else {
+                print("texture not found '\(spriteComponent.texture.textureId)' for \(id)")
                 return }
             
             let textureRect: Rect
@@ -20,7 +21,7 @@ public struct SpriteRenderingReducer: Reducer {
                 let frameInfo = textureMap.frames.first(where: { $0.filename == frameId }) {
                 textureRect = Rect(
                     x: frameInfo.frame.x,
-                    y: frameInfo.frame.y,
+                    y: textureMap.meta.size.h - frameInfo.frame.y - frameInfo.frame.h,
                     width: frameInfo.frame.w,
                     height: frameInfo.frame.h
                 )
@@ -35,7 +36,7 @@ public struct SpriteRenderingReducer: Reducer {
                 .translatedBy(tx: transform.position.x, ty: transform.position.y)
                 .rotatedBy(angleInRadians: transform.rotate.degreesToRadians())
                 .scaledBy(sx: transform.scale, sy: transform.scale)
-                .translatedBy(tx: textureRect.size.width / 2, ty: textureRect.size.height / 2)
+                .translatedBy(tx: -transform.anchorPoint.x, ty: -transform.anchorPoint.y)
             
             let topRenderTri = RenderTriangle(
                 triangle: Triangle(

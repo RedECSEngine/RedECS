@@ -37,7 +37,11 @@ open class MetalViewController: AppleViewController {
         mtkView.device = defaultDevice
         
         let resourceManager = MetalResourceManager(metalDevice: defaultDevice)
-        guard let newRenderer = MetalRenderer(mtkView: mtkView, resourceManager: resourceManager) else {
+        guard let newRenderer = MetalRenderer(
+            device: defaultDevice,
+            pixelFormat: mtkView.colorPixelFormat,
+            resourceManager: resourceManager
+        ) else {
             print("Renderer cannot be initialized")
             return
         }

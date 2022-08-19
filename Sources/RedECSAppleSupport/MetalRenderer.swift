@@ -50,12 +50,13 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
     
     var projectionMatrix: matrix_float4x4 = matrix_float4x4()
     
-    public init?(mtkView: MTKView, resourceManager: MetalResourceManager) {
+    public init?(
+        device: MTLDevice,
+        pixelFormat: MTLPixelFormat,
+        resourceManager: MetalResourceManager
+    ) {
         self.resourceManager = resourceManager
         
-        guard let device = mtkView.device else {
-            return nil
-        }
         self.device = device
         
         guard let defaultLibrary = try? device.makeDefaultLibrary(bundle: .module) else {
@@ -69,7 +70,7 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         pipelineDescriptor.label = "2D Rendering Pipeline"
         pipelineDescriptor.vertexFunction = vertexFunction
         pipelineDescriptor.fragmentFunction = fragmentFunction
-        pipelineDescriptor.colorAttachments[0].pixelFormat = mtkView.colorPixelFormat
+        pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat
         
         pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
         pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
@@ -130,7 +131,7 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
 //        renderPassDescriptor.colorAttachments[0].loadAction = .clear
 //            renderPassDescriptor.colorAttachments[0].storeAction = .store
 //        renderPassDescriptor.colorAttachments[0].clearColor = .init(red: 1, green: 1, blue: 1, alpha: 1)
-        renderPassDescriptor.colorAttachments[0].clearColor = .init(red: 1, green: 1, blue: 1, alpha: 1)
+        renderPassDescriptor.colorAttachments[0].clearColor = .init(red: 0, green: 0, blue: 0, alpha: 1)
 //
 //            renderPassDescriptor.depthAttachment.clearDepth = 1.0
 //            renderPassDescriptor.depthAttachment.loadAction = .clear
@@ -153,7 +154,7 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         
         var lastBoundTexture: TextureId?
 
-        for renderGroup in queuedWork {
+        for renderGroup in queuedWork.sorted(by: { $0.zIndex < $1.zIndex }) {
             var triangleVertices: [AAPLVertex] = []
             var textureVertices: [TextureInfo] = []
             var uniforms = Uniforms(
@@ -193,10 +194,13 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
             }
             
             if let textureId = renderGroup.textureId,
-               lastBoundTexture != textureId,
-               let texture = resourceManager.textureImages[textureId] {
-                renderEncoder.setFragmentTexture(texture, index: TextureIndex.colorMap.rawValue)
-                lastBoundTexture = textureId
+               lastBoundTexture != textureId {
+                if let texture = resourceManager.textureImages[textureId] {
+                    renderEncoder.setFragmentTexture(texture, index: TextureIndex.colorMap.rawValue)
+                    lastBoundTexture = textureId
+                } else {
+                    print("Texture not found: \(textureId)")
+                }
             }
             
             renderEncoder.setVertexBytes(triangleVertices, length: triangleVertices.count *  MemoryLayout<AAPLVertex>.size, index: AAPLVertexInputIndex.indices.rawValue)
@@ -266,8 +270,7 @@ extension Point {
     }
 }
 
-extension Matrix3 {
-
+public extension Matrix3 {
     var asMatrix4x4: matrix_float4x4 {
 //        return  matrix_float4x4(columns: (
 //            .init(x: 1, y: 0, z: 0, w: 0),
@@ -288,6 +291,14 @@ extension Matrix3 {
             .init(x: 0, y: 0, z: 1, w: 0),
             .init(x: Float(values[6]), y: Float(values[7]), z: 0, w: Float(values[8]))
         ))
+    }
+
+    static func projection(width: Double, height: Double) -> Matrix3 {
+        [
+            2/width, 0, 0,
+            0, -2/height, 0,
+            1, 1, 1,
+        ]
     }
 }
 

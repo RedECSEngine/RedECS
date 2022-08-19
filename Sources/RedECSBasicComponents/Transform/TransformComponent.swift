@@ -4,6 +4,7 @@ import Geometry
 public struct TransformComponent: GameComponent {
     public let entity: EntityId
     public var position: Point = .zero
+    public var anchorPoint: Point = .zero
     public var rotate: Double = 0
     public var scale: Double = 1
     public var zIndex: Int = 0
@@ -14,6 +15,7 @@ public struct TransformComponent: GameComponent {
     public init(
         entity: EntityId,
         position: Point = .zero,
+        anchorPoint: Point = .zero,
         rotate: Double = 0,
         scale: Double = 1,
         zIndex: Int = 0,
@@ -22,6 +24,7 @@ public struct TransformComponent: GameComponent {
     ) {
         self.entity = entity
         self.position = position
+        self.anchorPoint = anchorPoint
         self.rotate = rotate
         self.scale = scale
         self.zIndex = zIndex

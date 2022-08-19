@@ -31,7 +31,7 @@ public struct TileMapRenderingReducer: Reducer {
                     .translatedBy(tx: transform.position.x, ty: transform.position.y)
                     .rotatedBy(angleInRadians: transform.rotate.degreesToRadians())
                     .scaledBy(sx: transform.scale, sy: transform.scale)
-                    .translatedBy(tx: tileMap.tileMap.totalWidth / 2, ty: tileMap.tileMap.totalHeight / 2)
+//                    .translatedBy(tx: tileMap.tileMap.totalWidth / 2, ty: tileMap.tileMap.totalHeight / 2)
                 
                 for r in 0..<layerRows {
                     for c in 0..<layerCols {
