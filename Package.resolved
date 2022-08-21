@@ -2,15 +2,6 @@
   "object": {
     "pins": [
       {
-        "package": "Geometry",
-        "repositoryURL": "git@github.com:RedECSEngine/Geometry.git",
-        "state": {
-          "branch": "develop",
-          "revision": "51e666975e83955c0e8702e59833f8470588d417",
-          "version": null
-        }
-      },
-      {
         "package": "JavaScriptKit",
         "repositoryURL": "https://github.com/swiftwasm/JavaScriptKit",
         "state": {
@@ -35,15 +26,6 @@
           "branch": null,
           "revision": "f8a9c997c3c1dab4e216a8ec9014e23144cbab37",
           "version": "1.9.0"
-        }
-      },
-      {
-        "package": "XMLCoder",
-        "repositoryURL": "https://github.com/MaxDesiatov/XMLCoder.git",
-        "state": {
-          "branch": null,
-          "revision": "f30119af03996939cc4f54e0bf0dda9f88a84da5",
-          "version": "0.13.1"
         }
       }
     ]

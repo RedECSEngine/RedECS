@@ -72,6 +72,10 @@ public final class GameStore<R: Reducer> {
             registeredComponentTypes[registeredComponentId]?.onEntityDestroyed(entityId, &state)
         }
     }
+    
+    public func perform(_ reduceBlock: (inout R.State, R.Environment) -> GameEffect<R.State, R.Action>) {
+        handleEffect(reduceBlock(&state, environment))
+    }
 
     public func addEntity(_ id: EntityId, tags: Set<String>) {
         state.entities.addEntity(GameEntity(id: id, tags: tags))

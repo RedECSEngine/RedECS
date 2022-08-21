@@ -20,7 +20,7 @@ class MetalRenderingTests: XCTestCase {
     var mtkView: MTKView!
     var renderer: MetalRenderer!
     
-    var bottomLeftTriangle = RenderGroup(
+    var triangle = RenderGroup(
         triangles: [
             RenderTriangle(triangle: .init(
                 a: .zero,
@@ -46,21 +46,47 @@ class MetalRenderingTests: XCTestCase {
             pixelFormat: mtkView.colorPixelFormat,
             resourceManager: MetalResourceManager(metalDevice: device)
         )
-        
-        renderer.projectionMatrix = Matrix3.projection(width: 480, height: 480).asMatrix4x4
         mtkView.delegate = renderer
-        renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
+        
+        renderer.projectionMatrix = Matrix3.projection(
+            rect: .init(origin: .zero, size: .init(width: 480, height: 480))
+        ).asMatrix4x4
+        enqueueGrid(into: renderer)
     }
 
-    func testTrianglePointingBottomLeft() throws {
-        renderer.enqueue([bottomLeftTriangle])
+    func testTriangle() throws {
+        renderer.enqueue([triangle])
         assertSnapshot(matching: mtkView, as: .image(renderer: renderer))
     }
     
-    func testTriangleInBottomLeftRotatedAround0_0AnchorPoint() throws {
+    func testProjectionMatrix() throws {
+        renderer.enqueue([triangle])
+        assertSnapshot(matching: mtkView, as: .image(renderer: renderer), named: "normal")
+        
+        renderer.projectionMatrix = Matrix3
+            .projection(rect: .init(origin: .zero, size: .init(width: 480, height: 480)))
+            .scaledBy(sx: 0.5, sy: 0.5)
+            .asMatrix4x4
+        assertSnapshot(matching: mtkView, as: .image(renderer: renderer), named: "scale-down")
+        
+        renderer.projectionMatrix = Matrix3
+            .projection(rect: .init(origin: .zero, size: .init(width: 480, height: 480)))
+            .translatedBy(tx: -240, ty: -240)
+            .asMatrix4x4
+        assertSnapshot(matching: mtkView, as: .image(renderer: renderer), named: "translated")
+        
+        renderer.projectionMatrix = Matrix3
+            .projection(rect: .init(origin: .zero, size: .init(width: 480, height: 480)))
+            .scaledBy(sx: 0.5, sy: 0.5)
+            .translatedBy(tx: -240, ty: -240)
+            .asMatrix4x4
+        assertSnapshot(matching: mtkView, as: .image(renderer: renderer), named: "scaled-translated")
+    }
+    
+    func testTriangleRotatedAround0_0AnchorPoint() throws {
         for i in 0...4 {
             renderer.enqueue([
-                bottomLeftTriangle
+                triangle
                     .withAdjustedMatrix(
                         .identity
                             .rotatedBy(angleInRadians: Double(i * 45).degreesToRadians())
@@ -71,10 +97,10 @@ class MetalRenderingTests: XCTestCase {
         assertSnapshot(matching: mtkView, as: .image(renderer: renderer))
     }
     
-    func testTriangleInBottomLeftRotatedAround0_5_0_5AnchorPoint() throws {
+    func testTriangleRotatedAround0_5_0_5AnchorPoint() throws {
         for i in 0...4 {
             renderer.enqueue([
-                bottomLeftTriangle
+                triangle
                     .withAdjustedMatrix(
                         .identity
                             .rotatedBy(angleInRadians: Double(i * 45).degreesToRadians())
@@ -86,11 +112,10 @@ class MetalRenderingTests: XCTestCase {
         assertSnapshot(matching: mtkView, as: .image(renderer: renderer))
     }
     
-    
-    func testTriangleInBottomLeftRotatedAround1_1AnchorPoint() throws {
+    func testTriangleRotatedAround1_1AnchorPoint() throws {
         for i in 0...3 {
             renderer.enqueue([
-                bottomLeftTriangle
+                triangle
                     .withAdjustedMatrix(
                         .identity
                             .rotatedBy(angleInRadians: Double(i * 90).degreesToRadians())
@@ -127,23 +152,4 @@ extension RenderGroup {
             )
         }
     }
-}
-
-extension Snapshotting where Value == MTKView, Format == NSImage {
-  /// A snapshot strategy for comparing images based on pixel equality.
-    public static func image(renderer: MetalRenderer) -> Snapshotting {
-      Snapshotting<NSImage, NSImage>.image(precision: 1).pullback { mtkView in
-          mtkView.framebufferOnly = false
-          mtkView.drawableSize = mtkView.frame.size
-          renderer.draw(in: mtkView)
-          let texture = mtkView.currentDrawable!.texture
-          let ciImage = CIImage(mtlTexture: texture)!
-          let flipped = ciImage.transformed(by: CGAffineTransform(scaleX: 1, y: -1))
-          let opt = [CIContextOption.outputPremultiplied: true,
-                     CIContextOption.useSoftwareRenderer: false]
-          let cont = CIContext(options: opt)
-          let cgImage = cont.createCGImage(flipped, from: flipped.extent)!
-          return NSImage(cgImage: cgImage, size: mtkView.frame.size)
-      }
-  }
 }

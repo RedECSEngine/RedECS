@@ -1,5 +1,3 @@
-import Foundation
-
 public indirect enum GameEffect<State: GameState, LogicAction: Equatable> {
     case system(SystemAction<State>)
     case game(LogicAction)

@@ -1,4 +1,3 @@
-import Foundation
 import JavaScriptKit
 
 public protocol WebGLProgram {

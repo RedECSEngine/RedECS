@@ -1,5 +1,3 @@
-import Foundation
-
 public struct AnyReducer<State: GameState, Action: Equatable, Environment>: Reducer {
 
     var reduceDelta: (inout State, Double, Environment) -> GameEffect<State, Action>

@@ -1,10 +1,11 @@
 import Geometry
+import GeometryAlgorithms
 
 public protocol Renderer: AnyObject {
-    var cameraFrame: Rect { get }
+    var viewportSize: Size { get }
     var queuedWork: [RenderGroup] { get set }
     
-    func setCameraPosition(_ position: Point)
+    func setProjectionMatrix(_ matrix: Matrix3)
     func clearQueue()
     func enqueue(_ work: [RenderGroup])
 }

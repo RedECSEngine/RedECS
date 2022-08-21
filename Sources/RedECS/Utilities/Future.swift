@@ -1,5 +1,3 @@
-import Foundation
-
 public struct Future<T, E: Error> {
     public typealias ResolutionBlock = (Result<T, E>) -> Void
     public typealias ObserverCreationBlock = (@escaping ResolutionBlock) -> Void

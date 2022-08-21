@@ -49,9 +49,16 @@ public extension Color {
     static let white: Color = .init(red: 1, green: 1, blue: 1, alpha: 1)
     static let grey: Color = .init(red: 0.5, green: 0.5, blue: 0.5, alpha: 1)
     static let black: Color = .init(red: 0, green: 0, blue: 0, alpha: 1)
-    static let red: Color = .init(hex: 0xff0000)
+    
+    static let red: Color = .init(red: 1, green: 0, blue: 0, alpha: 1)
     static let green: Color = .init(red: 0, green: 1, blue: 0, alpha: 1)
     static let blue: Color = .init(red: 0, green: 0, blue: 1, alpha: 1)
+    
+    static let yellow: Color = .init(red: 1, green: 1, blue: 0, alpha: 1)
+    static let pink: Color = .init(red: 1, green: 0, blue: 1, alpha: 1)
+    static let cyan: Color = .init(red: 0, green: 1, blue: 1, alpha: 1)
+    
+    static let orange: Color = .init(hex: 0xff7700)
     
     static let clear: Color = .init(red: 0, green: 0, blue: 0, alpha: 0)
     

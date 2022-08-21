@@ -1,5 +1,3 @@
-import Foundation
-
 public struct Pullback<
     GlobalState: GameState,
     GlobalAction: Equatable,

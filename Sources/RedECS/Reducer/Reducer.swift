@@ -1,5 +1,3 @@
-import Foundation
-
 public protocol Reducer {
     associatedtype State: GameState
     associatedtype Action: Equatable

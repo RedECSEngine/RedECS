@@ -5,9 +5,8 @@ import GeometryAlgorithms
 
 enum AAPLVertexInputIndex: Int {
     case indices = 0
-    case viewportSize = 1
-    case uniforms = 2
-    case textureCoordinates = 3
+    case uniforms = 1
+    case textureCoordinates = 2
 }
 
 enum TextureIndex: Int {
@@ -42,7 +41,7 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
     var commandQueue: MTLCommandQueue
     
     // The current size of the view, used as an input to the vertex shader.
-    var viewportSize: vector_uint2 = .zero
+    public var viewportSize: Size = .init(width: 0, height: 0)
     
     public var queuedWork: [RenderGroup] = []
     
@@ -94,8 +93,8 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
     }
     
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        viewportSize.x = UInt32(size.width);
-        viewportSize.y = UInt32(size.height);
+        viewportSize.width = size.width
+        viewportSize.height = size.height
     }
     
     var lastDrawTime: Date?
@@ -144,8 +143,8 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         renderEncoder.setViewport(.init(
             originX: 0,
             originY: 0,
-            width: Double(viewportSize.x),
-            height: Double(viewportSize.y),
+            width: viewportSize.width,
+            height: viewportSize.height,
             znear: 0,
             zfar: 1.0
         ))
@@ -199,13 +198,12 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
                     renderEncoder.setFragmentTexture(texture, index: TextureIndex.colorMap.rawValue)
                     lastBoundTexture = textureId
                 } else {
-                    print("Texture not found: \(textureId)")
+//                    print("Texture not found: \(textureId)")
                 }
             }
             
             renderEncoder.setVertexBytes(triangleVertices, length: triangleVertices.count *  MemoryLayout<AAPLVertex>.size, index: AAPLVertexInputIndex.indices.rawValue)
             renderEncoder.setVertexBytes(textureVertices, length: textureVertices.count * MemoryLayout<TextureInfo>.size, index: AAPLVertexInputIndex.textureCoordinates.rawValue)
-            renderEncoder.setVertexBytes(&viewportSize, length: MemoryLayout<vector_uint2>.size, index: AAPLVertexInputIndex.viewportSize.rawValue)
             
             renderEncoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.size, index: AAPLVertexInputIndex.uniforms.rawValue)
             
@@ -249,18 +247,8 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
 }
 
 extension MetalRenderer: Renderer {
-    public var cameraFrame: Rect {
-        .init(
-            center: .zero,
-            size: .init(
-                width: Double(viewportSize.x),
-                height: Double( viewportSize.y)
-            )
-        )
-    }
-    
-    public func setCameraPosition(_ position: Point) {
-        
+    public func setProjectionMatrix(_ matrix: Matrix3) {
+        projectionMatrix = matrix.asMatrix4x4
     }
 }
 
@@ -291,14 +279,6 @@ public extension Matrix3 {
             .init(x: 0, y: 0, z: 1, w: 0),
             .init(x: Float(values[6]), y: Float(values[7]), z: 0, w: Float(values[8]))
         ))
-    }
-
-    static func projection(width: Double, height: Double) -> Matrix3 {
-        [
-            2/width, 0, 0,
-            0, -2/height, 0,
-            1, 1, 1,
-        ]
     }
 }
 

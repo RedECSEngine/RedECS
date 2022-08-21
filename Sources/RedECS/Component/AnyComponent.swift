@@ -1,5 +1,3 @@
-import Foundation
-
 public typealias RegisteredComponentId = String
 
 public struct RegisteredComponentType<S: GameState>: Identifiable {

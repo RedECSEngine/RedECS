@@ -13,9 +13,8 @@ using namespace metal;
 typedef enum AAPLVertexInputIndex
 {
     AAPLVertexInputIndexVertices     = 0,
-    AAPLVertexInputIndexViewportSize = 1,
-    BufferIndexUniforms      = 2,
-    TextureCoordinates  = 3
+    BufferIndexUniforms      = 1,
+    TextureCoordinates  = 2
 } AAPLVertexInputIndex;
 
 typedef enum TextureIndex
@@ -66,13 +65,13 @@ vertex RasterizerData
 vertexShader(uint vertexID [[vertex_id]],
              constant AAPLVertex *vertices [[buffer(AAPLVertexInputIndexVertices)]],
              constant TextureInfo *textureInfo [[buffer(TextureCoordinates)]],
-             constant vector_uint2 *viewportSizePointer [[buffer(AAPLVertexInputIndexViewportSize)]],
              constant Uniforms & uniforms [[ buffer(BufferIndexUniforms) ]])
 {
     RasterizerData out;
-    float4 position = float4(vertices[vertexID].position.xy, 0.0, 1.0);
-    out.position = (uniforms.projectionMatrix * uniforms.modelViewMatrix) * position;
-//    out.position.xy = ((out.position.xy / viewportSize) * 4) - 1;
+    float2 pixelSpacePosition = vertices[vertexID].position.xy;
+
+    float4 position = float4(pixelSpacePosition, 0.0, 1.0);
+    out.position = uniforms.projectionMatrix * uniforms.modelViewMatrix * position;
 
     vector_float2 texCoord = textureInfo[vertexID].texCoord;
     texCoord.y = textureInfo[vertexID].texSize.y - texCoord.y;
