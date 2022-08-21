@@ -50,8 +50,8 @@ let package = Package(
 //            url: "git@github.com:RedECSEngine/Geometry.git",
 //            from: "0.0.3"
 //        ),
-        .package(path: "../Geometry"),
-//        .package(url: "git@github.com:RedECSEngine/Geometry.git", .branch("develop")),
+//        .package(path: "../Geometry"),
+        .package(url: "git@github.com:RedECSEngine/Geometry.git", .branch("develop")),
         
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.9.0"),
     ],

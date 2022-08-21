@@ -2,6 +2,15 @@
   "object": {
     "pins": [
       {
+        "package": "Geometry",
+        "repositoryURL": "git@github.com:RedECSEngine/Geometry.git",
+        "state": {
+          "branch": "develop",
+          "revision": "58c77a117bd3405e97b0a68d6b887f384facaa2a",
+          "version": null
+        }
+      },
+      {
         "package": "JavaScriptKit",
         "repositoryURL": "https://github.com/swiftwasm/JavaScriptKit",
         "state": {
