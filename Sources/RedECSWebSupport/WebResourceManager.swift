@@ -1,6 +1,6 @@
 import JavaScriptKit
 import RedECS
-import RedECSRenderingComponents
+import RedECSUIComponents
 import TiledInterpreter
 
 public final class WebResourceManager: ResourceManager {
@@ -145,11 +145,17 @@ public final class WebResourceManager: ResourceManager {
         .flatMap { mapInfo in
             let tileSetSources = Set(mapInfo.tileSets.map { $0.source })
             let tileSetFutures: [Future<Void, Swift.Error>] = tileSetSources
-                .map { filename -> Future<Void, Swift.Error>  in
-                    self.loadJSONFile(filename, decodedAs: TiledTilesetJSON.self)
+                .map { filename -> Future<Void, Swift.Error> in
+                    var textureName = ""
+                    return self.loadJSONFile(filename, decodedAs: TiledTilesetJSON.self)
                         .flatMap { tileSet -> Future<JSValue, Swift.Error> in
+                            textureName = tileSet.image.split(separator: ".").dropLast().joined(separator: ".")
                             self.tileSets[filename] = tileSet
                             return self.loadImageFile(name: tileSet.image)
+                        }
+                        .flatMap { value -> Future<Void, Swift.Error> in
+                            self.textureImages[textureName] = value
+                            return .just(())
                         }
                         .toVoid()
                 }

@@ -16,10 +16,12 @@ public struct ShapeRenderingReducer: Reducer {
                     .map { (i, triangle) -> RenderTriangle in
                         RenderTriangle(triangle: triangle)
                     }
+                let matrix = transform.matrix(containerSize: shapeComponent.rect.size)
+                
                 environment.renderer.enqueue([
                     RenderGroup(
                         triangles: triangles,
-                        transformMatrix: transform.matrix(containerSize: shapeComponent.rect.size),
+                        transformMatrix: matrix,
                         fragmentType: .color(shapeComponent.fillColor),
                         zIndex: transform.zIndex
                     )

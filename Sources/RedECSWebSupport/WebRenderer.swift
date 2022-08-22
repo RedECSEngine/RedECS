@@ -1,7 +1,8 @@
 import JavaScriptKit
 import RedECS
 import Geometry
-import RedECSRenderingComponents
+import GeometryAlgorithms
+import RedECSUIComponents
 
 open class WebRenderer {
     public enum State {
@@ -10,21 +11,20 @@ open class WebRenderer {
     }
     
     public private(set) var size: Size
-    public private(set) var cameraPosition: Point
-    
     public private(set) var canvasElement: JSValue = .undefined
     public private(set) var glContext: JSValue = .undefined
     
     public var webResourceManager: WebResourceManager
     
-    public var queuedTriangles: [RenderTriangle] = []
+    public var queuedWork: [RenderGroup] = []
+    
+    private(set) var projectionMatrix: Matrix3 = .identity
     
     public init(
         size: Size,
         resourceLoader: WebResourceManager
     ) {
         self.size = size
-        self.cameraPosition = Point(x: size.width / 2, y: size.height / 2)
         self.webResourceManager = resourceLoader
         setUp()
     }
@@ -42,29 +42,30 @@ open class WebRenderer {
     public func draw() {
         do {
             clearCanvas()
-            let work = groupEnqueuedWork()
-            for job in work {
-                switch job.program {
-                case .color:
-                    try DrawTrianglesProgram(triangles: job.triangles)
+            for renderGroup in queuedWork.sorted(by: { $0.zIndex < $1.zIndex }) {
+                switch renderGroup.fragmentType {
+                case .color(let color):
+                    try DrawTrianglesProgram(
+                        triangles: renderGroup.triangles,
+                        color: color,
+                        projectionMatrix: projectionMatrix,
+                        modelMatrix: renderGroup.transformMatrix
+                    )
                         .execute(with: self)
-                case .texture:
-                    guard let textureId = job.triangles.first?.textureId else {
-                        print("no texture")
-                        fatalError()
-                        break
-                    }
+                case .texture(let textureId):
                     if let image = webResourceManager.textureImages[textureId],
                        let imageObject = image.object,
                        let width = imageObject.width.number,
                        let height = imageObject.height.number {
                         try DrawTextureProgram(
-                            triangles: job.triangles,
+                            triangles: renderGroup.triangles,
                             textureSize: .init(
                                 width: width,
                                 height: height
                             ),
-                            image: image
+                            image: image,
+                            projectionMatrix: projectionMatrix,
+                            modelMatrix: renderGroup.transformMatrix
                         )
                         .execute(with: self)
                     } else {
@@ -98,11 +99,11 @@ open class WebRenderer {
 }
 
 extension WebRenderer: Renderer {
-    public var cameraFrame: Rect {
-        Rect(center: cameraPosition, size: size)
+    public var viewportSize: Size {
+        size
     }
     
-    public func setCameraPosition(_ position: Point) {
-        cameraPosition = position
+    public func setProjectionMatrix(_ matrix: Matrix3) {
+       projectionMatrix = matrix
     }
 }

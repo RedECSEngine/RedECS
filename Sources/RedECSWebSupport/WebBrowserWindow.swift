@@ -135,7 +135,7 @@ open class WebBrowserWindow<State: GameState, Action: Equatable, Environment> {
     public func requestAnimationFrame() {
         _ = JSObject.global.requestAnimationFrame!(JSClosure { [weak self] args in
             guard let time = args.first?.number else { return .null }
-            self?.renderer.clearTriangleQueue()
+            self?.renderer.clearQueue()
             self?.update(time)
             self?.renderer.draw()
             return .undefined
@@ -144,7 +144,7 @@ open class WebBrowserWindow<State: GameState, Action: Equatable, Environment> {
     
     public func update(_ currentTime: Double) {
         if let lastTime = lastTime {
-            let delta = (currentTime - lastTime) / 100
+            let delta = (currentTime - lastTime) / 1000
             store.sendDelta(delta)
         }
         lastTime = currentTime

@@ -31,12 +31,8 @@ public struct TileMapRenderingReducer: Reducer {
                     height: tileMap.tileMap.totalHeight
                 ))
                 
-//                Matrix3.identity
-//                    .translatedBy(tx: transform.position.x, ty: transform.position.y)
-//                    .rotatedBy(angleInRadians: transform.rotate.degreesToRadians())
-//                    .scaledBy(sx: transform.scale, sy: transform.scale)
-//                    .translatedBy(tx: -tileMap.tileMap.totalWidth / 2, ty: -tileMap.tileMap.totalHeight / 2)
-                
+                var renderTriangles: [RenderTriangle] = []
+
                 for r in 0..<layerRows {
                     for c in 0..<layerCols {
                         let rectForTile = Rect(
@@ -89,17 +85,20 @@ public struct TileMapRenderingReducer: Reducer {
                             )
                         )
                         
-                        let textureId = tileSet.image.split(separator: ".").dropLast().joined(separator: ".")
-                        environment.renderer.enqueue([
-                            RenderGroup(
-                                triangles: [topRenderTri, bottomRenderTri],
-                                transformMatrix: matrix,
-                                fragmentType: .texture(textureId),
-                                zIndex: transform.zIndex
-                            )
-                        ])
+                        renderTriangles.append(contentsOf: [topRenderTri, bottomRenderTri])
                     }
                 }
+                
+                let textureId = tileSet.image.split(separator: ".").dropLast().joined(separator: ".")
+                environment.renderer.enqueue([
+                    RenderGroup(
+                        triangles: renderTriangles,
+                        transformMatrix: matrix,
+                        fragmentType: .texture(textureId),
+                        zIndex: transform.zIndex
+                    )
+                ])
+                
             }
         }
         return .none

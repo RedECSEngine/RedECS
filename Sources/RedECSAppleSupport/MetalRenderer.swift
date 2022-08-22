@@ -202,16 +202,21 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
                 }
             }
             
-            renderEncoder.setVertexBytes(triangleVertices, length: triangleVertices.count *  MemoryLayout<AAPLVertex>.size, index: AAPLVertexInputIndex.indices.rawValue)
-            renderEncoder.setVertexBytes(textureVertices, length: textureVertices.count * MemoryLayout<TextureInfo>.size, index: AAPLVertexInputIndex.textureCoordinates.rawValue)
-            
             renderEncoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.size, index: AAPLVertexInputIndex.uniforms.rawValue)
             
-            renderEncoder.drawPrimitives(
-                type: .triangle,
-                vertexStart: 0,
-                vertexCount: triangleVertices.count
-            )
+            let chunkAmount = 3
+            for i in 0..<(triangleVertices.count / chunkAmount) {
+                let index = i * chunkAmount
+                renderEncoder.setVertexBytes(Array(triangleVertices[index..<index+chunkAmount]), length:  MemoryLayout<AAPLVertex>.size * chunkAmount, index: AAPLVertexInputIndex.indices.rawValue)
+                
+                renderEncoder.setVertexBytes(Array(textureVertices[index..<index+chunkAmount]), length: MemoryLayout<TextureInfo>.size * chunkAmount, index: AAPLVertexInputIndex.textureCoordinates.rawValue)
+                
+                renderEncoder.drawPrimitives(
+                    type: .triangle,
+                    vertexStart: 0,
+                    vertexCount: chunkAmount
+                )
+            }
         }
         
         renderEncoder.endEncoding()

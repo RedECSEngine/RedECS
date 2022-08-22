@@ -106,13 +106,14 @@ public extension Future {
             return .just([])
         }
         return Future<[A], E> { resolver in
-            var cumulative: [A] = []
+            var cumulative: [(Int, A)] = []
             var cumulativeCount = 0
             cumulative.reserveCapacity(all.count)
             
             func resolveIfComplete() {
                 if cumulativeCount == all.count {
-                    resolver(.success(cumulative))
+                    let sorted = cumulative.sorted(by: { a, b in a.0 < b.0 }).map { $0.1 }
+                    resolver(.success(sorted))
                 }
             }
             
@@ -120,7 +121,7 @@ public extension Future {
                 future.subscribe { result in
                     switch result {
                     case .success(let value):
-                        cumulative.insert(value, at: i)
+                        cumulative.append((i, value))
                         cumulativeCount += 1
                         resolveIfComplete()
                     case .failure(let e):

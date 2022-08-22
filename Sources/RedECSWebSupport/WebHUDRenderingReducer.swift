@@ -1,5 +1,5 @@
 import RedECS
-import RedECSRenderingComponents
+import RedECSUIComponents
 import JavaScriptKit
 /*
 public struct WebHUDRenderingReducer<State: HUDRenderingCapable>: Reducer {

@@ -15,7 +15,7 @@ public struct EntityRepository: Equatable, Codable {
     }
     
     public mutating func addEntity(_ e: GameEntity) {
-        assert(entities[e.id] == nil, "adding duplicate entity")
+        assert(entities[e.id] == nil, "adding duplicate entity \(e.id)")
         entities[e.id] = e
         e.tags.forEach { tag in
             tags[tag, default: []].insert(e.id)
