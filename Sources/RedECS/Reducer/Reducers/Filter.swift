@@ -1,5 +1,3 @@
-import Foundation
-
 public struct Filter<
     R: Reducer
 > : Reducer {

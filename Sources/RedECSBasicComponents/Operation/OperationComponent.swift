@@ -1,43 +1,34 @@
 import RedECS
+import Geometry
 
-public protocol OperationCapable {
+public protocol OperationCapable: GameState {
     associatedtype GameAction: Equatable & Codable
+    
     var operation: [EntityId: OperationComponent<GameAction>] { get set }
+    var transform: [EntityId: TransformComponent] { get set }
+}
+
+extension OperationCapable {
+    var basicOperationComponentState: BasicOperationComponentContext {
+        get {
+            BasicOperationComponentContext(entities: entities, transform: transform)
+        }
+        set {
+            self.transform = newValue.transform
+        }
+    }
 }
 
 public struct OperationComponent<GameAction: Equatable & Codable>: GameComponent {
-    public enum OperationType: Equatable & Codable {
-        case wait(Double)
-    }
-    
     public var entity: EntityId
-    public var type: OperationType
-    public var delta: Double
-    public var onComplete: GameAction
+    public var type: OperationType<GameAction>?
     
     public init (
         entity: EntityId,
-        type: OperationType,
-        delta: Double,
-        onComplete: GameAction
+        type: OperationType<GameAction>? = nil
     ) {
         self.entity =  entity
         self.type = type
-        self.delta = delta
-        self.onComplete = onComplete
     }
 }
 
-public extension GameEffect where State: OperationCapable, LogicAction == State.GameAction {
-    static func operation(
-        _ type: OperationComponent<LogicAction>.OperationType,
-        then: LogicAction
-    ) -> Self {
-        let id = newEntityId(prefix: "operation")
-        let operation = OperationComponent(entity: id, type: type, delta: 0, onComplete: then)
-        return .many([
-            .system(.addEntity(id, ["operation"])),
-            .system(.addComponent(operation, into: \.operation))
-        ])
-    }
-}

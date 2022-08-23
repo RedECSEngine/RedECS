@@ -1,5 +1,3 @@
-import Foundation
-
 public struct AnyReducer<State: GameState, Action: Equatable, Environment>: Reducer {
 
     var reduceDelta: (inout State, Double, Environment) -> GameEffect<State, Action>
@@ -22,7 +20,7 @@ public struct AnyReducer<State: GameState, Action: Equatable, Environment>: Redu
           R.Environment == Environment
     {
         self.reduceDelta = reducer.reduce(state:delta:environment:)
-        self.reduceAction = reducer .reduce(state:action:environment:)
+        self.reduceAction = reducer.reduce(state:action:environment:)
         self.reduceEntityEvent = reducer.reduce(state:entityEvent:environment:)
     }
 

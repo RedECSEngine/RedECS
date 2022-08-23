@@ -5,9 +5,9 @@
         "package": "Geometry",
         "repositoryURL": "git@github.com:RedECSEngine/Geometry.git",
         "state": {
-          "branch": null,
-          "revision": "e4eaa3d403dc5147f492d8d50956ae2a202547b4",
-          "version": "0.0.3"
+          "branch": "develop",
+          "revision": "58c77a117bd3405e97b0a68d6b887f384facaa2a",
+          "version": null
         }
       },
       {
@@ -17,6 +17,24 @@
           "branch": null,
           "revision": "9a3b7d5f316e6d1709bd25e3e0392efca357f525",
           "version": "0.14.0"
+        }
+      },
+      {
+        "package": "swift-numerics",
+        "repositoryURL": "https://github.com/apple/swift-numerics.git",
+        "state": {
+          "branch": null,
+          "revision": "6583ac70c326c3ee080c1d42d9ca3361dca816cd",
+          "version": "0.1.0"
+        }
+      },
+      {
+        "package": "SnapshotTesting",
+        "repositoryURL": "https://github.com/pointfreeco/swift-snapshot-testing.git",
+        "state": {
+          "branch": null,
+          "revision": "f8a9c997c3c1dab4e216a8ec9014e23144cbab37",
+          "version": "1.9.0"
         }
       }
     ]

@@ -18,6 +18,7 @@ public final class GameStore<R: Reducer> {
     }
 
     public func sendDelta(_ delta: Double) {
+        assert(delta > 0, "Delta should be greater than 0")
         let effect = reducer.reduce(state: &state, delta: delta, environment: environment)
         handleEffect(effect)
     }
@@ -70,6 +71,10 @@ public final class GameStore<R: Reducer> {
 //            print("[♦️]: Removed Component", registeredComponentId, "for", entityId)
             registeredComponentTypes[registeredComponentId]?.onEntityDestroyed(entityId, &state)
         }
+    }
+    
+    public func perform(_ reduceBlock: (inout R.State, R.Environment) -> GameEffect<R.State, R.Action>) {
+        handleEffect(reduceBlock(&state, environment))
     }
 
     public func addEntity(_ id: EntityId, tags: Set<String>) {
