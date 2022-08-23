@@ -3,7 +3,7 @@ import Geometry
 import RedECS
 import GeometryAlgorithms
 
-struct DrawTextureProgram {
+final class DrawTextureProgram {
     var triangles: [RenderTriangle]
     var textureSize: Size
     var image: JSValue
@@ -11,7 +11,23 @@ struct DrawTextureProgram {
     var projectionMatrix: Matrix3
     var modelMatrix: Matrix3
     
+    var program: JSValue?
+    
     init(
+        triangles: [RenderTriangle],
+        textureSize: Size,
+        image: JSValue,
+        projectionMatrix: Matrix3,
+        modelMatrix: Matrix3
+    ) {
+        self.triangles = triangles
+        self.textureSize = textureSize
+        self.image = image
+        self.projectionMatrix = projectionMatrix
+        self.modelMatrix = modelMatrix
+    }
+    
+    func update(
         triangles: [RenderTriangle],
         textureSize: Size,
         image: JSValue,
@@ -29,7 +45,14 @@ struct DrawTextureProgram {
 extension DrawTextureProgram: WebGLProgram {
     public func execute(with webRenderer: WebRenderer) throws {
         let gl = webRenderer.glContext
-        let program = try createProgram(with: webRenderer)
+        let program: JSValue
+        if let p = self.program {
+            program = p
+        } else {
+            let p = try createProgram(with: webRenderer)
+            program = p
+            self.program = p
+        }
         
         let positionLocation = gl.getAttribLocation(program, "a_position")
         let texcoordLocation = gl.getAttribLocation(program, "a_texCoord")

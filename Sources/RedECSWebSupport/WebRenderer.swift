@@ -20,6 +20,16 @@ open class WebRenderer {
     
     private(set) var projectionMatrix: Matrix3 = .identity
     
+    lazy var textureProgram: DrawTextureProgram = {
+        DrawTextureProgram(
+            triangles: [],
+            textureSize: .zero,
+            image: .null,
+            projectionMatrix: .identity,
+            modelMatrix: .identity
+        )
+    }()
+    
     public init(
         size: Size,
         resourceLoader: WebResourceManager
@@ -57,7 +67,7 @@ open class WebRenderer {
                        let imageObject = image.object,
                        let width = imageObject.width.number,
                        let height = imageObject.height.number {
-                        try DrawTextureProgram(
+                        textureProgram.update(
                             triangles: renderGroup.triangles,
                             textureSize: .init(
                                 width: width,
@@ -67,7 +77,7 @@ open class WebRenderer {
                             projectionMatrix: projectionMatrix,
                             modelMatrix: renderGroup.transformMatrix
                         )
-                        .execute(with: self)
+                        try textureProgram.execute(with: self)
                     } else {
                         print("no texture loaded for", textureId)
                         webResourceManager.startTextureLoadIfNeeded(textureId: textureId)
