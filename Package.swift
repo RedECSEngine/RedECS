@@ -12,34 +12,33 @@ let package = Package(
     ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
+        .library(name: "RedECSKit", targets: ["RedECSKit"]),
         .library(
             name: "RedECS",
             targets: ["RedECS"]
-        ),
-        .library(
-            name: "RedECSUtilities",
-            targets: ["RedECSUtilities"]
         ),
         .library(
             name: "RedECSBasicComponents",
             targets: ["RedECSBasicComponents"]
         ),
         .library(
-            name: "RedECSRenderingComponents",
-            targets: ["RedECSRenderingComponents"]
+            name: "RedECSUIComponents",
+            targets: ["RedECSUIComponents"]
         ),
+        
         .library(
-            name: "RedECSSpriteKitSupport",
-            targets: ["RedECSSpriteKitSupport"]
+            name: "RedECSAppleSupport",
+            targets: ["RedECSAppleSupport"]
         ),
         .library(
             name: "RedECSWebSupport",
             targets: ["RedECSWebSupport"]
         ),
+        
         .library(
-            name: "RedECSExamples",
-            targets: ["RedECSExamples"]
-        )
+            name: "TiledInterpreter",
+            targets: ["TiledInterpreter"]
+        ),
     ],
     dependencies: [
         .package(
@@ -49,61 +48,75 @@ let package = Package(
         ),
         .package(
             url: "git@github.com:RedECSEngine/Geometry.git",
-            from: "0.0.3"
+            from: "0.0.4"
         ),
+//        .package(path: "../Geometry"),
+//        .package(url: "git@github.com:RedECSEngine/Geometry.git", .branch("develop")),
+        
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.9.0"),
     ],
     targets: [
-        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-        // Targets can depend on other targets in this package, and on products in packages this package depends on.
         .target(
-            name: "RedECS",
-            dependencies: []
-        ),
-        .testTarget(
-            name: "RedECSTests",
-            dependencies: ["RedECS"]
-        ),
-        
-        .target(
-            name: "RedECSUtilities",
-            dependencies: ["RedECS"]
-        ),
-        
-        .target(
-            name: "RedECSBasicComponents",
-            dependencies: ["RedECS", "Geometry"]
-        ),
-        
-        .target(
-            name: "RedECSRenderingComponents",
+            name: "RedECSKit",
             dependencies: [
                 "RedECS",
-                "RedECSBasicComponents"
+                "RedECSBasicComponents",
+                "RedECSUIComponents"
             ]
         ),
         
         .target(
-            name: "RedECSSpriteKitSupport",
+            name: "RedECS",
             dependencies: [
-                "RedECSRenderingComponents",
-                .product(
-                    name: "GeometrySpriteKitExtensions",
-                    package: "Geometry"
-                )
+                .product(name: "Geometry", package: "Geometry"),
+                .product(name: "GeometryAlgorithms", package: "Geometry"),
+                "TiledInterpreter",
             ]
         ),
+        .target(
+            name: "RedECSBasicComponents",
+            dependencies: ["RedECS"]
+        ),
+        .target(
+            name: "RedECSUIComponents",
+            dependencies: ["RedECS", "RedECSBasicComponents"]
+        ),
         
+        .target(
+            name: "RedECSAppleSupport",
+            dependencies: ["RedECSKit"]
+        ),
         .target(
             name: "RedECSWebSupport",
             dependencies: [
-                "RedECSRenderingComponents",
+                "RedECSKit",
                 .product(name: "JavaScriptKit", package: "JavaScriptKit")
             ]
         ),
         
         .target(
-            name: "RedECSExamples",
-            dependencies: ["RedECSRenderingComponents", "RedECSSpriteKitSupport"]
+            name: "TiledInterpreter",
+            dependencies: []
+        ),
+        
+        .testTarget(
+            name: "RedECSTests",
+            dependencies: ["RedECS", "RedECSBasicComponents", "RedECSAppleSupport"]
+        ),
+        .testTarget(
+            name: "RenderingTests",
+            dependencies: [
+                "RedECS",
+                "RedECSAppleSupport",
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
+            ]
+        ),
+        .testTarget(
+            name: "TiledInterpreterTests",
+            dependencies: [
+                "TiledInterpreter",
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
+            ]
         ),
     ]
 )

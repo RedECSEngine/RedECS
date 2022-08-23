@@ -3,13 +3,16 @@ import RedECS
 public struct OperationComponentContext<GameAction: Equatable & Codable>: GameState, OperationCapable {
     public var entities: EntityRepository = .init()
     public var operation: [EntityId: OperationComponent<GameAction>] = [:]
+    public var transform: [EntityId: TransformComponent] = [:]
     
     public init(
         entities: EntityRepository = .init(),
-        operation: [EntityId : OperationComponent<GameAction>] = [:]
+        operation: [EntityId : OperationComponent<GameAction>] = [:],
+        transform: [EntityId: TransformComponent] = [:]
     ) {
         self.entities = entities
         self.operation = operation
+        self.transform = transform
     }
 }
 
@@ -30,16 +33,21 @@ public struct OperationReducer<GameAction: Equatable & Codable>: Reducer {
     ) -> GameEffect<OperationComponentContext<GameAction>, GameAction> {
         var effects: [GameEffect<OperationComponentContext<GameAction>, GameAction>] = []
         state.operation.forEach { (id, operation) in
-            var op = operation
-            op.delta += delta
-            switch op.type {
-            case .wait(let amount):
-                if op.delta >= amount {
-                    effects.append(.system(.removeEntity(id)))
-                    effects.append(.game(op.onComplete))
-                }
+            guard var actionType = operation.type else {
+                state.operation[id] = nil
+                return
             }
-            state.operation[id] = op
+            
+            let effect = actionType.run(id: id, state: &state.basicOperationComponentState, delta: delta)
+            effects.append(effect.map(
+                stateTransform: \.basicOperationComponentState,
+                actionTransform: { $0 }))
+            
+            if actionType.isComplete == true {
+                state.operation[id] = nil
+            } else {
+                state.operation[id] = OperationComponent(entity: id, type: actionType)
+            }
         }
         return .many(effects)
     }

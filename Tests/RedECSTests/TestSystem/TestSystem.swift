@@ -1,13 +1,15 @@
-import Foundation
 @testable import RedECS
 
+import Geometry
+import RedECSBasicComponents
+
 struct TestGlobalState: GameState {
-    var entities: Set<EntityId> = []
+    var entities: EntityRepository = .init()
     var count: Int32 = 0
     var text: String = ""
     
-    var positions: [EntityId: TestTransformComponent] = [:]
-    var movement: [EntityId: TestMovementComponent] = [:]
+    var transform: [EntityId: TransformComponent] = [:]
+    var movement: [EntityId: MovementComponent] = [:]
     
     var containedState: TestLocalState {
         get {
@@ -19,18 +21,18 @@ struct TestGlobalState: GameState {
         }
     }
     
-    var movementState: TestMovementComponentState {
-        get { TestMovementComponentState(entities: entities, positions: positions, movement: movement) }
+    var movementContext: MovementReducerContext {
+        get { MovementReducerContext(entities: entities, transform: transform, movement: movement) }
         set {
             entities = newValue.entities
-            positions = newValue.positions
+            transform = newValue.transform
             movement = newValue.movement
         }
     }
 }
 
 enum TestGlobalAction: Equatable {
-    case tick
+    case incrementCount
     case updateVelocity(entity: EntityId, velocity: Point)
     case removeEntity(entity: EntityId)
 }
@@ -50,7 +52,7 @@ struct TestGlobalReducer: Reducer {
         environment: TestGlobalEnvironment
     ) -> GameEffect<TestGlobalState, TestGlobalAction> {
         switch action {
-        case .tick:
+        case .incrementCount:
             state.count += 1
         case .removeEntity(let entity):
             return .system(.removeEntity(entity))
@@ -61,7 +63,7 @@ struct TestGlobalReducer: Reducer {
 }
 
 struct TestLocalState: GameState {
-    var entities: Set<EntityId> = []
+    var entities: EntityRepository
     var count: Int32
 }
 
@@ -76,7 +78,7 @@ struct TestLocalReducer: Reducer {
         environment: TestGlobalEnvironment
     ) -> GameEffect<TestLocalState, TestGlobalAction> {
         switch action {
-        case .tick:
+        case .incrementCount:
             state.count += 1
         default: break
         }

@@ -1,5 +1,3 @@
-import Foundation
-
 public struct Zip2<A: Reducer, B: Reducer>: Reducer
 where A.State == B.State,
       A.Action == B.Action,

@@ -1,21 +1,43 @@
 import JavaScriptKit
+import RedECS
 import RedECSBasicComponents
 import Geometry
 
-open class WebBrowserWindow {
+open class WebBrowserWindow<State: GameState, Action: Equatable, Environment> {
     
-    public var renderer: WebRenderer!
+    public private(set) var resourceManager: WebResourceManager
+    public private(set) var renderer: WebRenderer
+    public private(set) var store: GameStore<AnyReducer<State, Action, Environment>>!
+    
+    public private(set) var lastTime: Double?
     
     public required init(size: Size) {
-        self.renderer = WebRenderer(size: size, stateChangeHandler: { [weak self] _, newValue in
-            if newValue == .ready {
-                self?.onWebRendererReady()
+        self.resourceManager = WebResourceManager(resourcePath: "Resources")
+        self.renderer = WebRenderer(size: size, resourceLoader: resourceManager)
+    }
+    
+    open func setStoreAndBegin(
+        _ store: GameStore<AnyReducer<State, Action, Environment>>,
+        preloading assets: [(String, ResourceType)],
+        onReady: (() -> Void)? = nil
+    ) {
+        self.store = store
+        resourceManager
+            .preload(assets)
+            .subscribe { [weak self] result in
+                switch result {
+                case .success:
+                    self?.startWebRenderer()
+                    onReady?()
+                case .failure(let e):
+                    print(e)
+                    fatalError(e.localizedDescription)
+                }
             }
-        })
     }
     
     /// If overriding, either call super or add listeners and request animation frame manually
-    open func onWebRendererReady() {
+    open func startWebRenderer() {
         addAllInputListeners()
         requestAnimationFrame()
     }
@@ -109,16 +131,23 @@ open class WebBrowserWindow {
         )
     }
     
+    /// This functions draws the enqueued work and calls update upon the next animation frame
     public func requestAnimationFrame() {
         _ = JSObject.global.requestAnimationFrame!(JSClosure { [weak self] args in
             guard let time = args.first?.number else { return .null }
+            self?.renderer.clearQueue()
             self?.update(time)
+            self?.renderer.draw()
             return .undefined
         })
     }
     
-    /// If overriding, either call `requestAnimationFrame` yourself or call super
-    open func update(_ currentTime: Double) {
+    public func update(_ currentTime: Double) {
+        if let lastTime = lastTime {
+            let delta = (currentTime - lastTime) / 1000
+            store.sendDelta(delta)
+        }
+        lastTime = currentTime
         requestAnimationFrame()
     }
     
