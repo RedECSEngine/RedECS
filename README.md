@@ -4,10 +4,14 @@ A Swift Entity Component System. Inspired by The Composable Architecture and foc
 
 <img src="breakout.gif" />
 <img src="asteroids.gif" />
+<img src="rpg.gif" />
 
-## About
+## Current Supported Platforms
 
-This game engine is in its nascent days and mostly operating as a hobby project. There is no formal roadmap. Feedback and ideas are still always welcome.
+- iOS, tvOS, macOS
+- Web
+
+### Note: This is still under heavy development so documentation is sparse
 
 ## Architecture
 
