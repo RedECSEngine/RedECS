@@ -46,12 +46,12 @@ let package = Package(
             url: "https://github.com/swiftwasm/JavaScriptKit",
             from: "0.13.0"
         ),
-//        .package(
-//            url: "git@github.com:RedECSEngine/Geometry.git",
-//            from: "0.0.3"
-//        ),
+        .package(
+            url: "git@github.com:RedECSEngine/Geometry.git",
+            from: "0.0.4"
+        ),
 //        .package(path: "../Geometry"),
-        .package(url: "git@github.com:RedECSEngine/Geometry.git", .branch("develop")),
+//        .package(url: "git@github.com:RedECSEngine/Geometry.git", .branch("develop")),
         
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.9.0"),
     ],

@@ -5,9 +5,9 @@
         "package": "Geometry",
         "repositoryURL": "git@github.com:RedECSEngine/Geometry.git",
         "state": {
-          "branch": "develop",
-          "revision": "58c77a117bd3405e97b0a68d6b887f384facaa2a",
-          "version": null
+          "branch": null,
+          "revision": "7c9ba07e4ee2e09ab8454870c8ede2ad96e544f6",
+          "version": "0.0.4"
         }
       },
       {
