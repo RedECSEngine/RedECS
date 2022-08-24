@@ -1,7 +1,12 @@
 import RedECS
 import Geometry
 
-public struct MoveByOperation: Operation {
+public struct ScaleOperation: Operation {
+    enum Strategy {
+        case by(Point)
+        case to(Point)
+    }
+    
     public typealias Action = Int
     
     public var moveBy: Point

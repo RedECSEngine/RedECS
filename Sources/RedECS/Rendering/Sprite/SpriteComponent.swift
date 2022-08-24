@@ -19,7 +19,7 @@ public struct SpriteComponent: GameComponent {
     
     public init(
         entity: EntityId,
-        texture: TextureReference
+        texture: TextureReference = .empty
     ) {
         self.entity = entity
         self.texture = texture

@@ -6,4 +6,6 @@ public struct TextureReference: Equatable, Codable {
         self.textureId = textureId
         self.frameId = frameId
     }
+    
+    public static var empty: TextureReference = .init(textureId: "", frameId: nil)
 }

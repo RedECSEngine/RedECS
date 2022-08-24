@@ -20,7 +20,6 @@ public struct TileMapRenderingReducer: Reducer {
                 tileSize = Size(width: Double(tileWidth), height: Double(tileHeight))
             
             tileMap.tileMap.tileLayers.enumerated().forEach { (i, layer) in
-                guard let data = layer.data else { return }
                 guard let tileSetName = tileMap.tileMap.tileSets.first?.source,
                       let tileSet = environment.resourceManager.tileSets[tileSetName] else {
                     return

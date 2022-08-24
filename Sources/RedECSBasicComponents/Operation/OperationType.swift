@@ -2,19 +2,20 @@ import RedECS
 import Geometry
 
 public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & Equatable {
-    case moveBy(MoveByOperation)
-    case rotateBy(RotateByOperation)
+    case move(MoveOperation)
+    case rotate(RotateOperation)
     case wait(WaitOperation)
     case repeatForever(RepeatForeverOperation<GameAction>)
     case sequence(SequenceOperation<GameAction>)
     case group(GroupOperation<GameAction>)
     case call(CallOperation<GameAction>)
+    case animate(AnimateOperation)
     
     public var isComplete: Bool {
         switch self {
-        case .moveBy(let moveOperation):
+        case .move(let moveOperation):
             return moveOperation.isComplete
-        case .rotateBy(let rotateOperation):
+        case .rotate(let rotateOperation):
             return rotateOperation.isComplete
         case .wait(let waitOperation):
             return waitOperation.isComplete
@@ -26,6 +27,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return repeatOp.isComplete
         case .call(let callOp):
             return callOp.isComplete
+        case .animate(let animOp):
+            return animOp.isComplete
         }
     }
     
@@ -39,17 +42,17 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             _ = wait.run(id: id, state: &state, delta: delta)
             self = .wait(wait)
             return .none
-        case .rotateBy(var rotate):
+        case .rotate(var rotate):
             _ = rotate.run(id: id, state: &state, delta: delta)
-            self = .rotateBy(rotate)
+            self = .rotate(rotate)
             return .none
         case .repeatForever(var rp):
             let effect = rp.run(id: id, state: &state, delta: delta)
             self = .repeatForever(rp)
             return effect
-        case .moveBy(var move):
+        case .move(var move):
             _ = move.run(id: id, state: &state, delta: delta)
-            self = .moveBy(move)
+            self = .move(move)
             return .none
         case .sequence(var sequence):
             let effect = sequence.run(id: id, state: &state, delta: delta)
@@ -63,6 +66,10 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             let effect = call.run(id: id, state: &state, delta: delta)
             self = .call(call)
             return effect
+        case .animate(var anim):
+            _ = anim.run(id: id, state: &state, delta: delta)
+            self = .animate(anim)
+            return .none
         }
     }
     
@@ -71,15 +78,15 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         case .wait(var wait):
             wait.reset()
             self = .wait(wait)
-        case .rotateBy(var rotate):
+        case .rotate(var rotate):
             rotate.reset()
-            self = .rotateBy(rotate)
+            self = .rotate(rotate)
         case .repeatForever(var rp):
             rp.reset()
             self = .repeatForever(rp)
-        case .moveBy(var move):
+        case .move(var move):
             move.reset()
-            self = .moveBy(move)
+            self = .move(move)
         case .sequence(var sequence):
             sequence.reset()
             self = .sequence(sequence)
@@ -89,6 +96,9 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         case .call(var call):
             call.reset()
             self = .call(call)
+        case .animate(var anim):
+            anim.reset()
+            self = .animate(anim)
         }
     }
     
@@ -131,13 +141,13 @@ public extension OperationType {
 
 public extension OperationType {
     static func moveBy(_ amount: Point, duration: Double) -> Self {
-        .moveBy(MoveByOperation(moveBy: amount, duration: duration))
+        .move(MoveOperation(strategy: .by(amount), duration: duration))
     }
     
     func moveBy(_ amount: Point, duration: Double) -> Self {
         var component = self
-        let moveOp = MoveByOperation(moveBy: amount, duration: duration)
-        component.appendOperation(.moveBy(moveOp))
+        let moveOp = MoveOperation(strategy: .by(amount), duration: duration)
+        component.appendOperation(.move(moveOp))
         return component
     }
 }
@@ -145,13 +155,13 @@ public extension OperationType {
 
 public extension OperationType {
     static func rotateBy(_ amount: Double, duration: Double) -> Self {
-        .rotateBy(RotateByOperation(rotateBy: amount, duration: duration))
+        .rotate(RotateOperation(strategy: .by(amount), duration: duration))
     }
     
     func rotateBy(_ amount: Double, duration: Double) -> Self {
         var component = self
-        let rotateOp = RotateByOperation(rotateBy: amount, duration: duration)
-        component.appendOperation(.rotateBy(rotateOp))
+        let rotateOp = RotateOperation(strategy: .by(amount), duration: duration)
+        component.appendOperation(.rotate(rotateOp))
         return component
     }
 }
@@ -191,6 +201,18 @@ public extension OperationType {
     func call(_ action: GameAction) -> Self {
         var component = self
         component.appendOperation(.call(CallOperation(action: action)))
+        return component
+    }
+}
+
+public extension OperationType {
+    static func animate(_ frames: [AnimateOperation.FrameData]) -> Self {
+        return .animate(AnimateOperation(frames: frames))
+    }
+    
+    func animate(_ frames: [AnimateOperation.FrameData]) -> Self {
+        var component = self
+        component.appendOperation(.animate(AnimateOperation(frames: frames)))
         return component
     }
 }
