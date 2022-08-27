@@ -11,24 +11,7 @@ public struct ShapeRenderingReducer: Reducer {
     ) -> GameEffect<ShapeRenderingContext, Never> {
         state.shape.forEach { (id, shapeComponent) in
             guard let transform = state.transform[id] else { return }
-            do {
-                let triangles = try shapeComponent.shape.triangulate().enumerated()
-                    .map { (i, triangle) -> RenderTriangle in
-                        RenderTriangle(triangle: triangle)
-                    }
-                let matrix = transform.matrix(containerSize: shapeComponent.rect.size)
-                
-                environment.renderer.enqueue([
-                    RenderGroup(
-                        triangles: triangles,
-                        transformMatrix: matrix,
-                        fragmentType: .color(shapeComponent.fillColor),
-                        zIndex: transform.zIndex
-                    )
-                ])
-            } catch {
-                print("⚠️ couldn't render shape", error)
-            }
+            environment.renderer.enqueue(shapeComponent.renderGroups(transform: transform, resourceManager: environment.resourceManager))
         }
         return .none
     }

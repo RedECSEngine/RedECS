@@ -59,3 +59,26 @@ public struct ShapeComponent: GameComponent {
     }
     
 }
+
+extension ShapeComponent: RenderableComponent {
+    public func renderGroups(transform: TransformComponent, resourceManager: ResourceManager) -> [RenderGroup] {
+        do {
+            let triangles = try shape.triangulate().enumerated()
+                .map { (i, triangle) -> RenderTriangle in
+                    RenderTriangle(triangle: triangle)
+                }
+            let matrix = transform.matrix(containerSize: rect.size)
+            return [
+                RenderGroup(
+                    triangles: triangles,
+                    transformMatrix: matrix,
+                    fragmentType: .color(fillColor),
+                    zIndex: transform.zIndex
+                )
+            ]
+        } catch {
+            print("⚠️ couldn't render shape", error)
+            return []
+        }
+    }
+}
