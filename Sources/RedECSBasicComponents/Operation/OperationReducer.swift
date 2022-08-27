@@ -4,15 +4,18 @@ public struct OperationComponentContext<GameAction: Equatable & Codable>: GameSt
     public var entities: EntityRepository = .init()
     public var operation: [EntityId: OperationComponent<GameAction>] = [:]
     public var transform: [EntityId: TransformComponent] = [:]
+    public var sprite: [EntityId : SpriteComponent] = [:]
     
     public init(
-        entities: EntityRepository = .init(),
-        operation: [EntityId : OperationComponent<GameAction>] = [:],
-        transform: [EntityId: TransformComponent] = [:]
+        entities: EntityRepository,
+        operation: [EntityId : OperationComponent<GameAction>],
+        transform: [EntityId: TransformComponent],
+        sprite: [EntityId : SpriteComponent]
     ) {
         self.entities = entities
         self.operation = operation
         self.transform = transform
+        self.sprite = sprite
     }
 }
 

@@ -10,6 +10,7 @@ public struct MoveOperation: Operation {
     }
     
     public var strategy: Strategy
+    public var amount: Point = .zero
     public var duration: Double
     public var currentTime: Double = 0
     
@@ -22,15 +23,21 @@ public struct MoveOperation: Operation {
     }
     
     public mutating func run(id: EntityId, state: inout BasicOperationComponentContext, delta: Double) -> GameEffect<BasicOperationComponentContext, Action> {
-        switch strategy {
-        case .by(let point):
-            let percentage = delta / duration
-            let moveByIncrement = point * percentage
-            state.transform[id]?.position += moveByIncrement
-            currentTime += delta
-        case .to(_):
-            fatalError("not implemented yet")
+        if currentTime == 0 {
+            switch strategy {
+            case .by(let amount):
+                self.amount = amount
+            case .to(let location):
+                let currentPos = (state.transform[id]?.position ?? .zero)
+                self.amount = location.diffOf(currentPos)
+            }
         }
+        
+        let percentage = delta / duration
+        let moveByIncrement = amount * percentage
+        state.transform[id]?.position += moveByIncrement
+        currentTime += delta
+        
         return .none
     }
     

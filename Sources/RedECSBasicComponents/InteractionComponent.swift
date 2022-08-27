@@ -6,15 +6,19 @@ public struct InteractionComponent<Action: Equatable & Codable>: GameComponent {
         case selection
     }
     public var entity: EntityId
-    public var interactionType: InteractionType
-    public var action: Action
+    public var interactionType: InteractionType?
+    public var action: Action?
     public var radius: Double
     public var triggerTags: Set<String>
     
+    public init(entity: EntityId) {
+        self = .init(entity: entity, interactionType: nil, action: nil, radius: 0, triggerTags: [])
+    }
+    
     public init(
         entity: EntityId,
-        interactionType: InteractionType,
-        action: Action,
+        interactionType: InteractionType?,
+        action: Action?,
         radius: Double,
         triggerTags: Set<String>
     ) {
@@ -59,7 +63,7 @@ public struct InteractionWhenNearbyReducer<Action: Equatable & Codable>: Reducer
         state.interaction
             .filter { $1.interactionType == .proximity }
             .forEach { interactionId, interaction in
-            guard let interactionTransform = state.transform[interactionId] else {
+                guard let action = interaction.action, let interactionTransform = state.transform[interactionId] else {
                 return
             }
                 
@@ -71,7 +75,7 @@ public struct InteractionWhenNearbyReducer<Action: Equatable & Codable>: Reducer
                         return
                     }
                     if interactionTransform.position.distanceFrom(triggererTransform.position) <= interaction.radius {
-                        effects.append(.game(interaction.action))
+                        effects.append(.game(action))
                     }
                 })
             }

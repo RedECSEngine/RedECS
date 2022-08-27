@@ -7,6 +7,10 @@ public struct CameraComponent: GameComponent {
     public var offset: Point = .zero
     public var isPrimaryCamera: Bool = true
     
+    public init(entity: EntityId) {
+        self = .init(entity: entity, zoom: 1)
+    }
+    
     public init(
         entity: EntityId,
         zoom: Double = 1,

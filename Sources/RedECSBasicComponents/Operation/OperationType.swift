@@ -4,12 +4,45 @@ import Geometry
 public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & Equatable {
     case move(MoveOperation)
     case rotate(RotateOperation)
+    case scale(ScaleOperation)
     case wait(WaitOperation)
-    case repeatForever(RepeatForeverOperation<GameAction>)
+    case `repeat`(RepeatOperation<GameAction>)
     case sequence(SequenceOperation<GameAction>)
     case group(GroupOperation<GameAction>)
     case call(CallOperation<GameAction>)
     case animate(AnimateOperation)
+    case opacity(OpacityOperation)
+    case visibility(VisibilityOperation)
+    case timing(TimingOperation<GameAction>)
+    
+    public var duration: Double {
+        switch self {
+        case .move(let moveOperation):
+            return moveOperation.duration
+        case .rotate(let rotateOperation):
+            return rotateOperation.duration
+        case .scale(let scaleOperation):
+            return scaleOperation.duration
+        case .wait(let waitOperation):
+            return waitOperation.duration
+        case .sequence(let sequenceOperation):
+            return sequenceOperation.duration
+        case .group(let groupOp):
+            return groupOp.duration
+        case .repeat(let repeatOp):
+            return repeatOp.duration
+        case .call(let callOp):
+            return callOp.duration
+        case .animate(let animOp):
+            return animOp.duration
+        case .opacity(let opOp):
+            return opOp.duration
+        case .visibility(let visOp):
+            return visOp.duration
+        case .timing(let timing):
+            return timing.duration
+        }
+    }
     
     public var isComplete: Bool {
         switch self {
@@ -17,18 +50,26 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return moveOperation.isComplete
         case .rotate(let rotateOperation):
             return rotateOperation.isComplete
+        case .scale(let scaleOperation):
+            return scaleOperation.isComplete
         case .wait(let waitOperation):
             return waitOperation.isComplete
         case .sequence(let sequenceOperation):
             return sequenceOperation.isComplete
         case .group(let groupOp):
             return groupOp.isComplete
-        case .repeatForever(let repeatOp):
+        case .repeat(let repeatOp):
             return repeatOp.isComplete
         case .call(let callOp):
             return callOp.isComplete
         case .animate(let animOp):
             return animOp.isComplete
+        case .opacity(let opOp):
+            return opOp.isComplete
+        case .visibility(let visOp):
+            return visOp.isComplete
+        case .timing(let timing):
+            return timing.isComplete
         }
     }
     
@@ -46,9 +87,13 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             _ = rotate.run(id: id, state: &state, delta: delta)
             self = .rotate(rotate)
             return .none
-        case .repeatForever(var rp):
+        case .scale(var scale):
+            _ = scale.run(id: id, state: &state, delta: delta)
+            self = .scale(scale)
+            return .none
+        case .repeat(var rp):
             let effect = rp.run(id: id, state: &state, delta: delta)
-            self = .repeatForever(rp)
+            self = .repeat(rp)
             return effect
         case .move(var move):
             _ = move.run(id: id, state: &state, delta: delta)
@@ -70,6 +115,18 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             _ = anim.run(id: id, state: &state, delta: delta)
             self = .animate(anim)
             return .none
+        case .opacity(var opacity):
+            _ = opacity.run(id: id, state: &state, delta: delta)
+            self = .opacity(opacity)
+            return .none
+        case .visibility(var visibility):
+            _ = visibility.run(id: id, state: &state, delta: delta)
+            self = .visibility(visibility)
+            return .none
+        case .timing(var timing):
+            _ = timing.run(id: id, state: &state, delta: delta)
+            self = .timing(timing)
+            return .none
         }
     }
     
@@ -81,9 +138,12 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         case .rotate(var rotate):
             rotate.reset()
             self = .rotate(rotate)
-        case .repeatForever(var rp):
+        case .scale(var scale):
+            scale.reset()
+            self = .scale(scale)
+        case .repeat(var rp):
             rp.reset()
-            self = .repeatForever(rp)
+            self = .repeat(rp)
         case .move(var move):
             move.reset()
             self = .move(move)
@@ -99,6 +159,15 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         case .animate(var anim):
             anim.reset()
             self = .animate(anim)
+        case .opacity(var opacity):
+            opacity.reset()
+            self = .opacity(opacity)
+        case .visibility(var visibility):
+            visibility.reset()
+            self = .visibility(visibility)
+        case .timing(var timing):
+            timing.reset()
+            self = .timing(timing)
         }
     }
     
@@ -140,28 +209,40 @@ public extension OperationType {
 }
 
 public extension OperationType {
-    static func moveBy(_ amount: Point, duration: Double) -> Self {
-        .move(MoveOperation(strategy: .by(amount), duration: duration))
+    static func move(_ strategy: MoveOperation.Strategy, duration: Double) -> Self {
+        .move(MoveOperation(strategy: strategy, duration: duration))
     }
     
-    func moveBy(_ amount: Point, duration: Double) -> Self {
+    func move(_ strategy: MoveOperation.Strategy, duration: Double) -> Self {
         var component = self
-        let moveOp = MoveOperation(strategy: .by(amount), duration: duration)
+        let moveOp = MoveOperation(strategy: strategy, duration: duration)
         component.appendOperation(.move(moveOp))
         return component
     }
 }
 
-
 public extension OperationType {
-    static func rotateBy(_ amount: Double, duration: Double) -> Self {
-        .rotate(RotateOperation(strategy: .by(amount), duration: duration))
+    static func rotate(_ strategy: RotateOperation.Strategy, duration: Double) -> Self {
+        .rotate(RotateOperation(strategy: strategy, duration: duration))
     }
     
-    func rotateBy(_ amount: Double, duration: Double) -> Self {
+    func rotate(_ strategy: RotateOperation.Strategy, duration: Double) -> Self {
         var component = self
-        let rotateOp = RotateOperation(strategy: .by(amount), duration: duration)
+        let rotateOp = RotateOperation(strategy: strategy, duration: duration)
         component.appendOperation(.rotate(rotateOp))
+        return component
+    }
+}
+
+public extension OperationType {
+    static func scale(_ strategy: ScaleOperation.Strategy, duration: Double) -> Self {
+        .scale(ScaleOperation(strategy: strategy, duration: duration))
+    }
+    
+    func scale(_ strategy: ScaleOperation.Strategy, duration: Double) -> Self {
+        var component = self
+        let scale = ScaleOperation(strategy: strategy, duration: duration)
+        component.appendOperation(.scale(scale))
         return component
     }
 }
@@ -181,14 +262,14 @@ public extension OperationType {
 }
 
 public extension OperationType {
-    func repeatForever() -> Self {
-        if case .repeatForever = self {
+    func `repeat`(_ strategy: RepeatOperation<GameAction>.Strategy) -> Self {
+        if case .repeat(let op) = self, op.strategy == .forever {
             return self
         }
         
         var component = self
-        let repeatOp = RepeatForeverOperation(operation: self)
-        component.appendOperation(.repeatForever(repeatOp))
+        let repeatOp = RepeatOperation(strategy: strategy, operation: self)
+        component.appendOperation(.repeat(repeatOp))
         return component
     }
 }
@@ -214,5 +295,35 @@ public extension OperationType {
         var component = self
         component.appendOperation(.animate(AnimateOperation(frames: frames)))
         return component
+    }
+}
+
+public extension OperationType {
+    static func visibility(_ strategy: VisibilityOperation.Strategy) -> Self {
+        return .visibility(VisibilityOperation(strategy: strategy))
+    }
+    
+    func visibility(_ strategy: VisibilityOperation.Strategy) -> Self {
+        var component = self
+        component.appendOperation(.visibility(VisibilityOperation(strategy: strategy)))
+        return component
+    }
+}
+
+public extension OperationType {
+    static func opacity(_ strategy: OpacityOperation.Strategy, duration: Double) -> Self {
+        return .opacity(OpacityOperation(strategy: strategy, duration: duration))
+    }
+    
+    func opacity(_ strategy: OpacityOperation.Strategy, duration: Double) -> Self {
+        var component = self
+        component.appendOperation(.opacity(OpacityOperation(strategy: strategy, duration: duration)))
+        return component
+    }
+}
+
+public extension OperationType {
+    func timing(_ strategy: TimingOperation<GameAction>.Strategy) -> Self {
+        .timing(TimingOperation(strategy: strategy, operation: self))
     }
 }

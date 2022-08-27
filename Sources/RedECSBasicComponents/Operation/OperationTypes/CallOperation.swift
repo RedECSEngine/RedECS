@@ -2,6 +2,7 @@ import RedECS
 
 public struct CallOperation<GameAction: Equatable & Codable>: Operation {
     public var currentTime: Double = 0
+    public var duration: Double { Self.InstantDuration }
     
     public var action: GameAction
     public var isComplete: Bool = false

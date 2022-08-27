@@ -28,6 +28,10 @@ public struct KeyboardInputComponent<Action: Equatable & Codable>: GameComponent
     public var pressedKeys: [KeyboardInput: Bool]
     public var keyMap: [Mapping]
     
+    public init(entity: EntityId) {
+        self = .init(entity: entity, pressedKeys: [:], keyMap: [])
+    }
+    
     public init(
         entity: EntityId,
         pressedKeys: [KeyboardInput: Bool] = [:],

@@ -8,7 +8,7 @@ public struct ShapeComponent: GameComponent {
             triangulate()
         }
     }
-    public var fillColor: Color
+    public var fillColor: Color = .pink
     
     public private(set) var triangles: [Triangle] = []
     
@@ -23,6 +23,10 @@ public struct ShapeComponent: GameComponent {
         case .polygon(let p):
             return GeometryAlgorithms.calculateContainingRect(of: p.points)
         }
+    }
+    
+    public init(entity: EntityId) {
+        self = .init(entity: entity, shape: .rect(.zero), fillColor: .clear)
     }
     
     public init(

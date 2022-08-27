@@ -9,8 +9,12 @@ public struct TransformComponent: GameComponent {
     public var scale: Point = Point(x: 1, y: 1)
     public var zIndex: Int = 0
     
-    public var parentId: EntityId?
-    public var isHidden: Bool = false
+    public var parentId: EntityId? // TODO: implement rendering implications
+    public var isHidden: Bool = false // TODO: implement rendering implications
+    
+    public init(entity: EntityId) {
+        self = .init(entity: entity, position: .zero)
+    }
     
     public init(
         entity: EntityId,

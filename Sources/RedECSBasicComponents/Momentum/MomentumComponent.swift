@@ -4,6 +4,10 @@ import Geometry
 public struct MomentumComponent: GameComponent {
     public let entity: EntityId
     public var velocity: Point
+    
+    public init(entity: EntityId) {
+        self = .init(entity: entity, velocity: .zero)
+    }
     public init(
         entity: EntityId,
         velocity: Point

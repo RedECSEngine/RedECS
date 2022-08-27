@@ -6,9 +6,9 @@ public struct BasicOperationComponentContext: GameState {
     public var sprite: [EntityId: SpriteComponent] = [:]
     
     public init(
-        entities: EntityRepository = .init(),
-        transform: [EntityId: TransformComponent] = [:],
-        sprite: [EntityId: SpriteComponent] = [:]
+        entities: EntityRepository,
+        transform: [EntityId: TransformComponent],
+        sprite: [EntityId: SpriteComponent]
     ) {
         self.entities = entities
         self.transform = transform

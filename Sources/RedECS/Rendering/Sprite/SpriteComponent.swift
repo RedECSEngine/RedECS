@@ -16,6 +16,11 @@ public struct SpriteComponent: GameComponent {
     public var entity: EntityId
     public var texture: TextureReference
     public var animation: SpriteAnimation?
+    public var opacity: Double = 1 // TODO: implement rendering implications
+    
+    public init(entity: EntityId) {
+        self.init(entity: entity, texture: .empty)
+    }
     
     public init(
         entity: EntityId,

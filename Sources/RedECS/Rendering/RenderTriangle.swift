@@ -11,17 +11,20 @@ public struct RenderGroup {
     public let transformMatrix: Matrix3
     public let fragmentType: FragmentType
     public let zIndex: Int
+    public let opacity: Double
     
     public init(
         triangles: [RenderTriangle],
         transformMatrix: Matrix3,
         fragmentType: FragmentType,
-        zIndex: Int
+        zIndex: Int,
+        opacity: Double = 1
     ) {
         self.triangles = triangles
         self.transformMatrix = transformMatrix
         self.fragmentType = fragmentType
         self.zIndex = zIndex
+        self.opacity = opacity
     }
 }
 

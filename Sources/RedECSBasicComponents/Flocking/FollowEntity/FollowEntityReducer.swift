@@ -1,24 +1,24 @@
-//import RedECS
-//import Geometry
-//
-//public struct FollowEntityReducerContext: GameState {
-//    public var entities: EntityRepository = .init()
-//    public var transform: [EntityId: TransformComponent]
-//    public var movement: [EntityId: MovementComponent]
-//    public var followEntity: [EntityId: FollowEntityComponent]
-//    
-//    public init(
-//        entities: EntityRepository = .init(),
-//        transform: [EntityId: TransformComponent],
-//        movement: [EntityId : MovementComponent],
-//        followEntity: [EntityId : FollowEntityComponent]
-//    ) {
-//        self.entities = entities
-//        self.transform = transform
-//        self.movement = movement
-//        self.followEntity = followEntity
-//    }
-//}
+import RedECS
+import Geometry
+
+public struct FollowEntityReducerContext: GameState {
+    public var entities: EntityRepository = .init()
+    public var transform: [EntityId: TransformComponent]
+    public var movement: [EntityId: MovementComponent]
+    public var followEntity: [EntityId: FollowEntityComponent]
+    
+    public init(
+        entities: EntityRepository = .init(),
+        transform: [EntityId: TransformComponent],
+        movement: [EntityId : MovementComponent],
+        followEntity: [EntityId : FollowEntityComponent]
+    ) {
+        self.entities = entities
+        self.transform = transform
+        self.movement = movement
+        self.followEntity = followEntity
+    }
+}
 //
 //public struct FollowEntityReducer: Reducer {
 //    public init() {}

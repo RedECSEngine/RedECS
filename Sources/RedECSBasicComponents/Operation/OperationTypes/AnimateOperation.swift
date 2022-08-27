@@ -10,11 +10,15 @@ public struct AnimateOperation: Operation {
             self.duration = duration
         }
     }
+    
     public var currentTime: Double = 0
     public var currentFrameTime: Double = 0
     public var currentFrameIndex: Int = 0
     public var frames: [FrameData]
     public var isComplete: Bool = false
+    public var duration: Double {
+        frames.reduce(0) { $0 + $1.duration }
+    }
     
     public init(
         frames: [FrameData]

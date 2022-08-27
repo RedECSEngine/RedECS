@@ -2,7 +2,12 @@ import TiledInterpreter
 
 public struct TileMapComponent: GameComponent {
     public var entity: EntityId
-    public var tileMap: TiledMapJSON
+    public var tileMap: TiledMapJSON?
+    
+    public init(entity: EntityId) {
+        self.entity = entity
+        self.tileMap = nil
+    }
     
     public init(
         entity: EntityId,

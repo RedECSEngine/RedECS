@@ -1,7 +1,7 @@
 import RedECS
 import Geometry
 
-public struct RotateOperation: Operation {
+public struct OpacityOperation: Operation {
     public typealias Action = Int
     
     public enum Strategy: Equatable, Codable {
@@ -35,19 +35,19 @@ public struct RotateOperation: Operation {
             switch strategy {
             case .by(let amount):
                 self.amount = amount
-            case .to(let angle):
-                let rotation = (state.transform[id]?.rotate ?? 0)
-                if angle > rotation {
-                    self.amount = angle - rotation
+            case .to(let opacity):
+                let current = (state.sprite[id]?.opacity ?? 0)
+                if opacity > current {
+                    self.amount = opacity - current
                 } else {
-                    self.amount = -(rotation - angle)
+                    self.amount = -(current - opacity)
                 }
             }
         }
         
         let percentage = delta / duration
-        let rotateByIncrement = amount * percentage
-        state.transform[id]?.rotate += rotateByIncrement
+        let opacityIncrement = amount * percentage
+        state.sprite[id]?.opacity += opacityIncrement
         currentTime += delta
         return .none
     }

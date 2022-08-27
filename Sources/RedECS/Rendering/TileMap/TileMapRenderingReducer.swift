@@ -9,25 +9,26 @@ public struct TileMapRenderingReducer: Reducer {
         environment: RenderingEnvironment
     ) -> GameEffect<TileMapRenderingReducerContext, Never> {
         state.tileMap.forEach { (id, tileMap) in
-            guard let transform = state.transform[id] else { return }
+            guard let tileMap = tileMap.tileMap,
+                  let transform = state.transform[id] else { return }
             
 //            let cameraRect = environment.renderer.cameraFrame
             
-            let tileWidth = tileMap.tileMap.tileWidth,
-                tileHeight = tileMap.tileMap.tileHeight,
-                layerCols = tileMap.tileMap.width,
-                layerRows = tileMap.tileMap.height,
+            let tileWidth = tileMap.tileWidth,
+                tileHeight = tileMap.tileHeight,
+                layerCols = tileMap.width,
+                layerRows = tileMap.height,
                 tileSize = Size(width: Double(tileWidth), height: Double(tileHeight))
             
-            tileMap.tileMap.tileLayers.enumerated().forEach { (i, layer) in
-                guard let tileSetName = tileMap.tileMap.tileSets.first?.source,
+            tileMap.tileLayers.enumerated().forEach { (i, layer) in
+                guard let tileSetName = tileMap.tileSets.first?.source,
                       let tileSet = environment.resourceManager.tileSets[tileSetName] else {
                     return
                 }
                 
                 let matrix = transform.matrix(containerSize: Size(
-                    width: tileMap.tileMap.totalWidth,
-                    height: tileMap.tileMap.totalHeight
+                    width: tileMap.totalWidth,
+                    height: tileMap.totalHeight
                 ))
                 
                 var renderTriangles: [RenderTriangle] = []

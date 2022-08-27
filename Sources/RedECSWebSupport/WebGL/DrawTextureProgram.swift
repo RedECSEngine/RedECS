@@ -49,6 +49,7 @@ extension DrawTextureProgram: WebGLProgram {
         if let p = self.program {
             program = p
         } else {
+            print("texture program create")
             let p = try createProgram(with: webRenderer)
             program = p
             self.program = p
@@ -106,8 +107,8 @@ extension DrawTextureProgram: WebGLProgram {
         _ = gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // flip Y
         
         // alpha transparency support
-        _ = gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         _ = gl.enable(gl.BLEND);
+        _ = gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         
         // other texture parameters, nearest neighbour
         _ = gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
@@ -202,7 +203,12 @@ extension DrawTextureProgram: WebGLProgram {
     varying vec2 v_texCoord;
     
     void main() {
-       gl_FragColor = texture2D(u_image, v_texCoord);
+        vec4 color = texture2D(u_image, v_texCoord);
+        if(color.w == 0.0) {
+            gl_FragColor = color;
+        } else {
+            gl_FragColor = vec4(color.xyz, 1); //todo: read alpha from buffer
+        }
     }
     """
     }
