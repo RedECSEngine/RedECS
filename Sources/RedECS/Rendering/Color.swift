@@ -70,4 +70,13 @@ public extension Color {
             alpha: 1
         )
     }
+    
+    func withAlpha(_ alpha: Double) -> Color {
+        Color(
+            red: red,
+            green: green,
+            blue: blue,
+            alpha: alpha
+        )
+    }
 }

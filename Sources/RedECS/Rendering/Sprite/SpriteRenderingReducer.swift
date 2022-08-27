@@ -60,7 +60,8 @@ public struct SpriteRenderingReducer: Reducer {
                     triangles: [topRenderTri, bottomRenderTri],
                     transformMatrix: transform.matrix(),
                     fragmentType: .texture(spriteComponent.texture.textureId),
-                    zIndex: transform.zIndex
+                    zIndex: transform.zIndex,
+                    opacity: spriteComponent.opacity
                 )
             ])
         }

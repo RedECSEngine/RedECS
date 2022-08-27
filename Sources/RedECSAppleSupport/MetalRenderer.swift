@@ -154,6 +154,7 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         var lastBoundTexture: TextureId?
 
         for renderGroup in queuedWork.sorted(by: { $0.zIndex < $1.zIndex }) {
+            let color = renderGroup.color?.asVectorFloat4 ?? vector_float4(0, 0, 0, Float(renderGroup.opacity))
             var triangleVertices: [AAPLVertex] = []
             var textureVertices: [TextureInfo] = []
             var uniforms = Uniforms(
@@ -165,15 +166,15 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
                 triangleVertices.append(contentsOf: [
                     AAPLVertex(
                         position: renderTriangle.triangle.a.asVectorFloat2,
-                        color: (renderGroup.color ?? .clear).asVectorFloat4
+                        color: color
                     ),
                     AAPLVertex(
                         position: renderTriangle.triangle.b.asVectorFloat2,
-                        color: (renderGroup.color ?? .clear).asVectorFloat4
+                        color: color
                     ),
                     AAPLVertex(
                         position: renderTriangle.triangle.c.asVectorFloat2,
-                        color: (renderGroup.color ?? .clear).asVectorFloat4
+                        color: color
                     )
                 ])
                 var texSize = vector_float2(0, 0)
@@ -247,7 +248,6 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
                                             scaleFactor: 1.0,
                                             bundle: nil,
                                             options: textureLoaderOptions)
-        
     }
 }
 
@@ -264,20 +264,13 @@ extension Point {
 }
 
 public extension Matrix3 {
+    /**
+     V V 0 V
+     V V 0 V
+     0 0 1 0
+     V V 0 v
+     */
     var asMatrix4x4: matrix_float4x4 {
-//        return  matrix_float4x4(columns: (
-//            .init(x: 1, y: 0, z: 0, w: 0),
-//            .init(x: 0, y: 1, z: 0, w: 0),
-//            .init(x: 0, y: 0, z: 1, w: 0),
-//            .init(x: 0, y: 0, z: 0, w: 1)
-//        ))
-        
-        /*
-         V V 0 V
-         V V 0 V
-         0 0 1 0
-         V V 0 v
-         */
         return matrix_float4x4(columns: (
             .init(x: Float(values[0]), y: Float(values[1]), z: 0, w: Float(values[2])),
             .init(x: Float(values[3]), y: Float(values[4]), z: 0, w: Float(values[5])),
