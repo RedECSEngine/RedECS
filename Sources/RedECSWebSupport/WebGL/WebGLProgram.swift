@@ -38,8 +38,6 @@ extension WebGLProgram {
           return program
         }
         
-        _ = gl.deleteProgram(program)
-        
         throw WebGLError.couldNotCreateShader(gl.getProgramInfoLog(program).string)
     }
 
@@ -53,8 +51,6 @@ extension WebGLProgram {
           return shader
         }
        
-        _ = gl.deleteShader(shader)
-        
         throw WebGLError.couldNotCreateShader(gl.getShaderInfoLog(shader).string)
     }
 }
