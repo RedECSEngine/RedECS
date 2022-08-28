@@ -109,6 +109,9 @@ let package = Package(
                 "RedECS",
                 "RedECSAppleSupport",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
+            ],
+            resources: [
+                .process("Resources")
             ]
         ),
         .testTarget(

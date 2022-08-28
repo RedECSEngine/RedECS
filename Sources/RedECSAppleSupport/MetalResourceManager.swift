@@ -4,7 +4,7 @@ import TiledInterpreter
 import MetalKit
 
 public final class MetalResourceManager: ResourceManager {
-    public enum Error: Swift.Error {
+    public enum MetalResourceManagerError: Swift.Error {
         case fileNotFound(String)
         case fileLoadFailure(String)
         case fileDecodeFailure(String)
@@ -15,6 +15,7 @@ public final class MetalResourceManager: ResourceManager {
     public var tileMaps: [String: TiledMapJSON] = [:]
     public var tileSets: [String: TiledTilesetJSON] = [:]
     public var textureImages: [TextureId: MTLTexture] = [:]
+    public var fonts: [String : BitmapFont] = [:]
     
     public var resourceBundle: Bundle
     public let metalDevice: MTLDevice
@@ -37,14 +38,14 @@ public final class MetalResourceManager: ResourceManager {
         }
         return Future { resolve in
             guard let path = self.resourceBundle.path(forResource: name, ofType: ext) else {
-                resolve(.failure(Error.fileNotFound("\(name).\(ext) in \(self.resourceBundle.description)")))
+                resolve(.failure(MetalResourceManagerError.fileNotFound("\(name).\(ext) in \(self.resourceBundle.description)")))
                 return
             }
 
             let url = URL(fileURLWithPath: path)
 
             guard let jsonData = try? Data(contentsOf: url, options: .mappedIfSafe) else {
-                resolve(.failure(Error.fileLoadFailure(url.absoluteString)))
+                resolve(.failure(MetalResourceManagerError.fileLoadFailure(url.absoluteString)))
                 return
             }
 
@@ -53,9 +54,8 @@ public final class MetalResourceManager: ResourceManager {
                 resolve(.success(decoded))
             } catch {
                 print(String(data: jsonData, encoding: .utf8))
-                resolve(.failure(Error.fileDecodeFailure("\(name).\(ext):" + String(describing: error))))
+                resolve(.failure(MetalResourceManagerError.fileDecodeFailure("\(name).\(ext):" + String(describing: error))))
             }
-            
         }
     }
     
@@ -68,6 +68,8 @@ public final class MetalResourceManager: ResourceManager {
                 return .just(())
             case .tilemap:
                 return self.loadTiledMap(id).toVoid()
+            case .bitmapFont:
+                return self.loadBitmapFontTextFile(id).toVoid()
             }
         }
         if futures.isEmpty {
@@ -164,6 +166,47 @@ public final class MetalResourceManager: ResourceManager {
             } catch {
                 resolve(.failure(error))
             }
+        }
+    }
+    
+    public func loadBitmapFontTextFile(_ name: String) -> Future<BitmapFont, Swift.Error> {
+        var name = name
+        var ext = "fnt"
+        let nameSplit = name.split(separator: ".")
+        if nameSplit.count > 1 {
+            name = String(nameSplit.dropLast().joined(separator: "."))
+            ext = String(nameSplit[nameSplit.count - 1])
+        }
+        return Future { (resolve: (Result<BitmapFont, Error>) -> Void) in
+            guard let path = self.resourceBundle.path(forResource: name, ofType: ext) else {
+                resolve(.failure(MetalResourceManagerError.fileNotFound("\(name).\(ext) in \(self.resourceBundle.description)")))
+                return
+            }
+
+            let url = URL(fileURLWithPath: path)
+
+            guard let data = try? Data(contentsOf: url, options: .mappedIfSafe),
+                  let string = String(data: data, encoding: .utf8) else {
+                resolve(.failure(MetalResourceManagerError.fileLoadFailure(url.absoluteString)))
+                return
+            }
+           
+            do {
+                let decoded = try BitmapFont(fromString: string)
+                
+                resolve(.success(decoded))
+            } catch {
+                print(String(data: data, encoding: .utf8))
+                resolve(.failure(MetalResourceManagerError.fileDecodeFailure("\(name).\(ext):" + String(describing: error))))
+            }
+        }
+        .flatMap { font -> Future<BitmapFont, Swift.Error> in
+            self.fonts[font.info.face] = font
+            let imageName = font.page.file.split(separator: ".").dropLast().joined(separator: ".")
+            return self.loadImageFile(name: String(imageName))
+                .map { _ in
+                    font
+                }
         }
     }
 }

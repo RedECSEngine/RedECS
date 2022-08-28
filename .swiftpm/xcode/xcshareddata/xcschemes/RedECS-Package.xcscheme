@@ -160,6 +160,20 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "RedECS_RenderingTests"
+               BuildableName = "RedECS_RenderingTests"
+               BlueprintName = "RedECS_RenderingTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -185,16 +199,6 @@
                BlueprintIdentifier = "RenderingTests"
                BuildableName = "RenderingTests"
                BlueprintName = "RenderingTests"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "TiledInterpreterTests"
-               BuildableName = "TiledInterpreterTests"
-               BlueprintName = "TiledInterpreterTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

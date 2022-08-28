@@ -10,6 +10,7 @@ public enum ResourceType {
     case image
     case sound
     case tilemap
+    case bitmapFont
     // TODO: preload sprite animation dictionary
 }
 
@@ -18,6 +19,7 @@ public protocol ResourceManager: AnyObject {
     var animations: [TextureId: SpriteAnimationDictionary] { get set }
     var tileMaps: [String: TiledMapJSON] { get set }
     var tileSets: [String: TiledTilesetJSON] { get set }
+    var fonts: [String: BitmapFont] { get set }
     
     func preload(_ assets: [(String, ResourceType)]) -> Future<Void, Error>
     
@@ -29,6 +31,7 @@ public protocol ResourceManager: AnyObject {
     
     func loadJSONFile<T: Decodable>(_ name: String, decodedAs: T.Type) -> Future<T, Error>
     func loadTiledMap(_ name: String) -> Future<TiledMapJSON, Error>
+    func loadBitmapFontTextFile(_ name: String) -> Future<BitmapFont, Error>
 }
 
 public extension ResourceManager {
