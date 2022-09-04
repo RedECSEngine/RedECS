@@ -1,5 +1,6 @@
 import TiledInterpreter
 import Geometry
+import GeometryAlgorithms
 
 public struct TileMapComponent: GameComponent {
     public var entity: EntityId
@@ -21,6 +22,7 @@ public struct TileMapComponent: GameComponent {
 
 extension TileMapComponent: RenderableComponent {
     public func renderGroups(
+        cameraMatrix: Matrix3,
         transform: TransformComponent,
         resourceManager: ResourceManager
     ) -> [RenderGroup] {
@@ -54,6 +56,11 @@ extension TileMapComponent: RenderableComponent {
                         ),
                         size: tileSize
                     )
+                    
+                    let projectedPosition = rectForTile.center.multiplyingMatrix(cameraMatrix)
+                    if abs(projectedPosition.x) > 1.125 || abs(projectedPosition.y) > 1.125 {
+                        continue
+                    }
                     
                     guard let tileIndex = layer.tileDataAt(column: c, row: r, flipY: true) else { continue }
                     
@@ -97,6 +104,10 @@ extension TileMapComponent: RenderableComponent {
                     
                     renderTriangles.append(contentsOf: [topRenderTri, bottomRenderTri])
                 }
+            }
+            
+            guard !renderTriangles.isEmpty else {
+                return
             }
             
             let textureId = tileSet.image.split(separator: ".").dropLast().joined(separator: ".")

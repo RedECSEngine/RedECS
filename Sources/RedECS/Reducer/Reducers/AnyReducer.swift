@@ -2,12 +2,12 @@ public struct AnyReducer<State: GameState, Action: Equatable, Environment>: Redu
 
     var reduceDelta: (inout State, Double, Environment) -> GameEffect<State, Action>
     var reduceAction: (inout State, Action, Environment) -> GameEffect<State, Action>
-    var reduceEntityEvent: (inout State, EntityEvent, Environment) -> Void
+    var reduceEntityEvent: (inout State, EntityEvent, Environment) -> GameEffect<State, Action>
 
     public init(
         _ reduceDelta: @escaping (inout State, Double, Environment) -> GameEffect<State, Action>,
         _ reduceAction: @escaping (inout State, Action, Environment) -> GameEffect<State, Action>,
-        _ reduceEntityEvent: @escaping (inout State, EntityEvent, Environment) -> Void
+        _ reduceEntityEvent: @escaping (inout State, EntityEvent, Environment) -> GameEffect<State, Action>
     ) {
         self.reduceDelta = reduceDelta
         self.reduceAction = reduceAction
@@ -25,7 +25,7 @@ public struct AnyReducer<State: GameState, Action: Equatable, Environment>: Redu
     }
 
     public static var noop: Self {
-        AnyReducer({ _, _, _ in .none }, { _, _, _ in .none },  { _, _, _ in })
+        AnyReducer({ _, _, _ in .none }, { _, _, _ in .none },  { _, _, _ in .none })
     }
 
     public func reduce(state: inout State, delta: Double, environment: Environment) -> GameEffect<State, Action> {
@@ -36,7 +36,7 @@ public struct AnyReducer<State: GameState, Action: Equatable, Environment>: Redu
         reduceAction(&state, action, environment)
     }
     
-    public func reduce(state: inout State, entityEvent: EntityEvent, environment: Environment) {
+    public func reduce(state: inout State, entityEvent: EntityEvent, environment: Environment) -> GameEffect<State, Action> {
         reduceEntityEvent(&state, entityEvent, environment)
     }
 }

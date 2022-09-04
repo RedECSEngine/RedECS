@@ -4,24 +4,24 @@ import RedECSUIComponents
 import TiledInterpreter
 
 public final class WebResourceManager: ResourceManager {
-    public enum Error: Swift.Error {
+    public enum WebResourceManagerError: Swift.Error {
         case fileNotFound
         case fileLoadFailure
-        case fileDecodeFailure
+        case fileDecodeFailure(String?)
         case windowLocationOriginNotAvailable
         case jsFetchFunctionNotAvailable
         case jsError(JSValue)
     }
     
-    let resourcePath: String
-    
     public var textures: [TextureId: Resource<TextureMap>] = [:]
     public var animations: [TextureId: SpriteAnimationDictionary] = [:]
     public var tileMaps: [String: TiledMapJSON] = [:]
     public var tileSets: [String: TiledTilesetJSON] = [:]
+    public var fonts: [String: BitmapFont] = [:]
     
-    /// Web Specific Storage for image resources
+    /// Web Specific
     public var textureImages: [TextureId: JSValue] = [:]
+    let resourcePath: String
     
     public init(resourcePath: String) {
         self.resourcePath = resourcePath
@@ -60,11 +60,11 @@ public final class WebResourceManager: ResourceManager {
     ) -> Future<T, Swift.Error> {
         Future { (resolve: @escaping (Result<T, Swift.Error>) -> Void) in
             guard let origin = JSObject.global.window.object?.location.object?.origin.string else {
-                resolve(.failure(Error.windowLocationOriginNotAvailable))
+                resolve(.failure(WebResourceManagerError.windowLocationOriginNotAvailable))
                 return
             }
             guard let fetchFunc = JSObject.global.fetch.function else {
-                resolve(.failure(Error.jsFetchFunctionNotAvailable))
+                resolve(.failure(WebResourceManagerError.jsFetchFunctionNotAvailable))
                 return
             }
             
@@ -80,13 +80,12 @@ public final class WebResourceManager: ResourceManager {
                         print("Loaded \(name)")
                         resolve(.success(parsed))
                     } catch {
-                        print("couldn't decode \(T.self)", error)
-                        resolve(.failure(Error.fileDecodeFailure))
+                        resolve(.failure(WebResourceManagerError.fileDecodeFailure("couldn't decode \(T.self), \(error)")))
                     }
                     return JSValue.null
                 }, failure: { error in
                     print("error", error)
-                    resolve(.failure(Error.jsError(error.jsValue)))
+                    resolve(.failure(WebResourceManagerError.jsError(error.jsValue)))
                     return JSValue.null
                 })
         }
@@ -102,11 +101,11 @@ public final class WebResourceManager: ResourceManager {
             }
             
             guard let origin = JSObject.global.window.object?.location.object?.origin.string else {
-                resolve(.failure(Error.fileNotFound))
+                resolve(.failure(WebResourceManagerError.fileNotFound))
                 return
             }
             guard let fetchFunc = JSObject.global.fetch.function else {
-                resolve(.failure(Error.jsFetchFunctionNotAvailable))
+                resolve(.failure(WebResourceManagerError.jsFetchFunctionNotAvailable))
                 return
             }
             
@@ -121,7 +120,7 @@ public final class WebResourceManager: ResourceManager {
                     image?.src = url ?? .null
                     image?.onload = JSClosure({ args in
                         guard let value = image?.jsValue else {
-                            resolve(.failure(Error.jsError(.undefined)))
+                            resolve(.failure(WebResourceManagerError.jsError(.undefined)))
                             return .undefined
                         }
                         self.textureImages[name] = value
@@ -131,7 +130,7 @@ public final class WebResourceManager: ResourceManager {
                     return JSValue.null
                 }, failure: { error in
                     print("error", error)
-                    resolve(.failure(Error.jsError(error.jsValue)))
+                    resolve(.failure(WebResourceManagerError.jsError(error.jsValue)))
                     return JSValue.null
                 })
         }
@@ -176,6 +175,8 @@ public final class WebResourceManager: ResourceManager {
                 return .just(())
             case .tilemap:
                 return self.loadTiledMap(id).toVoid()
+            case .bitmapFont:
+                return self.loadBitmapFontTextFile(id).toVoid()
             }
         }
         if futures.isEmpty {
@@ -189,6 +190,60 @@ public final class WebResourceManager: ResourceManager {
                 }
             })
             .toVoid()
+    }
+    
+    public func loadBitmapFontTextFile(_ name: String) -> Future<BitmapFont, Swift.Error> {
+        return Future { (resolve: @escaping (Result<BitmapFont, Swift.Error>) -> Void) in
+            if let font = self.fonts[name] {
+                resolve(.success(font))
+                return
+            }
+            
+            guard let origin = JSObject.global.window.object?.location.object?.origin.string else {
+                resolve(.failure(WebResourceManagerError.fileNotFound))
+                return
+            }
+            guard let fetchFunc = JSObject.global.fetch.function else {
+                resolve(.failure(WebResourceManagerError.jsFetchFunctionNotAvailable))
+                return
+            }
+            
+            let url = origin + "/" + self.resourcePath + "/" + name
+            (JSPromise(from: fetchFunc(url)))?
+                .then(success: { response in
+                    JSPromise(from: response.text())
+                })
+                .then(success: { value in
+                    guard let fontText = value.string else {
+                        resolve(.failure(WebResourceManagerError.fileDecodeFailure("\(name):")))
+                        return JSValue.null
+                    }
+                    do {
+                        let decoded = try BitmapFont(fromString: fontText)
+                        resolve(.success(decoded))
+                    } catch {
+                        print(fontText)
+                        resolve(.failure(WebResourceManagerError.fileDecodeFailure("\(name):" + String(describing: error))))
+                    }
+                    return JSValue.null
+                }, failure: { error in
+                    print("error", error)
+                    resolve(.failure(WebResourceManagerError.jsError(error.jsValue)))
+                    return JSValue.null
+                })
+        }
+        .flatMap { font -> Future<BitmapFont, Swift.Error> in
+            self.fonts[font.info.face] = font
+            let textureName = font.page.file.split(separator: ".").dropLast().joined(separator: ".")
+            return self.loadImageFile(name: String(font.page.file))
+                .map { value -> Void in
+                    self.textureImages[textureName] = value
+                    return
+                }
+                .map { _ in
+                    font
+                }
+        }
     }
     
 }

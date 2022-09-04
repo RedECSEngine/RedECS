@@ -1,10 +1,12 @@
 public indirect enum GameEffect<State: GameState, LogicAction: Equatable> {
     case system(SystemAction<State>)
     case game(LogicAction)
-    case deferred(Future<Self, Never>)
     case waitFor(PendingGameEffect<State, LogicAction>)
     case many([Self])
     case none
+    
+    /// This case is intended primarily for asset loading. 
+    case deferred(Future<Self, Never>)
 
     public func map<S: GameState, A>(
         stateTransform: WritableKeyPath<S, State>,

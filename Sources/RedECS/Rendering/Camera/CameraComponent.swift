@@ -44,21 +44,3 @@ public struct CameraReducerContext: GameState {
         self.camera = camera
     }
 }
-
-public struct CameraReducer: Reducer {
-    public init() { }
-    public func reduce(
-        state: inout CameraReducerContext,
-        delta: Double,
-        environment: RenderingEnvironment
-    ) -> GameEffect<CameraReducerContext, Never> {
-        if let camera = state.camera.values.sorted(by: { $1.isPrimaryCamera ? false : true }).first,
-           let transform = state.transform[camera.entity] {
-            let renderer = environment.renderer
-            let size = renderer.viewportSize
-            let projectionMatrix = camera.matrix(withRect: Rect(center: transform.position, size: size))
-            renderer.setProjectionMatrix(projectionMatrix)
-        }
-        return .none
-    }
-}

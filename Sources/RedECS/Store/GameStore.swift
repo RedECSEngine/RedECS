@@ -60,9 +60,9 @@ public final class GameStore<R: Reducer> {
     public func sendSystemAction(_ action: SystemAction<R.State>) {
         switch action {
         case .addEntity(let entityId, let tags):
-            addEntity(entityId, tags: tags)
+            handleEffect(addEntity(entityId, tags: tags))
         case .removeEntity(let entityId):
-            removeEntity(entityId)
+            handleEffect(removeEntity(entityId))
         case .addComponent(let entityId, let componentRegistration):
             assert(isComponentTypeRegistered(id: componentRegistration.id), "Attempting to add a component type that is not registered \(String(describing: componentRegistration.id))")
             componentRegistration.onAdd(entityId, &state)
@@ -77,17 +77,17 @@ public final class GameStore<R: Reducer> {
         handleEffect(reduceBlock(&state, environment))
     }
 
-    public func addEntity(_ id: EntityId, tags: Set<String>) {
+    public func addEntity(_ id: EntityId, tags: Set<String>) -> GameEffect<R.State, R.Action> {
         state.entities.addEntity(GameEntity(id: id, tags: tags))
-        reducer.reduce(state: &state, entityEvent: .added(id), environment: environment)
+        return reducer.reduce(state: &state, entityEvent: .added(id), environment: environment)
     }
 
-    private func removeEntity(_ id: EntityId) {
+    private func removeEntity(_ id: EntityId) -> GameEffect<R.State, R.Action> {
         registeredComponentTypes.values.forEach { componentType in
             componentType.onEntityDestroyed(id, &state)
         }
         state.entities.removeEntity(id)
-        reducer.reduce(state: &state, entityEvent: .removed(id), environment: environment)
+        return reducer.reduce(state: &state, entityEvent: .removed(id), environment: environment)
     }
 
     public func addComponent<C: GameComponent>(

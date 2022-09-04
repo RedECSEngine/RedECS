@@ -6,6 +6,8 @@ public struct LabelComponent: GameComponent {
     public var font: String
     public var text: String
     
+    // TODO: color support
+    
     public init(entity: EntityId) {
         self = .init(entity: entity, font: "", text: "")
     }
@@ -19,6 +21,7 @@ public struct LabelComponent: GameComponent {
 
 extension LabelComponent: RenderableComponent {
     public func renderGroups(
+        cameraMatrix: Matrix3,
         transform: TransformComponent,
         resourceManager: ResourceManager
     ) -> [RenderGroup] {

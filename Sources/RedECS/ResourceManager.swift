@@ -53,7 +53,7 @@ public extension ResourceManager {
             return nil
         }
         do {
-            let dict = try SpriteAnimationDictionary(textureMap: textureMap)
+            let dict = try SpriteAnimationDictionary(name: textureId, textureMap: textureMap)
             self.animations[textureId] = dict
             return dict
         } catch {

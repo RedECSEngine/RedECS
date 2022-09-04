@@ -14,11 +14,12 @@ public final class MetalResourceManager: ResourceManager {
     public var animations: [TextureId: SpriteAnimationDictionary] = [:]
     public var tileMaps: [String: TiledMapJSON] = [:]
     public var tileSets: [String: TiledTilesetJSON] = [:]
-    public var textureImages: [TextureId: MTLTexture] = [:]
-    public var fonts: [String : BitmapFont] = [:]
+    public var fonts: [String: BitmapFont] = [:]
     
+    // Apple Specific
     public var resourceBundle: Bundle
     public let metalDevice: MTLDevice
+    public var textureImages: [TextureId: MTLTexture] = [:]
     
     public init(resourceBundle: Bundle = .main, metalDevice: MTLDevice) {
         self.resourceBundle = resourceBundle

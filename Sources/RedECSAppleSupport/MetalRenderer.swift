@@ -49,6 +49,10 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
     
     var projectionMatrix: matrix_float4x4 = matrix_float4x4()
     
+    private lazy var emptyTexture: MTLTexture = {
+        creatyEmptyPixelTexture(device: device)!
+    }()
+    
     public init?(
         device: MTLDevice,
         pixelFormat: MTLPixelFormat,
@@ -193,14 +197,17 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
                 ])
             }
             
-            if let textureId = renderGroup.textureId,
-               lastBoundTexture != textureId {
-                if let texture = resourceManager.textureImages[textureId] {
+            if let textureId = renderGroup.textureId {
+                if lastBoundTexture != textureId,
+                   let texture = resourceManager.textureImages[textureId] {
                     renderEncoder.setFragmentTexture(texture, index: TextureIndex.colorMap.rawValue)
                     lastBoundTexture = textureId
                 } else {
 //                    print("Texture not found: \(textureId)")
                 }
+            } else {
+                renderEncoder.setFragmentTexture(emptyTexture, index: TextureIndex.colorMap.rawValue)
+                lastBoundTexture = nil
             }
             
             renderEncoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.size, index: AAPLVertexInputIndex.uniforms.rawValue)
@@ -231,6 +238,14 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         commandBuffer.waitUntilCompleted()
         
         updateDelta()
+    }
+    
+    func creatyEmptyPixelTexture(device: MTLDevice) -> MTLTexture? {
+        let descriptor = MTLTextureDescriptor()
+        descriptor.width = 1
+        descriptor.height = 1
+        descriptor.usage = .shaderRead
+        return device.makeTexture(descriptor: descriptor)
     }
     
     class func loadTexture(device: MTLDevice,

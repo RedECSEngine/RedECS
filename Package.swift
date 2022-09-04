@@ -53,6 +53,11 @@ let package = Package(
 //        .package(path: "../Geometry"),
 //        .package(url: "git@github.com:RedECSEngine/Geometry.git", .branch("develop")),
         
+        .package(
+            url: "git@github.com:apple/swift-collections.git",
+            from: "1.0.2"
+        ),
+        
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.9.0"),
     ],
     targets: [
@@ -70,6 +75,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Geometry", package: "Geometry"),
                 .product(name: "GeometryAlgorithms", package: "Geometry"),
+                .product(name: "OrderedCollections", package: "swift-collections"),
                 "TiledInterpreter",
             ]
         ),

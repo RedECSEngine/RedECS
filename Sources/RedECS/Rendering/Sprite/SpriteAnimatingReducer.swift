@@ -61,7 +61,6 @@ public struct SpriteAnimatingReducer: Reducer {
             
             state.sprite[entityId]?.runAnimation(animation, animationId: nil, repeatsForever: true)
             state.transform[entityId]?.scale.x = config.flipX ? -1 : 1
-            
         case let .runOnce(animationId, entityId, animationName, config):
             guard let sprite = state.sprite[entityId],
                   let animationDict = environment.resourceManager.animationsForTexture(sprite.texture.textureId),

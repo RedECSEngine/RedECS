@@ -36,9 +36,10 @@ public struct AnimateOperation: Operation {
             return .none
         }
         
-        if currentFrameIndex == 0 && currentFrameTime == 0 {
+        if currentTime == 0 {
             state.sprite[id]?.texture = frames[0].texture
-            return .none // first frame doesnt need delta applied on first tick
+            currentTime += delta
+            return .none // first frame doesnt need frame delta applied on first tick
         }
         
         currentTime += delta
@@ -66,5 +67,18 @@ public struct AnimateOperation: Operation {
         currentFrameTime = 0
         currentFrameIndex = 0
         isComplete = false
+    }
+}
+
+public extension SpriteAnimationDictionary {
+    func operation(for name: String) -> AnimateOperation? {
+        guard let anim = self.dict[name] else { return nil }
+        let frames = anim.frames.map {
+            AnimateOperation.FrameData(
+                texture: .init(textureId: self.name, frameId: $0.name),
+                duration: $0.duration / 1000
+            )
+        }
+        return AnimateOperation(frames: frames)
     }
 }

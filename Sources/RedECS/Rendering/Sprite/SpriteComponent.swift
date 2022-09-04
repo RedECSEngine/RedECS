@@ -1,4 +1,5 @@
 import Geometry
+import GeometryAlgorithms
 
 public typealias CompletedAnimationId = String
 
@@ -54,6 +55,9 @@ public struct SpriteComponent: GameComponent {
         guard var runningAnimation = animation else {
             return nil
         }
+        if runningAnimation.repeatsForever == false {
+            print(animation?.animation.name, runningAnimation.currentFrame)
+        }
         
         runningAnimation.currentTime += delta
         
@@ -70,6 +74,7 @@ public struct SpriteComponent: GameComponent {
                 textureId: texture.textureId,
                 frameId: runningAnimation.animation.frames[0].name
             )
+            print("run once anim complete", animation?.animation.name)
             animation = nil
             return runningAnimation.id
         } else if isPastFinalFrame {
@@ -86,7 +91,16 @@ public struct SpriteComponent: GameComponent {
 }
 
 extension SpriteComponent: RenderableComponent {
-    public func renderGroups(transform: TransformComponent, resourceManager: ResourceManager) -> [RenderGroup] {
+    public func renderGroups(
+        cameraMatrix: Matrix3,
+        transform: TransformComponent,
+        resourceManager: ResourceManager
+    ) -> [RenderGroup] {
+        let projectedPosition = transform.position.multiplyingMatrix(cameraMatrix)
+        if abs(projectedPosition.x) > 1.05 || abs(projectedPosition.y) > 1.05 {
+            return []
+        }
+        
         guard let textureMap = resourceManager.getTexture(textureId: texture.textureId) else {
             return []
         }
@@ -100,6 +114,7 @@ extension SpriteComponent: RenderableComponent {
                 height: frameInfo.frame.h
             )
         } else {
+            print("using full texture, no frame info", textureMap.frames)
             let size = textureMap.meta.size
             textureRect = Rect(x: 0, y: 0, width: size.w, height: size.h)
         }
@@ -132,7 +147,7 @@ extension SpriteComponent: RenderableComponent {
         return [
             RenderGroup(
                 triangles: [topRenderTri, bottomRenderTri],
-                transformMatrix: transform.matrix(),
+                transformMatrix: transform.matrix(containerSize: renderRect.size),
                 fragmentType: .texture(texture.textureId),
                 zIndex: transform.zIndex,
                 opacity: opacity

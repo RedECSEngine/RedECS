@@ -47,7 +47,7 @@ public struct OpacityOperation: Operation {
         
         let percentage = delta / duration
         let opacityIncrement = amount * percentage
-        state.sprite[id]?.opacity += opacityIncrement
+        state.sprite[id]?.opacity += opacityIncrement // TODO: this doesnt work for shapes or labels
         currentTime += delta
         return .none
     }
