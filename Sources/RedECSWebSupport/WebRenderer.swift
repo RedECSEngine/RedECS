@@ -111,7 +111,7 @@ open class WebRenderer {
     
     private func clearCanvas() {
         // Clear the canvas
-        _ = glContext.clearColor(0, 0, 0, 0.1)
+        _ = glContext.clearColor(0, 0, 0, 1)
         _ = glContext.clear(glContext.COLOR_BUFFER_BIT)
     }
     

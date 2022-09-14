@@ -68,17 +68,6 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
                 }
             }
         }
-        
         return .none
     }
-    
-    public func reduce(
-        state: inout State,
-        entityEvent: EntityEvent,
-        environment: RenderingEnvironment
-    ) {
-
-    }
 }
-
-

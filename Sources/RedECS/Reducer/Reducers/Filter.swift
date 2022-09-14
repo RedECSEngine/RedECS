@@ -39,9 +39,9 @@ public struct Filter<
         state: inout R.State,
         entityEvent: EntityEvent,
         environment: R.Environment
-    ) {
-        guard predicate(state, nil) else { return }
-        reducer.reduce(
+    ) -> GameEffect<State, Action> {
+        guard predicate(state, nil) else { return .none }
+        return reducer.reduce(
             state: &state,
             entityEvent: entityEvent,
             environment: environment

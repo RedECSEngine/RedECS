@@ -37,7 +37,7 @@ public struct AnimateOperation: Operation {
         }
         
         if currentTime == 0 {
-            state.sprite[id]?.texture = frames[0].texture
+            state.sprite[id]?.setTexture(frames[0].texture)
             currentTime += delta
             return .none // first frame doesnt need frame delta applied on first tick
         }
@@ -57,7 +57,7 @@ public struct AnimateOperation: Operation {
             return .none
         }
          
-        state.sprite[id]?.texture = frames[currentFrameIndex].texture
+        state.sprite[id]?.setTexture(frames[currentFrameIndex].texture)
         
         return .none
     }

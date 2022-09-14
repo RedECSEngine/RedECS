@@ -12,19 +12,25 @@ public typealias AppleViewController = UIViewController
 public typealias AppleColor = UIColor
 #endif
 
+public class MetalView: MTKView {
+#if os(OSX)
+    public override var acceptsFirstResponder: Bool { true }
+#endif
+}
+
 open class MetalViewController: AppleViewController {
     public var renderer: MetalRenderer!
     public var resourceManager: MetalResourceManager!
-    public var mtkView: MTKView!
+    public var mtkView: MetalView!
     
     open override func loadView() {
-        self.view = MTKView(frame: .init(origin: .zero, size: .init(width: 480, height: 480)))
+        self.view = MetalView(frame: .init(origin: .zero, size: .init(width: 480, height: 480)))
     }
 
     open override func viewDidLoad() {
         super.viewDidLoad()
 
-        guard let mtkView = self.view as? MTKView else {
+        guard let mtkView = self.view as? MetalView else {
             fatalError("View of Gameview controller is not an MTKView")
         }
         self.mtkView = mtkView

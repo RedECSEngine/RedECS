@@ -6,12 +6,21 @@ public enum Resource<T> {
     case loaded(T)
 }
 
-public enum ResourceType {
+public enum ResourceType: Equatable, Codable {
     case image
     case sound
     case tilemap
     case bitmapFont
     // TODO: preload sprite animation dictionary
+}
+
+public struct LoadableResource: Equatable, Codable {
+    public var name: String
+    public var type: ResourceType
+    public init(name: String, type: ResourceType) {
+        self.name = name
+        self.type = type
+    }
 }
 
 public protocol ResourceManager: AnyObject {
@@ -21,7 +30,7 @@ public protocol ResourceManager: AnyObject {
     var tileSets: [String: TiledTilesetJSON] { get set }
     var fonts: [String: BitmapFont] { get set }
     
-    func preload(_ assets: [(String, ResourceType)]) -> Future<Void, Error>
+    func preload(_ assets: [LoadableResource]) -> Future<Void, Error>
     
     @discardableResult
     func startTextureLoadIfNeeded(textureId: TextureId) -> Future<Void, Error>

@@ -166,17 +166,17 @@ public final class WebResourceManager: ResourceManager {
         }
     }
     
-    public func preload(_ assets: [(String, ResourceType)]) -> Future<Void, Swift.Error> {
-        let futures = assets.map { (id, type) -> Future<Void, Swift.Error> in
-            switch type {
+    public func preload(_ assets: [LoadableResource]) -> Future<Void, Error> {
+        let futures = assets.map { asset -> Future<Void, Swift.Error> in
+            switch asset.type {
             case .image:
-                return self.startTextureLoadIfNeeded(textureId: id)
+                return self.startTextureLoadIfNeeded(textureId: asset.name)
             case .sound:
                 return .just(())
             case .tilemap:
-                return self.loadTiledMap(id).toVoid()
+                return self.loadTiledMap(asset.name).toVoid()
             case .bitmapFont:
-                return self.loadBitmapFontTextFile(id).toVoid()
+                return self.loadBitmapFontTextFile(asset.name).toVoid()
             }
         }
         if futures.isEmpty {

@@ -27,20 +27,3 @@ public struct CameraComponent: GameComponent {
         Matrix3.projection(rect: rect, zoom: zoom)
     }
 }
-
-public struct CameraReducerContext: GameState {
-    public var entities: EntityRepository = .init()
-    
-    public var transform: [EntityId: TransformComponent] = [:]
-    public var camera: [EntityId: CameraComponent] = [:]
-    
-    public init(
-        entities: EntityRepository = .init(),
-        transform: [EntityId: TransformComponent] = [:],
-        camera: [EntityId: CameraComponent] = [:]
-    ) {
-        self.entities = entities
-        self.transform = transform
-        self.camera = camera
-    }
-}
