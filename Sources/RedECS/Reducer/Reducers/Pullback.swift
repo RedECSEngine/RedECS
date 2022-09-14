@@ -41,12 +41,13 @@ public struct Pullback<
         state: inout GlobalState,
         entityEvent: EntityEvent,
         environment: GlobalEnvironment
-    ) {
+    ) -> GameEffect<GlobalState, GlobalAction> {
         reducer.reduce(
             state: &state[keyPath: toLocalState],
             entityEvent: entityEvent,
             environment: toLocalEnvironment(environment)
         )
+        .map(stateTransform: toLocalState, actionTransform: toGlobalAction)
     }
 }
 

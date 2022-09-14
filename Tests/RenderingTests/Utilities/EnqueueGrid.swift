@@ -43,6 +43,21 @@ func enqueueGrid(into renderer: MetalRenderer) {
     }
 }
 
+func enqueueLine(into renderer: MetalRenderer) {
+    let rectRow = Rect(
+        origin: .init(x: -480, y: 0),
+        size: .init(width: 960, height: 1)
+    )
+    renderer.enqueue([
+        RenderGroup(
+            triangles: try! rectRow.triangulate().map { RenderTriangle(triangle: $0) },
+            transformMatrix: .identity,
+            fragmentType: .color(.green),
+            zIndex: 0
+        )
+    ])
+}
+
 func enqueuePoint(_ point: Point, into renderer: MetalRenderer) {
     let circle = Circle(center: point, radius: 6)
     renderer.enqueue([

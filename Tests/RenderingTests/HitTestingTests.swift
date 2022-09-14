@@ -34,15 +34,12 @@ class HitTestingTests: XCTestCase {
         
         let reducer: AnyReducer<RenderingTestState, RenderingTestAction, RenderingTestEnvironment> =
         (
-            SpriteRenderingReducer()
+            RenderingReducer(renderableComponentTypes: [
+                .init(keyPath: \.sprite),
+                .init(keyPath: \.shape)
+            ])
                 .pullback(
-                    toLocalState: \.spriteContext,
-                    toLocalEnvironment: { $0 as RenderingEnvironment }
-                )
-            +
-            ShapeRenderingReducer()
-                .pullback(
-                    toLocalState: \.shapeContext,
+                    toLocalState: \.self,
                     toLocalEnvironment: { $0 as RenderingEnvironment }
                 )
             +

@@ -78,12 +78,7 @@ vertexShader(uint vertexID [[vertex_id]],
     texCoord = texCoord / textureInfo[vertexID].texSize;
     
     out.texCoord = float2(texCoord.x, texCoord.y);
-    if (textureInfo[vertexID].texCoord.x == -1 && textureInfo[vertexID].texCoord.y == -1) {
-        out.color = vertices[vertexID].color;
-    } else {
-        // Pass the input color directly to the rasterizer.
-        out.color = float4(0, 0, 0, 0);
-    }
+    out.color = vertices[vertexID].color;
 
     return out;
 }
@@ -91,14 +86,17 @@ vertexShader(uint vertexID [[vertex_id]],
 fragment float4 fragmentShader(RasterizerData in [[stage_in]],
                                texture2d<half> colorMap     [[ texture(TextureIndexColor) ]])
 {
-    if (in.color.x == 0 && in.color.y == 0 && in.color.z == 0 && in.color.w == 0) {
-        constexpr sampler colorSampler(mip_filter::nearest,
+    if (colorMap.get_width() == 1 && colorMap.get_height() == 1) {
+        return in.color;
+    }
+    
+    constexpr sampler colorSampler(mip_filter::nearest,
                                        mag_filter::nearest,
                                        min_filter::nearest);
 
-        half4 colorSample = colorMap.sample(colorSampler, in.texCoord.xy);
+    half4 colorSample = colorMap.sample(colorSampler, in.texCoord.xy);
+    if(colorSample.w == 0) {
         return float4(colorSample);
-    } else {
-        return in.color;
     }
+    return float4(colorSample.x, colorSample.y, colorSample.z, in.color.w);
 }

@@ -53,18 +53,17 @@ public struct SpriteAnimatingReducer: Reducer {
     ) -> GameEffect<SpriteContext, SpriteAnimatingAction> {
         switch action {
         case let .run(entityId, animationName, config):
-            guard let sprite = state.sprite[entityId],
-                  let animationDict = environment.resourceManager.animationsForTexture(sprite.texture.textureId),
+            guard let textureId = state.sprite[entityId]?.textureId,
+                  let animationDict = environment.resourceManager.animationsForTexture(textureId),
                   let animation = animationDict[animationName] else {
                 return .none
             }
             
             state.sprite[entityId]?.runAnimation(animation, animationId: nil, repeatsForever: true)
             state.transform[entityId]?.scale.x = config.flipX ? -1 : 1
-            
         case let .runOnce(animationId, entityId, animationName, config):
-            guard let sprite = state.sprite[entityId],
-                  let animationDict = environment.resourceManager.animationsForTexture(sprite.texture.textureId),
+            guard let textureId = state.sprite[entityId]?.textureId,
+                  let animationDict = environment.resourceManager.animationsForTexture(textureId),
                   let animation = animationDict[animationName] else {
                 return .none
             }

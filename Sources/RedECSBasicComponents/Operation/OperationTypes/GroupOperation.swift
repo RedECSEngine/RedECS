@@ -7,6 +7,11 @@ public struct GroupOperation<GameAction: Equatable & Codable>: Operation {
     public var currentOperationCompletionCount: Int = 0
     public var isComplete: Bool { currentOperationCompletionCount >= operations.count }
     
+    public var duration: Double {
+        let max = operations.max(by: { $0.duration < $1.duration })?.duration
+        return max ?? Self.InstantDuration
+    }
+    
     public init(
         operations: [OperationType<GameAction>]
     ) {

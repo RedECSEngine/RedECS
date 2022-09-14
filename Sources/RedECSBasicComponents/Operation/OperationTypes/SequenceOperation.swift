@@ -4,6 +4,14 @@ public struct SequenceOperation<GameAction: Equatable & Codable>: Operation {
     public var currentTime: Double = 0
     public var operations: [OperationType<GameAction>]
     
+    public var duration: Double {
+        if operations.isEmpty {
+            return Self.InstantDuration
+        } else {
+            return operations.reduce(0) { $0 + $1.duration }
+        }
+    }
+    
     public var currentOperationIndex: Int = 0
     public var isComplete: Bool { currentOperationIndex >= operations.count }
     

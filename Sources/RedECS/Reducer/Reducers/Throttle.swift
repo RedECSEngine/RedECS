@@ -48,7 +48,7 @@ public struct Throttle<
         state: inout R.State,
         entityEvent: EntityEvent,
         environment: R.Environment
-    ) {
+    ) -> GameEffect<R.State, R.Action> {
         reducer.reduce(
             state: &state,
             entityEvent: entityEvent,

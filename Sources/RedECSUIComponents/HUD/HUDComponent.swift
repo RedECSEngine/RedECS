@@ -22,6 +22,10 @@ public struct HUDComponent<Formatter: HUDElementFormattable>: GameComponent {
     public var entity: EntityId
     public var children: [HUDElement<Formatter>]
     
+    public init(entity: EntityId) {
+        self = .init(entity: entity, children: [])
+    }
+    
     public init (
         entity: EntityId,
         children: [HUDElement<Formatter>]
