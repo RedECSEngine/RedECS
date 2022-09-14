@@ -16,24 +16,15 @@ open class WebBrowserWindow<State: GameState, Action: Equatable, Environment> {
         self.renderer = WebRenderer(size: size, resourceLoader: resourceManager)
     }
     
+    deinit {
+        print("⚠️ WebBrowserWindow deinit")
+    }
+    
     open func setStoreAndBegin(
-        _ store: GameStore<AnyReducer<State, Action, Environment>>,
-        preloading assets: [(String, ResourceType)],
-        onReady: (() -> Void)? = nil
+        _ store: GameStore<AnyReducer<State, Action, Environment>>
     ) {
         self.store = store
-        resourceManager
-            .preload(assets)
-            .subscribe { [weak self] result in
-                switch result {
-                case .success:
-                    self?.startWebRenderer()
-                    onReady?()
-                case .failure(let e):
-                    print(e)
-                    fatalError(e.localizedDescription)
-                }
-            }
+        self.startWebRenderer()
     }
     
     /// If overriding, either call super or add listeners and request animation frame manually

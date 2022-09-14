@@ -20,7 +20,7 @@ public struct PathingReducerContext: GameState {
     }
 }
 
-public enum PathingAction: Equatable {
+public enum PathingAction: Equatable, Codable {
     case setPath(EntityId, [Point])
     case appendPath(EntityId, Point)
     case requestPathingCalculation(EntityId, to: Point)

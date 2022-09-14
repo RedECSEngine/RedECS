@@ -4,33 +4,14 @@ import Geometry
 import RedECSBasicComponents
 import RedECSAppleSupport
 
-struct RenderingTestState: GameState {
+struct RenderingTestState: RenderableGameState {
     var entities: EntityRepository = .init()
 
     var transform: [EntityId: TransformComponent] = [:]
     var shape: [EntityId: ShapeComponent] = [:]
     var sprite: [EntityId: SpriteComponent] = [:]
+    var label: [EntityId: LabelComponent] = [:]
     var camera: [EntityId: CameraComponent] = [:]
-    
-    var spriteContext: SpriteContext {
-        get {
-            SpriteContext(entities: entities, transform: transform, sprite: sprite)
-        }
-        set {
-            self.transform = newValue.transform
-            self.sprite = newValue.sprite
-        }
-    }
-    
-    var shapeContext: ShapeRenderingContext {
-        get {
-            ShapeRenderingContext(entities: entities, transform: transform, shape: shape)
-        }
-        set {
-            self.transform = newValue.transform
-            self.shape = newValue.shape
-        }
-    }
     
     var cameraContext: CameraReducerContext {
         get {

@@ -12,15 +12,15 @@ public struct SpriteAnimationDictionary: Codable {
         case textureMapDoesNotContainAnyAnimations
     }
     
-    private let name: String
-    private var dict: [String: Animation]
+    public let name: String
+    public private(set) var dict: [String: Animation]
 
     public subscript(index: String) -> Animation? {
         dict[index]
     }
 
-    public init(textureMap: TextureMap) throws {
-        self.name = textureMap.meta.image ?? "texturemap"
+    public init(name: String, textureMap: TextureMap) throws {
+        self.name = name
         guard textureMap.meta.frameTags?.isEmpty == false else {
             throw Error.textureMapDoesNotContainAnyAnimations
         }

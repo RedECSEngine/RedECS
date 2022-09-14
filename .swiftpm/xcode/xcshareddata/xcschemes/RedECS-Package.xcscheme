@@ -70,9 +70,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "RedECSExamples"
-               BuildableName = "RedECSExamples"
-               BlueprintName = "RedECSExamples"
+               BlueprintIdentifier = "RedECSKit"
+               BuildableName = "RedECSKit"
+               BlueprintName = "RedECSKit"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -84,23 +84,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "RedECSRenderingComponents"
-               BuildableName = "RedECSRenderingComponents"
-               BlueprintName = "RedECSRenderingComponents"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "RedECSSpriteKitSupport"
-               BuildableName = "RedECSSpriteKitSupport"
-               BlueprintName = "RedECSSpriteKitSupport"
+               BlueprintIdentifier = "RedECSUIComponents"
+               BuildableName = "RedECSUIComponents"
+               BlueprintName = "RedECSUIComponents"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -135,20 +121,6 @@
          <BuildActionEntry
             buildForTesting = "YES"
             buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "TiledSpriteKitSupport"
-               BuildableName = "TiledSpriteKitSupport"
-               BlueprintName = "TiledSpriteKitSupport"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
             buildForProfiling = "NO"
             buildForArchiving = "NO"
             buildForAnalyzing = "YES">
@@ -196,23 +168,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "RedECSKit"
-               BuildableName = "RedECSKit"
-               BlueprintName = "RedECSKit"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "RedECSUIComponents"
-               BuildableName = "RedECSUIComponents"
-               BlueprintName = "RedECSUIComponents"
+               BlueprintIdentifier = "RedECS_RenderingTests"
+               BuildableName = "RedECS_RenderingTests"
+               BlueprintName = "RedECS_RenderingTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -241,16 +199,6 @@
                BlueprintIdentifier = "RenderingTests"
                BuildableName = "RenderingTests"
                BlueprintName = "RenderingTests"
-               ReferencedContainer = "container:">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "TiledInterpreterTests"
-               BuildableName = "TiledInterpreterTests"
-               BlueprintName = "TiledInterpreterTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

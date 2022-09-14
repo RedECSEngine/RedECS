@@ -22,11 +22,19 @@ public struct KeyboardInputComponent<Action: Equatable & Codable>: GameComponent
     public struct Mapping: Equatable, Codable {
         public var keySet: Set<KeyboardInput>
         public var action: Action
+        public init(keySet: Set<KeyboardInput>, action: Action) {
+            self.keySet = keySet
+            self.action = action
+        }
     }
     
     public var entity: EntityId
     public var pressedKeys: [KeyboardInput: Bool]
     public var keyMap: [Mapping]
+    
+    public init(entity: EntityId) {
+        self = .init(entity: entity, pressedKeys: [:], keyMap: [])
+    }
     
     public init(
         entity: EntityId,
