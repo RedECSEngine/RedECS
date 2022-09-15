@@ -16,8 +16,7 @@ RedECS separates your game state from the reducers that manipulate it. Because t
 
 A very basic game state might looks like this
 
-```
-
+```swift
 public struct GameState: RenderableGameState {
     public var entities: EntityRepository = .init()
     
@@ -58,7 +57,7 @@ Reducers are where all the magic happens. You might be wondering why it took so 
 
 This is currently the pull protocol of `Reducer`
 
-```
+```swift
 public protocol Reducer {
     associatedtype State: GameState
     associatedtype Action: Equatable
