@@ -27,6 +27,7 @@ A Swift Entity Component System. Inspired by The Composable Architecture and foc
 
 ## Tutorials
 - [Getting Started](getting-started.md)
+- [Starter Template](https://github.com/RedECSEngine/starter-template)
 
 ## Architecture
 
