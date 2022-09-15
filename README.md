@@ -25,7 +25,8 @@ A Swift Entity Component System. Inspired by The Composable Architecture and foc
 - People who want to publish fun little things written in Swift to all platforms. The engine is likely to prioritize cross compatibility over performance or depth of capabilities.
 - People looking for a Swift game engine to tinker with, contribute to, help measure, build and turn this into something that maybe changes who this game engine is for entirely. How meta.
 
-> [Getting Started](getting-started.md)
+## Tutorials
+- [Getting Started](getting-started.md)
 
 ## Architecture
 
