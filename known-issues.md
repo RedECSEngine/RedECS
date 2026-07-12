@@ -14,8 +14,9 @@ the fixing commit) when they are addressed.
   event start and never re-evaluated. `isInCombat` serializes event
   *generation* (`RPReducer`), but pathing/movement reducers keep running, so
   the target of event N is often still walking out its travel from event N-1.
-- **Mitigation in progress:** combat-entry "hard stop + reserve" state (see
-  below); full fix would re-evaluate travel when the target's gridBody moves.
+- **Mitigation:** combat-entry "hard stop + reserve" parking
+  (dungeon-cleaners 885b1c1); full fix would re-evaluate travel when the
+  target's gridBody moves.
 
 ### Combat: occupancy clearing derives from the lerping transform
 - **Where:** `AnyRPSequence.swift` (`generateTravelAction`, "Clear current position")
@@ -57,6 +58,8 @@ the fixing commit) when they are addressed.
   boundaries (NE → `.right`, NW → `.up`); no hysteresis, so jitter near
   waypoints flips the dominant axis tick to tick. Sprites also hold their
   attack-start facing for the whole animation while targets keep moving.
+- **Note:** the *combat* facing inversions in melee squareoffs are a
+  separate issue (below).
 
 ### Combat: `pathingComplete` matching is not travel-specific
 - **Where:** `Travel.completedWhen` (`RoleplayAnimationSequence.swift`) +
@@ -66,6 +69,44 @@ the fixing commit) when they are addressed.
 - **Cause:** `waitFor` matches any `.pathingComplete(entityId)`, with no
   identity linking it to the specific travel that was issued.
 
+### Combat: attacker/reactor face away from each other in melee squareoffs
+- **Where:** `EffectReducer.react` (dungeon-cleaners)
+- **Symptom:** in melee squareoffs, attack and hit-react animations sometimes
+  face away from the opponent; the two halves of one swing can face opposite
+  directions.
+- **Diagnosis:** `react` applies `flipX` by *negating* the current `scale.x`
+  instead of assigning it, so facing depends on the sprite's previous facing
+  (wrong whenever the entity last faced left), and the attack start/end pair
+  double-negates. All side-facing atlas art natively faces right (verified
+  from the atlases), and walk animations assign scale absolutely — the
+  inconsistency is specific to `react`.
+- **Status:** an absolute-assignment fix (`setFacing`) was attempted and
+  reverted at the maintainer's request pending a broader combat rework;
+  playtesting showed the overall combat symptoms persisted.
+
+### Combat: friendly/heal events trigger combat lock + parking in peacetime
+- **Where:** `RPReducer.reduce(delta:)` (dungeon-cleaners) — combat-entry
+  parking and the per-event `isInCombat` lock apply to *every* event, and
+  `RPTargetingReducer` puts allies/self in `targets` by proximity, so
+  friendly abilities (Heal Potion) fire real events with no enemies near.
+  Status effects are worse: `StatusEffect.getPendingEvents` (RPTrunk) emits a
+  `.periodicEffect` event per RP tick while active, so a heal-over-time
+  produces a burst of events, each pulsing park + tap-lock + combat alert.
+- **Symptom (latent):** with a heal-capable party member, peacetime walking
+  gets interrupted whenever a heal fires. Currently latent — no spawned
+  entity has a friendly-target ability yet; becomes live with the party
+  restoration work.
+- **Fix sketch:** classify events by initiator-vs-target team hostility and
+  skip parking/lock/alert for friendly events.
+
 ## Resolved
 
 _(move entries here with the commit hash that fixed them)_
+
+### Combat: attackers shuffled to a different node when already melee-adjacent
+- **Was:** the melee "close enough" early-out used euclidean distance vs
+  `meleeRange` (20), but diagonal adjacency is ~22.6 — and the adjacent-node
+  search can never select the attacker's own node (it is `.occupied(self)`),
+  so diagonal-adjacent attackers always moved to a different neighbor.
+- **Fix:** grid-adjacency (Chebyshev ≤ 1) early-out in
+  `generateTravelAction`. (dungeon-cleaners 885b1c1.)
