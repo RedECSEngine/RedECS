@@ -45,13 +45,16 @@ what fraction of it will actually be used and what it links transitively.
 - Launching an app is allowed only as a does-it-crash check (e.g. `pgrep` after a
   few seconds); assert nothing visual from a live run.
 
-## Known issues live in known-issues.md
+## Known issues live in each repo's known-issues.md
 
-`known-issues.md` (next to this file) is the durable record of diagnosed
-issues across the ecosystem. Maintain it continuously: when an issue is
-diagnosed, add an entry (where / symptom / cause); when one is fixed, move it
-to the Resolved section with the fixing commit; when instructions in a session
-add to or resolve an issue, update the file in the same change.
+Each repo keeps a `known-issues.md` at its root as the durable record of its
+diagnosed issues — an issue lives with the repo where its *symptom* is felt,
+even when the cause is in a dependency (note the cross-repo location in the
+entry). Game issues live in `../dungeon-cleaners/known-issues.md`. Maintain
+these continuously: when an issue is diagnosed, add an entry (where / symptom
+/ cause); when one is fixed, move it to the Resolved section with the fixing
+commit; when instructions in a session add to or resolve an issue, update the
+file in the same change.
 
 ## Git workflow
 
