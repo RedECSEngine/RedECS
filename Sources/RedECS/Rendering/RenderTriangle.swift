@@ -29,6 +29,18 @@ public struct RenderGroup {
 }
 
 public extension RenderGroup {
+    /// A copy of this group with a different model matrix; used to reparent
+    /// a group into an ancestor's coordinate frame.
+    func withTransformMatrix(_ matrix: Matrix3) -> RenderGroup {
+        RenderGroup(
+            triangles: triangles,
+            transformMatrix: matrix,
+            fragmentType: fragmentType,
+            zIndex: zIndex,
+            opacity: opacity
+        )
+    }
+
     var textureId: TextureId? {
         switch fragmentType {
         case .texture(let id):

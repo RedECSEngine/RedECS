@@ -1,6 +1,8 @@
 public enum SystemAction<State: GameState> {
     case addEntity(EntityId, Set<String>)
     case removeEntity(EntityId)
+    /// Reparents an entity in the entity tree; `nil` moves it back to the root.
+    case setParent(EntityId, EntityId?)
     case addComponent(EntityId, AnyComponent<State>)
     case removeComponent(EntityId, RegisteredComponentId)
 
@@ -12,6 +14,8 @@ public enum SystemAction<State: GameState> {
             return .addEntity(e, tags)
         case .removeEntity(let e):
             return .removeEntity(e)
+        case .setParent(let e, let p):
+            return .setParent(e, p)
         case .addComponent(let eId, let registeredComponent):
             return .addComponent(eId, registeredComponent.map(stateTransform))
         case .removeComponent(let e, let registeredComponentId):

@@ -54,20 +54,60 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
             let size = renderer.viewportSize
             let projectionMatrix = camera.matrix(withRect: Rect(center: transform.position, size: size))
             renderer.setProjectionMatrix(projectionMatrix)
-            
-            state.entities.entities.forEach { id, entity in
-                renderableComponentTypes.forEach { type in
-                    if let renderComponent = type.renderComponent(entityId: id, state: state),
-                       let transform = state.transform[id] {
-                        renderer.enqueue(renderComponent.renderGroups(
-                            cameraMatrix: projectionMatrix,
-                            transform: transform,
-                            resourceManager: environment.resourceManager
-                        ))
-                    }
-                }
-            }
+
+            enqueue(
+                childrenOf: state.entities.tree,
+                worldMatrix: .identity,
+                state: state,
+                projectionMatrix: projectionMatrix,
+                environment: environment
+            )
         }
         return .none
+    }
+
+    /// Walks the entity tree depth-first, composing each entity's transform
+    /// with its ancestors' so children render in their parent's frame.
+    /// A hidden entity hides its entire subtree.
+    private func enqueue(
+        childrenOf tree: EntityTree,
+        worldMatrix: Matrix3,
+        state: State,
+        projectionMatrix: Matrix3,
+        environment: RenderingEnvironment
+    ) {
+        for node in tree.children ?? [] {
+            let transform = state.transform[node.id]
+            if transform?.isHidden == true {
+                continue
+            }
+
+            if let transform = transform {
+                for type in renderableComponentTypes {
+                    guard let renderComponent = type.renderComponent(entityId: node.id, state: state) else {
+                        continue
+                    }
+                    let groups = renderComponent.renderGroups(
+                        cameraMatrix: projectionMatrix,
+                        transform: transform,
+                        resourceManager: environment.resourceManager
+                    )
+                    environment.renderer.enqueue(groups.map { group in
+                        group.withTransformMatrix(.multiply(worldMatrix, group.transformMatrix))
+                    })
+                }
+            }
+
+            // Children inherit position/rotation/scale, but not the
+            // anchor-point offset (that only affects the parent's own drawing).
+            let childWorldMatrix = transform.map { .multiply(worldMatrix, $0.matrix()) } ?? worldMatrix
+            enqueue(
+                childrenOf: node,
+                worldMatrix: childWorldMatrix,
+                state: state,
+                projectionMatrix: projectionMatrix,
+                environment: environment
+            )
+        }
     }
 }

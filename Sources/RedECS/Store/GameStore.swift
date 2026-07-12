@@ -63,6 +63,8 @@ public final class GameStore<R: Reducer> {
             handleEffect(addEntity(entityId, tags: tags))
         case .removeEntity(let entityId):
             handleEffect(removeEntity(entityId))
+        case .setParent(let entityId, let parentId):
+            state.entities.setParent(of: entityId, to: parentId)
         case .addComponent(let entityId, let componentRegistration):
             assert(isComponentTypeRegistered(id: componentRegistration.id), "Attempting to add a component type that is not registered \(String(describing: componentRegistration.id))")
             componentRegistration.onAdd(entityId, &state)
@@ -77,17 +79,21 @@ public final class GameStore<R: Reducer> {
         handleEffect(reduceBlock(&state, environment))
     }
 
-    public func addEntity(_ id: EntityId, tags: Set<String>) -> GameEffect<R.State, R.Action> {
-        state.entities.addEntity(GameEntity(id: id, tags: tags))
+    public func addEntity(_ id: EntityId, tags: Set<String>, parentId: EntityId? = nil) -> GameEffect<R.State, R.Action> {
+        state.entities.addEntity(GameEntity(id: id, tags: tags, parentId: parentId))
         return reducer.reduce(state: &state, entityEvent: .added(id), environment: environment)
     }
 
     private func removeEntity(_ id: EntityId) -> GameEffect<R.State, R.Action> {
-        registeredComponentTypes.values.forEach { componentType in
-            componentType.onEntityDestroyed(id, &state)
+        let idsToRemove = state.entities.descendants(of: id).reversed() + [id]
+        let effects = idsToRemove.map { id -> GameEffect<R.State, R.Action> in
+            registeredComponentTypes.values.forEach { componentType in
+                componentType.onEntityDestroyed(id, &state)
+            }
+            state.entities.removeEntity(id)
+            return reducer.reduce(state: &state, entityEvent: .removed(id), environment: environment)
         }
-        state.entities.removeEntity(id)
-        return reducer.reduce(state: &state, entityEvent: .removed(id), environment: environment)
+        return .many(effects)
     }
 
     public func addComponent<C: GameComponent>(

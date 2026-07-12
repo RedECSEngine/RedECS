@@ -8,9 +8,7 @@ public struct TransformComponent: GameComponent {
     public var rotate: Double = 0
     public var scale: Point = Point(x: 1, y: 1)
     public var zIndex: Int = 0
-    
-    public var parentId: EntityId? // TODO: implement rendering implications
-    public var isHidden: Bool = false // TODO: implement rendering implications
+    public var isHidden: Bool = false
     
     public init(entity: EntityId) {
         self = .init(entity: entity, position: .zero)
@@ -23,7 +21,6 @@ public struct TransformComponent: GameComponent {
         rotate: Double = 0,
         scale: Point = Point(x: 1, y: 1),
         zIndex: Int = 0,
-        parentId: EntityId? = nil,
         isHidden: Bool = false
     ) {
         self.entity = entity
@@ -31,7 +28,6 @@ public struct TransformComponent: GameComponent {
         self.rotate = rotate
         self.scale = scale
         self.zIndex = zIndex
-        self.parentId = parentId
         self.isHidden = isHidden
         
         self.setAnchorPoint(anchorPoint)

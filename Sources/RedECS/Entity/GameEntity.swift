@@ -12,10 +12,12 @@ public struct GameEntity: Hashable, Identifiable, Codable {
     
     public init(
         id: EntityId,
-        tags: Set<String>
+        tags: Set<String>,
+        parentId: EntityId? = nil
     ) {
         self.id = id
         self.tags = tags
+        self.parentId = parentId
     }
 }
 

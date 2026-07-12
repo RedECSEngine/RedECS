@@ -5,7 +5,9 @@ public struct EntityRepository: Equatable, Codable {
     
     public private(set) var entities: [EntityId: GameEntity] = [:]
     public private(set) var tags: [String: Set<EntityId>] = [:]
-    public private(set) var tree: EntityTree = .init(id: Constants.rootTreeId) // TODO: use for rendering to power transform and show/hide capabilities
+    /// Parent/child relationships. Rendering walks this tree, composing each
+    /// entity's transform with its ancestors' and honoring `isHidden` subtrees.
+    public private(set) var tree: EntityTree = .init(id: Constants.rootTreeId)
     
     public init() { }
     
@@ -57,6 +59,38 @@ public extension EntityRepository {
 // MARK: - Tree Management
 
 public extension EntityRepository {
+    /// Reparents an entity. Passing `nil` moves it back to the root.
+    mutating func setParent(of entityId: EntityId, to parentId: EntityId?) {
+        var tree = self.tree
+        moveEntity(entityId, toParent: parentId ?? Constants.rootTreeId, inTree: &tree)
+        self.tree = tree
+    }
+
+    /// All ids in the subtree rooted at `entityId`, depth-first,
+    /// not including `entityId` itself.
+    func descendants(of entityId: EntityId) -> [EntityId] {
+        guard let node = findNode(entityId, in: tree) else { return [] }
+        var result: [EntityId] = []
+        func collect(_ tree: EntityTree) {
+            for child in tree.children ?? [] {
+                result.append(child.id)
+                collect(child)
+            }
+        }
+        collect(node)
+        return result
+    }
+
+    private func findNode(_ id: EntityId, in tree: EntityTree) -> EntityTree? {
+        if tree.id == id { return tree }
+        for child in tree.children ?? [] {
+            if let found = findNode(id, in: child) {
+                return found
+            }
+        }
+        return nil
+    }
+
     mutating func insertEntity(
         _ eId: EntityId,
         intoTree tree: inout EntityTree,
