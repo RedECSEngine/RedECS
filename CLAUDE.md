@@ -45,6 +45,14 @@ what fraction of it will actually be used and what it links transitively.
 - Launching an app is allowed only as a does-it-crash check (e.g. `pgrep` after a
   few seconds); assert nothing visual from a live run.
 
+## Known issues live in known-issues.md
+
+`known-issues.md` (next to this file) is the durable record of diagnosed
+issues across the ecosystem. Maintain it continuously: when an issue is
+diagnosed, add an entry (where / symptom / cause); when one is fixed, move it
+to the Resolved section with the fixing commit; when instructions in a session
+add to or resolve an issue, update the file in the same change.
+
 ## Git workflow
 
 - When working on a branch, commit often with incremental work. History can
