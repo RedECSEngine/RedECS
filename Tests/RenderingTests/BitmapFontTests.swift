@@ -95,11 +95,10 @@ class BitmapFontTests: XCTestCase {
         waitForExpectations(timeout: 2)
 
         let entityId = "TextEntity"
-        let label = SpriteComponent(entity: entityId, type: .label(font: "PT-Mono", text: text))
+        let label = SpriteComponent(entity: entityId, type: .label(font: "PT-Mono", text: text), anchorPoint: .init(x: 0.5, y: 0))
         let transform = TransformComponent(
             entity: entityId,
-            position: .zero,
-            anchorPoint: .init(x: 0.5, y: 0)
+            position: .zero
         )
         let camera = CameraComponent(entity: entityId)
 

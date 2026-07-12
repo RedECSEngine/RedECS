@@ -68,10 +68,19 @@ class HitTestingTests: XCTestCase {
         store.sendSystemAction(.addComponent(camera, into: \.camera))
     }
 
+    private func setSpriteAnchor(_ anchorPoint: Point) {
+        store.perform { state, _ in
+            state.sprite[entityId]?.setAnchorPoint(anchorPoint)
+            return .none
+        }
+    }
+
     func testShapeContainsPoint() {
         let point = Point(x: 10, y: 10)
-        let shape = store.state.sprite[entityId]!.shapeValue!
-        let transform = TransformComponent(entity: entityId, anchorPoint: .zero)
+        setSpriteAnchor(.zero)
+        let sprite = store.state.sprite[entityId]!
+        let shape = sprite.shapeValue!
+        let transform = TransformComponent(entity: entityId)
         store.sendSystemAction(.addComponent(transform, into: \.transform))
 
         enqueueGrid(into: renderer)
@@ -79,12 +88,13 @@ class HitTestingTests: XCTestCase {
         store.sendDelta(1)
 
         assertSnapshot(matching: mtkView, as: .image(renderer: renderer))
-        XCTAssertEqual(shape.contains(point, whenTransformedBy: transform.matrix(containerSize: shape.rect.size)), true)
+        XCTAssertEqual(shape.contains(point, whenTransformedBy: sprite.contentMatrix(transform: transform, containerSize: shape.rect.size)), true)
     }
 
     func testShapeTransformAndRotateDoesNotContainPoint() throws {
         let point = Point(x: 10, y: 10)
-        let shape = store.state.sprite[entityId]!.shapeValue!
+        let sprite = store.state.sprite[entityId]!
+        let shape = sprite.shapeValue!
         let transform = TransformComponent(
             entity: entityId,
             position: .init(x: 120, y: 120),
@@ -97,12 +107,13 @@ class HitTestingTests: XCTestCase {
         store.sendDelta(1)
 
         assertSnapshot(matching: mtkView, as: .image(renderer: renderer))
-        XCTAssertEqual(shape.contains(point, whenTransformedBy: transform.matrix(containerSize: shape.rect.size)), false)
+        XCTAssertEqual(shape.contains(point, whenTransformedBy: sprite.contentMatrix(transform: transform, containerSize: shape.rect.size)), false)
     }
 
     func testShapeTransformAndRotateContainsPoint() throws {
         let point = Point(x: 210, y: 50)
-        let shape = store.state.sprite[entityId]!.shapeValue!
+        let sprite = store.state.sprite[entityId]!
+        let shape = sprite.shapeValue!
         let transform = TransformComponent(
             entity: entityId,
             position: .init(x: 220, y: 120),
@@ -115,17 +126,18 @@ class HitTestingTests: XCTestCase {
         store.sendDelta(1)
 
         assertSnapshot(matching: mtkView, as: .image(renderer: renderer))
-        let matrix = transform.matrix(containerSize: shape.rect.size)
+        let matrix = sprite.contentMatrix(transform: transform, containerSize: shape.rect.size)
         XCTAssertEqual(shape.contains(point, whenTransformedBy: matrix), true)
     }
 
     func testShapeTransformAndRotateContainsPointAtZero() throws {
         let point = Point(x: 220, y: 120)
-        let shape = store.state.sprite[entityId]!.shapeValue!
+        setSpriteAnchor(.zero)
+        let sprite = store.state.sprite[entityId]!
+        let shape = sprite.shapeValue!
         let transform = TransformComponent(
             entity: entityId,
             position: .init(x: 220, y: 120),
-            anchorPoint: .zero,
             rotate: -45
         )
         store.sendSystemAction(.addComponent(transform, into: \.transform))
@@ -135,18 +147,19 @@ class HitTestingTests: XCTestCase {
         store.sendDelta(1)
 
         assertSnapshot(matching: mtkView, as: .image(renderer: renderer))
-        let matrix = transform.matrix(containerSize: shape.rect.size)
+        let matrix = sprite.contentMatrix(transform: transform, containerSize: shape.rect.size)
         XCTAssertEqual(shape.contains(point, whenTransformedBy: matrix), true)
         XCTAssertEqual(point.multiplyingMatrix(matrix.calculateInverse()), .zero)
     }
 
     func testShapeTransformAndRotateContainsPointAtCenter() throws {
         let point = Point(x: 220, y: 120)
-        let shape = store.state.sprite[entityId]!.shapeValue!
+        setSpriteAnchor(.init(x: 0.5, y: 0.5))
+        let sprite = store.state.sprite[entityId]!
+        let shape = sprite.shapeValue!
         let transform = TransformComponent(
             entity: entityId,
             position: .init(x: 220, y: 120),
-            anchorPoint: .init(x: 0.5, y: 0.5),
             rotate: -45
         )
         store.sendSystemAction(.addComponent(transform, into: \.transform))
@@ -156,18 +169,19 @@ class HitTestingTests: XCTestCase {
         store.sendDelta(1)
 
         assertSnapshot(matching: mtkView, as: .image(renderer: renderer))
-        let matrix = transform.matrix(containerSize: shape.rect.size)
+        let matrix = sprite.contentMatrix(transform: transform, containerSize: shape.rect.size)
         XCTAssertEqual(shape.contains(point, whenTransformedBy: matrix), true)
 
         XCTAssertEqual(point.multiplyingMatrix(matrix.calculateInverse()).rounded(), .init(x: 60, y: 60))
     }
 
     func testShapePointContainmentWhenTransformedFromCameraSpace() {
-        let shape = store.state.sprite[entityId]!.shapeValue!
+        setSpriteAnchor(.zero)
+        let sprite = store.state.sprite[entityId]!
+        let shape = sprite.shapeValue!
         let transform = TransformComponent(
             entity: entityId,
-            position: .zero,
-            anchorPoint: .zero
+            position: .zero
         )
         store.sendSystemAction(.addComponent(transform, into: \.transform))
         store.sendDelta(1)
@@ -175,7 +189,7 @@ class HitTestingTests: XCTestCase {
 
         var camera = store.state.camera.values.first!
         let screenTouchPoint = Point(x: 0.4, y: 0.4)
-        let shapeMatrix = transform.matrix(containerSize: shape.rect.size)
+        let shapeMatrix = sprite.contentMatrix(transform: transform, containerSize: shape.rect.size)
 
         // Pre-Zoom test
 
@@ -210,11 +224,12 @@ class HitTestingTests: XCTestCase {
 
 
     func testCameraRenderZoomWithObjectTranslate() throws {
-        let shape = store.state.sprite[entityId]!.shapeValue!
+        setSpriteAnchor(.init(x: 0.5, y: 0.5))
+        let sprite = store.state.sprite[entityId]!
+        let shape = sprite.shapeValue!
         let transform = TransformComponent(
             entity: entityId,
-            position: .init(x: 120, y: 120),
-            anchorPoint: .init(x: 0.5, y: 0.5)
+            position: .init(x: 120, y: 120)
         )
         store.sendSystemAction(.addComponent(transform, into: \.transform))
         store.sendDelta(1)
@@ -222,7 +237,7 @@ class HitTestingTests: XCTestCase {
 
         var camera = store.state.camera.values.first!
         let screenTouchPoint = Point(x: 0.4, y: 0.4)
-        let shapeMatrix = transform.matrix(containerSize: shape.rect.size)
+        let shapeMatrix = sprite.contentMatrix(transform: transform, containerSize: shape.rect.size)
 
         // Zoom Test
 

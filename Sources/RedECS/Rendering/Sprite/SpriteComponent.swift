@@ -27,20 +27,46 @@ public struct SpriteComponent: GameComponent {
     public var entity: EntityId
     public var type: SpriteType?
     public var animation: SpriteAnimation?
-    
+
     public var fillColor: Color = .clear
     public var opacity: Double = 1
-    
+    /// Where this sprite's content hangs on its transform's frame, from 0 to 1.
+    /// The transform's position is where the anchor point of the content sits,
+    /// and rotation/scale pivot around it. Content only — children of the
+    /// entity attach to the frame itself.
+    public private(set) var anchorPoint: Point = .init(x: 0.5, y: 0.5)
+
     public init(entity: EntityId) {
         self.init(entity: entity, type: nil)
     }
-    
+
     public init(
         entity: EntityId,
-        type: SpriteType?
+        type: SpriteType?,
+        anchorPoint: Point = .init(x: 0.5, y: 0.5)
     ) {
         self.entity = entity
         self.type = type
+        self.setAnchorPoint(anchorPoint)
+    }
+
+    /// Clamps values between 0 and 1. A value of 0.5 for both x and y means center
+    public mutating func setAnchorPoint(_ anchorPoint: Point) {
+        self.anchorPoint = .init(
+            x: max(0, min(1, anchorPoint.x)),
+            y: max(0, min(1, anchorPoint.y))
+        )
+    }
+
+    /// The model matrix for drawing content of `containerSize` in `transform`'s
+    /// frame, offset so the anchor point of the content lands on the frame's
+    /// position.
+    public func contentMatrix(transform: TransformComponent, containerSize: Size) -> Matrix3 {
+        transform.matrix()
+            .translatedBy(
+                tx: -anchorPoint.x * containerSize.width,
+                ty: -anchorPoint.y * containerSize.height
+            )
     }
     
     public mutating func runAnimation(
@@ -143,7 +169,7 @@ extension SpriteComponent: RenderableComponent {
                 .map { (i, triangle) -> RenderTriangle in
                     RenderTriangle(triangle: triangle)
                 }
-            let matrix = transform.matrix(containerSize: shape.rect.size)
+            let matrix = contentMatrix(transform: transform, containerSize: shape.rect.size)
             return [
                 RenderGroup(
                     triangles: triangles,
@@ -225,7 +251,8 @@ extension SpriteComponent {
             return [
                 RenderGroup(
                     triangles: renderTriangles,
-                    transformMatrix: transform.matrix(
+                    transformMatrix: contentMatrix(
+                        transform: transform,
                         containerSize: Size(width: currentOffsetX, height: maxHeight)
                     ),
                     fragmentType: .texture(textureName),
@@ -297,7 +324,7 @@ extension SpriteComponent {
         return [
             RenderGroup(
                 triangles: [topRenderTri, bottomRenderTri],
-                transformMatrix: transform.matrix(containerSize: renderRect.size),
+                transformMatrix: contentMatrix(transform: transform, containerSize: renderRect.size),
                 fragmentType: .texture(texture.textureId),
                 zIndex: transform.zIndex,
                 opacity: opacity
@@ -326,7 +353,7 @@ extension SpriteComponent {
                 return
             }
             
-            let matrix = transform.matrix(containerSize: Size(
+            let matrix = contentMatrix(transform: transform, containerSize: Size(
                 width: tileMap.totalWidth,
                 height: tileMap.totalHeight
             ))

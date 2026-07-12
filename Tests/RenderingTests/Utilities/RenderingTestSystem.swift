@@ -25,8 +25,8 @@ struct RenderingTestEnvironment: RenderingEnvironment {
 }
 
 extension SpriteComponent {
-    init(entity: EntityId, shape: Shape, fillColor: Color) {
-        self.init(entity: entity, type: .shape(shape))
+    init(entity: EntityId, shape: Shape, fillColor: Color, anchorPoint: Point = .init(x: 0.5, y: 0.5)) {
+        self.init(entity: entity, type: .shape(shape), anchorPoint: anchorPoint)
         self.fillColor = fillColor
     }
 

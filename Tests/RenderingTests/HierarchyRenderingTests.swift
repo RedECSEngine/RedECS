@@ -75,14 +75,15 @@ class HierarchyRenderingTests: XCTestCase {
             store.sendSystemAction(.setParent(id, parent))
         }
         store.sendSystemAction(.addComponent(
-            TransformComponent(entity: id, position: position, anchorPoint: .zero, rotate: rotate, scale: scale),
+            TransformComponent(entity: id, position: position, rotate: rotate, scale: scale),
             into: \.transform
         ))
         store.sendSystemAction(.addComponent(
             SpriteComponent(
                 entity: id,
                 shape: .rect(.init(origin: .zero, size: .init(width: size, height: size))),
-                fillColor: color
+                fillColor: color,
+                anchorPoint: .zero
             ),
             into: \.sprite
         ))
@@ -143,11 +144,11 @@ class HierarchyRenderingTests: XCTestCase {
         // center-anchored: content is centered on the pivot
         store.sendSystemAction(.addEntity("centered", []))
         store.sendSystemAction(.addComponent(
-            TransformComponent(entity: "centered", position: .init(x: 60, y: 170), anchorPoint: .init(x: 0.5, y: 0.5), rotate: 40),
+            TransformComponent(entity: "centered", position: .init(x: 60, y: 170), rotate: 40),
             into: \.transform
         ))
         store.sendSystemAction(.addComponent(
-            SpriteComponent(entity: "centered", shape: .rect(.init(origin: .zero, size: .init(width: 80, height: 80))), fillColor: .red),
+            SpriteComponent(entity: "centered", shape: .rect(.init(origin: .zero, size: .init(width: 80, height: 80))), fillColor: .red, anchorPoint: .init(x: 0.5, y: 0.5)),
             into: \.sprite
         ))
         addSquare("centeredChild", parent: "centered", position: .init(x: 70, y: 0), size: 24, color: .green)

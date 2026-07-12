@@ -70,9 +70,10 @@ class CameraRenderingTests: XCTestCase {
                 b: .init(x: 0, y: 240),
                 c: .init(x: 240, y: 0)
             )),
-            fillColor: .red
+            fillColor: .red,
+            anchorPoint: .zero
         )
-        let transform = TransformComponent(entity: entityId, position: .zero, anchorPoint: .zero)
+        let transform = TransformComponent(entity: entityId, position: .zero)
         let camera = CameraComponent(entity: entityId)
 
         store.sendSystemAction(.addEntity(entityId, []))
@@ -96,9 +97,10 @@ class CameraRenderingTests: XCTestCase {
                 b: .init(x: 0, y: 240),
                 c: .init(x: 240, y: 0)
             )),
-            fillColor: .red
+            fillColor: .red,
+            anchorPoint: .zero
         )
-        let transform = TransformComponent(entity: entityId, position: .init(x: 100, y: 100), anchorPoint: .zero)
+        let transform = TransformComponent(entity: entityId, position: .init(x: 100, y: 100))
         let camera = CameraComponent(entity: entityId)
 
         store.sendSystemAction(.addEntity(entityId, []))
@@ -120,12 +122,12 @@ class CameraRenderingTests: XCTestCase {
                 b: .init(x: 0, y: 240),
                 c: .init(x: 240, y: 0)
             )),
-            fillColor: .red
+            fillColor: .red,
+            anchorPoint: .zero
         )
         let transform = TransformComponent(
             entity: entityId,
-            position: .zero,
-            anchorPoint: .zero
+            position: .zero
         )
         let camera = CameraComponent(entity: entityId, zoom: 0.5)
 
