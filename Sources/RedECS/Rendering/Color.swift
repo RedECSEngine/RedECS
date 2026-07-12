@@ -1,5 +1,5 @@
 /// Values represented from 0 to 1
-public struct Color: Equatable, Codable {
+public struct Color: Equatable, Codable, Sendable {
     public var red: Double
     public var green: Double
     public var blue: Double

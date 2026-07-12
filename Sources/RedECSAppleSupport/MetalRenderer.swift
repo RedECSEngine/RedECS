@@ -62,7 +62,7 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         
         self.device = device
         
-        guard let defaultLibrary = try? device.makeDefaultLibrary(bundle: .module) else {
+        guard let defaultLibrary = Self.makeShaderLibrary(device: device) else {
             return nil
         }
         
@@ -94,6 +94,20 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         }
         
         self.commandQueue = commandQueue
+    }
+
+    /// Xcode compiles a package's .metal resources into a default.metallib,
+    /// but `swift build`/`swift test` only copy the source file into the
+    /// bundle, so fall back to compiling the shaders at runtime.
+    private static func makeShaderLibrary(device: MTLDevice) -> MTLLibrary? {
+        if let library = try? device.makeDefaultLibrary(bundle: .module) {
+            return library
+        }
+        guard let sourceURL = Bundle.module.url(forResource: "Shaders", withExtension: "metal"),
+              let source = try? String(contentsOf: sourceURL, encoding: .utf8) else {
+            return nil
+        }
+        return try? device.makeLibrary(source: source, options: nil)
     }
     
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {

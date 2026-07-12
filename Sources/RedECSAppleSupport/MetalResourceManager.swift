@@ -156,10 +156,9 @@ public final class MetalResourceManager: ResourceManager {
             ]
             
             do {
-                let texture = try textureLoader.newTexture(
+                let texture = try self.loadTexture(
                     name: name,
-                    scaleFactor: 1.0,
-                    bundle: self.resourceBundle,
+                    textureLoader: textureLoader,
                     options: textureLoaderOptions
                 )
                 self.textureImages[name] = texture
@@ -169,7 +168,32 @@ public final class MetalResourceManager: ResourceManager {
             }
         }
     }
-    
+
+    /// Asset catalogs are only compiled by Xcode; `swift build`/`swift test`
+    /// leave loose image files in the bundle instead, so fall back to loading
+    /// the texture by file URL.
+    private func loadTexture(
+        name: String,
+        textureLoader: MTKTextureLoader,
+        options: [MTKTextureLoader.Option: NSNumber]
+    ) throws -> MTLTexture {
+        do {
+            return try textureLoader.newTexture(
+                name: name,
+                scaleFactor: 1.0,
+                bundle: resourceBundle,
+                options: options
+            )
+        } catch {
+            for ext in ["png", "jpg", "jpeg"] {
+                if let url = resourceBundle.url(forResource: name, withExtension: ext) {
+                    return try textureLoader.newTexture(URL: url, options: options)
+                }
+            }
+            throw error
+        }
+    }
+
     public func loadBitmapFontTextFile(_ name: String) -> Future<BitmapFont, Swift.Error> {
         var name = name
         var ext = "fnt"

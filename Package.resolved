@@ -1,52 +1,78 @@
 {
-  "object": {
-    "pins": [
-      {
-        "package": "Geometry",
-        "repositoryURL": "git@github.com:RedECSEngine/Geometry.git",
-        "state": {
-          "branch": null,
-          "revision": "7c9ba07e4ee2e09ab8454870c8ede2ad96e544f6",
-          "version": "0.0.4"
-        }
-      },
-      {
-        "package": "JavaScriptKit",
-        "repositoryURL": "https://github.com/swiftwasm/JavaScriptKit",
-        "state": {
-          "branch": null,
-          "revision": "9a3b7d5f316e6d1709bd25e3e0392efca357f525",
-          "version": "0.14.0"
-        }
-      },
-      {
-        "package": "swift-collections",
-        "repositoryURL": "git@github.com:apple/swift-collections.git",
-        "state": {
-          "branch": null,
-          "revision": "48254824bb4248676bf7ce56014ff57b142b77eb",
-          "version": "1.0.2"
-        }
-      },
-      {
-        "package": "swift-numerics",
-        "repositoryURL": "https://github.com/apple/swift-numerics.git",
-        "state": {
-          "branch": null,
-          "revision": "6583ac70c326c3ee080c1d42d9ca3361dca816cd",
-          "version": "0.1.0"
-        }
-      },
-      {
-        "package": "SnapshotTesting",
-        "repositoryURL": "https://github.com/pointfreeco/swift-snapshot-testing.git",
-        "state": {
-          "branch": null,
-          "revision": "f8a9c997c3c1dab4e216a8ec9014e23144cbab37",
-          "version": "1.9.0"
-        }
+  "originHash" : "3ba7a6101a7d5adc357d12d6ad13760078b490fa5bf6c50bd84656366f13f48e",
+  "pins" : [
+    {
+      "identity" : "geometry",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RedECSEngine/Geometry.git",
+      "state" : {
+        "revision" : "90247082d2e42f726a6e6a17a877b3ad9a059629",
+        "version" : "0.0.5"
       }
-    ]
-  },
-  "version": 1
+    },
+    {
+      "identity" : "javascriptkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftwasm/JavaScriptKit",
+      "state" : {
+        "revision" : "22905075f8b61834810babe5fb9a2f613f22f398",
+        "version" : "0.56.1"
+      }
+    },
+    {
+      "identity" : "swift-collections",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-collections.git",
+      "state" : {
+        "revision" : "a0cb0954ecb21e4e31b0070e6ed5674e8556685a",
+        "version" : "1.6.0"
+      }
+    },
+    {
+      "identity" : "swift-custom-dump",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-custom-dump",
+      "state" : {
+        "revision" : "a8cd6c976f335ed361dcecddb0dc39ebda51bc3e",
+        "version" : "1.6.1"
+      }
+    },
+    {
+      "identity" : "swift-numerics",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-numerics.git",
+      "state" : {
+        "revision" : "0c0290ff6b24942dadb83a929ffaaa1481df04a2",
+        "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "swift-snapshot-testing",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-snapshot-testing.git",
+      "state" : {
+        "revision" : "1bc16f430d8410e7f087d4c787767b26fd32fe30",
+        "version" : "1.19.3"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-syntax",
+      "state" : {
+        "revision" : "4799286537280063c85a32f09884cfbca301b1a1",
+        "version" : "602.0.0"
+      }
+    },
+    {
+      "identity" : "xctest-dynamic-overlay",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
+      "state" : {
+        "revision" : "8f6abcf4c8950e2679d5b2fee4ca284fd7c34886",
+        "version" : "1.11.0"
+      }
+    }
+  ],
+  "version" : 3
 }

@@ -14,4 +14,15 @@ extension Shape {
             return GeometryAlgorithms.calculateContainingRect(of: p.points)
         }
     }
+
+    public func contains(_ point: Point, whenTransformedBy matrix: Matrix3? = nil) -> Bool {
+        guard let matrix = matrix else {
+            return rect.contains(point)
+        }
+        let triangles = (try? triangulate()) ?? []
+        for triangle in triangles where triangle.multiplyingMatrix(matrix).contains(point) {
+            return true
+        }
+        return false
+    }
 }

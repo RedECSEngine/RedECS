@@ -43,7 +43,7 @@ public struct KeyboardInputComponent<Action: Equatable & Codable>: GameComponent
     ) {
         self.entity = entity
         self.pressedKeys = pressedKeys
-        self.keyMap = keyMap.map(Mapping.init)
+        self.keyMap = keyMap.map { Mapping(keySet: $0.0, action: $0.1) }
     }
     
     public func isKeyPressed(_ key: KeyboardInput) -> Bool {

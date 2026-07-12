@@ -59,7 +59,7 @@ open class WebRenderer {
             clearCanvas()
             for renderGroup in queuedWork.sorted(by: { $0.zIndex < $1.zIndex }) {
                 switch renderGroup.fragmentType {
-                case .color(let color):
+                case .color:
                     drawProgram.update(
                         triangles: renderGroup.triangles,
                         textureSize: .init(width: 1, height: 1),
@@ -117,11 +117,11 @@ open class WebRenderer {
     
     private func createEmptyImage(size: Size) -> JSValue {
         let document = JSObject.global.document
-        var canvas = document.createElement("canvas")
+        let canvas = document.createElement("canvas")
         canvas.width = size.width.jsValue
         canvas.height = size.height.jsValue
         
-        var ctx = canvas.getContext("2d")
+        let ctx = canvas.getContext("2d")
         ctx.fillStyle = "rgba(0, 0, 0, 0)"
         _ = ctx.fillRect(0, 0, size.width.jsValue, size.height.jsValue)
 

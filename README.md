@@ -8,14 +8,42 @@ A Swift Entity Component System. Inspired by The Composable Architecture and foc
 
 ## Current Supported Platforms
 
-- iOS, tvOS, macOS
-- Web
+- iOS 16+, tvOS 16+, macOS 13+ (Metal renderer)
+- Web via WebAssembly (WebGL renderer)
 
-### Note: This is still under heavy development so documentation is sparse
+## Requirements
+
+- Swift 6.2+ (all targets build in the Swift 6 language mode)
+
+### Building & Testing
+
+```console
+swift build
+swift test
+```
+
+Note: rendering tests compile the Metal shaders and load textures from
+loose files at runtime when run from the command line; running through
+Xcode uses the compiled shader library and asset catalog instead. Both work.
+
+### Building for the Web
+
+Install the [Swift SDK for WebAssembly](https://book.swiftwasm.org/getting-started/setup.html)
+and the exactly-matching [swift.org toolchain](https://www.swift.org/install/)
+(the wasm SDK requires the same compiler version it was built with), then:
+
+```console
+swift build --swift-sdk 6.2-RELEASE-wasm32-unknown-wasip1 --target RedECSWebSupport
+```
+
+(The `RedECSAppleSupport` target cannot build for wasm, so build the web
+product/target specifically rather than the whole package.)
 
 ## Features
 - Highly modular Entity Component System
 - Fully `Codable` game state
+- Entity parent/child hierarchy: children render through their ancestors'
+  composed transforms, and hiding an entity hides its subtree
 - Separation of State and Game Logic through composable reducers.
 - Cross-platform, trying to have equivalents for all SpriteKit/GameplayKit capabilities (within reason)
 
@@ -28,6 +56,11 @@ A Swift Entity Component System. Inspired by The Composable Architecture and foc
 ## Tutorials
 - [Getting Started](getting-started.md)
 - [Starter Template](https://github.com/RedECSEngine/starter-template)
+
+## Example Projects
+- [Asteroids](https://github.com/RedECSEngine/RedECS-Asteroids)
+- [Breakout](https://github.com/RedECSEngine/RedECS-Breakout)
+- [RPG web demo](https://github.com/RedECSEngine/rpg-demo-web)
 
 ## Architecture
 

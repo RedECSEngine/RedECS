@@ -10,7 +10,7 @@ public final class WebResourceManager: ResourceManager {
         case fileDecodeFailure(String?)
         case windowLocationOriginNotAvailable
         case jsFetchFunctionNotAvailable
-        case jsError(JSValue)
+        case jsError(String)
     }
     
     public var textures: [TextureId: Resource<TextureMap>] = [:]
@@ -72,7 +72,7 @@ public final class WebResourceManager: ResourceManager {
             
             (JSPromise(from: fetchFunc(url)))?
                 .then(success: { response in
-                    JSPromise(from: response.json())
+                    JSPromise(from: response.json())?.jsValue ?? .null
                 })
                 .then(success: { json in
                     do {
@@ -85,7 +85,7 @@ public final class WebResourceManager: ResourceManager {
                     return JSValue.null
                 }, failure: { error in
                     print("error", error)
-                    resolve(.failure(WebResourceManagerError.jsError(error.jsValue)))
+                    resolve(.failure(WebResourceManagerError.jsError(String(describing: error.jsValue))))
                     return JSValue.null
                 })
         }
@@ -112,7 +112,7 @@ public final class WebResourceManager: ResourceManager {
             let url = origin + "/" + self.resourcePath + "/" + name
             (JSPromise(from: fetchFunc(url)))?
                 .then(success: { response in
-                    JSPromise(from: response.blob())
+                    JSPromise(from: response.blob())?.jsValue ?? .null
                 })
                 .then(success: { value in
                     let url = JSObject.global.URL.function?.createObjectURL.function?(value)
@@ -120,7 +120,7 @@ public final class WebResourceManager: ResourceManager {
                     image?.src = url ?? .null
                     image?.onload = JSClosure({ args in
                         guard let value = image?.jsValue else {
-                            resolve(.failure(WebResourceManagerError.jsError(.undefined)))
+                            resolve(.failure(WebResourceManagerError.jsError("undefined")))
                             return .undefined
                         }
                         self.textureImages[name] = value
@@ -130,7 +130,7 @@ public final class WebResourceManager: ResourceManager {
                     return JSValue.null
                 }, failure: { error in
                     print("error", error)
-                    resolve(.failure(WebResourceManagerError.jsError(error.jsValue)))
+                    resolve(.failure(WebResourceManagerError.jsError(String(describing: error.jsValue))))
                     return JSValue.null
                 })
         }
@@ -211,7 +211,7 @@ public final class WebResourceManager: ResourceManager {
             let url = origin + "/" + self.resourcePath + "/" + name
             (JSPromise(from: fetchFunc(url)))?
                 .then(success: { response in
-                    JSPromise(from: response.text())
+                    JSPromise(from: response.text())?.jsValue ?? .null
                 })
                 .then(success: { value in
                     guard let fontText = value.string else {
@@ -228,7 +228,7 @@ public final class WebResourceManager: ResourceManager {
                     return JSValue.null
                 }, failure: { error in
                     print("error", error)
-                    resolve(.failure(WebResourceManagerError.jsError(error.jsValue)))
+                    resolve(.failure(WebResourceManagerError.jsError(String(describing: error.jsValue))))
                     return JSValue.null
                 })
         }

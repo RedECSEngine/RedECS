@@ -1,7 +1,7 @@
 import Geometry
 
-public struct SpriteAnimationConfiguration: Codable, Equatable {
-    public static var `default` = SpriteAnimationConfiguration()
+public struct SpriteAnimationConfiguration: Codable, Equatable, Sendable {
+    public static let `default` = SpriteAnimationConfiguration()
     public var flipX: Bool
     public var flipY: Bool
     public init(

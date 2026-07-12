@@ -8,30 +8,30 @@ struct RenderingTestState: RenderableGameState {
     var entities: EntityRepository = .init()
 
     var transform: [EntityId: TransformComponent] = [:]
-    var shape: [EntityId: ShapeComponent] = [:]
     var sprite: [EntityId: SpriteComponent] = [:]
-    var label: [EntityId: LabelComponent] = [:]
     var camera: [EntityId: CameraComponent] = [:]
-    
-    var cameraContext: CameraReducerContext {
-        get {
-            CameraReducerContext(entities: entities, transform: transform, camera: camera)
-        }
-        set {
-            self.transform = newValue.transform
-            self.camera = newValue.camera
-        }
-    }
 }
 
 enum RenderingTestAction: Equatable {
-    
+
 }
 
 struct RenderingTestEnvironment: RenderingEnvironment {
     var renderer: Renderer { metalRenderer }
     var resourceManager: ResourceManager { metalResourceManager }
-    
+
     var metalRenderer: MetalRenderer
     var metalResourceManager: MetalResourceManager
+}
+
+extension SpriteComponent {
+    init(entity: EntityId, shape: Shape, fillColor: Color) {
+        self.init(entity: entity, type: .shape(shape))
+        self.fillColor = fillColor
+    }
+
+    var shapeValue: Shape? {
+        guard case let .shape(shape) = type else { return nil }
+        return shape
+    }
 }

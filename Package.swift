@@ -1,17 +1,15 @@
-// swift-tools-version:5.3
-// The swift-tools-version declares the minimum version of Swift required to build this package.
+// swift-tools-version:6.2
 
 import PackageDescription
 
 let package = Package(
     name: "RedECS",
     platforms: [
-        .macOS(.v11),
-        .iOS(.v14),
-        .tvOS(.v14)
+        .macOS(.v13),
+        .iOS(.v16),
+        .tvOS(.v16)
     ],
     products: [
-        // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(name: "RedECSKit", targets: ["RedECSKit"]),
         .library(
             name: "RedECS",
@@ -25,7 +23,7 @@ let package = Package(
             name: "RedECSUIComponents",
             targets: ["RedECSUIComponents"]
         ),
-        
+
         .library(
             name: "RedECSAppleSupport",
             targets: ["RedECSAppleSupport"]
@@ -34,7 +32,7 @@ let package = Package(
             name: "RedECSWebSupport",
             targets: ["RedECSWebSupport"]
         ),
-        
+
         .library(
             name: "TiledInterpreter",
             targets: ["TiledInterpreter"]
@@ -42,23 +40,20 @@ let package = Package(
     ],
     dependencies: [
         .package(
-            name: "JavaScriptKit",
             url: "https://github.com/swiftwasm/JavaScriptKit",
-            from: "0.13.0"
+            from: "0.56.0"
         ),
         .package(
-            url: "git@github.com:RedECSEngine/Geometry.git",
-            from: "0.0.4"
+            url: "https://github.com/RedECSEngine/Geometry.git",
+            from: "0.0.5"
         ),
-//        .package(path: "../Geometry"),
-//        .package(url: "git@github.com:RedECSEngine/Geometry.git", .branch("develop")),
-        
+
         .package(
-            url: "git@github.com:apple/swift-collections.git",
-            from: "1.0.2"
+            url: "https://github.com/apple/swift-collections.git",
+            from: "1.1.0"
         ),
-        
-        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.9.0"),
+
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.18.0"),
     ],
     targets: [
         .target(
@@ -69,7 +64,7 @@ let package = Package(
                 "RedECSUIComponents"
             ]
         ),
-        
+
         .target(
             name: "RedECS",
             dependencies: [
@@ -87,10 +82,13 @@ let package = Package(
             name: "RedECSUIComponents",
             dependencies: ["RedECS", "RedECSBasicComponents"]
         ),
-        
+
         .target(
             name: "RedECSAppleSupport",
-            dependencies: ["RedECSKit"]
+            dependencies: ["RedECSKit"],
+            resources: [
+                .process("Shaders.metal")
+            ]
         ),
         .target(
             name: "RedECSWebSupport",
@@ -99,12 +97,12 @@ let package = Package(
                 .product(name: "JavaScriptKit", package: "JavaScriptKit")
             ]
         ),
-        
+
         .target(
             name: "TiledInterpreter",
             dependencies: []
         ),
-        
+
         .testTarget(
             name: "RedECSTests",
             dependencies: ["RedECS", "RedECSBasicComponents", "RedECSAppleSupport"]
@@ -116,6 +114,7 @@ let package = Package(
                 "RedECSAppleSupport",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
             ],
+            exclude: ["__Snapshots__"],
             resources: [
                 .process("Resources")
             ]
@@ -125,6 +124,12 @@ let package = Package(
             dependencies: [
                 "TiledInterpreter",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
+            ],
+            exclude: [
+                "TestMap.tmj",
+                "TestMap.png",
+                "dungeon.tsj",
+                "tiles_dungeon.png",
             ]
         ),
     ]
