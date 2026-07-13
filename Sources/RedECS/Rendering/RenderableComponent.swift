@@ -88,7 +88,7 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
                         continue
                     }
                     let groups = renderComponent.renderGroups(
-                        cameraMatrix: projectionMatrix,
+                        cameraMatrix: .multiply(projectionMatrix, worldMatrix),
                         transform: transform,
                         resourceManager: environment.resourceManager
                     )

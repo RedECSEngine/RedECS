@@ -34,7 +34,7 @@ public struct SpriteComponent: GameComponent {
     /// The transform's position is where the anchor point of the content sits,
     /// and rotation/scale pivot around it. Content only — children of the
     /// entity attach to the frame itself.
-    public private(set) var anchorPoint: Point = .init(x: 0.5, y: 0.5)
+    public var anchorPoint: Point = .init(x: 0.5, y: 0.5)
 
     public init(entity: EntityId) {
         self.init(entity: entity, type: nil)

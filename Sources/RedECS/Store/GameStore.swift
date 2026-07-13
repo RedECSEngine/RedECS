@@ -26,14 +26,16 @@ public final class GameStore<R: Reducer> {
     public func sendAction(_ action: R.Action) {
 //        print("[♦️] \(action)")
         var remainingAwaits: [PendingGameEffect<R.State, R.Action>] = []
-        for i in 0..<awaitingEffects.count {
-            if awaitingEffects[i].evaluateCompleteness(action) {
-                handleEffect(awaitingEffects[i].effect)
+        var completedEffects: [GameEffect<R.State, R.Action>] = []
+        for var pending in awaitingEffects {
+            if pending.evaluateCompleteness(action) {
+                completedEffects.append(pending.effect)
             } else {
-                remainingAwaits.append(awaitingEffects[i])
+                remainingAwaits.append(pending)
             }
         }
         awaitingEffects = remainingAwaits
+        completedEffects.forEach(handleEffect)
         let effect = reducer.reduce(state: &state, action: action, environment: environment)
         handleEffect(effect)
     }

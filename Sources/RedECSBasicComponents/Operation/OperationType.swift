@@ -14,6 +14,7 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
     case opacity(OpacityOperation)
     case visibility(VisibilityOperation)
     case timing(TimingOperation<GameAction>)
+    case removeEntity(RemoveEntityOperation<GameAction>)
     
     public var duration: Double {
         switch self {
@@ -41,6 +42,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return visOp.duration
         case .timing(let timing):
             return timing.duration
+        case .removeEntity:
+            return 0
         }
     }
     
@@ -70,6 +73,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return visOp.isComplete
         case .timing(let timing):
             return timing.isComplete
+        case .removeEntity(let remove):
+            return remove.isComplete
         }
     }
     
@@ -127,6 +132,11 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             _ = timing.run(id: id, state: &state, delta: delta)
             self = .timing(timing)
             return .none
+        case .removeEntity(var remove):
+            let effect = remove.run(id: id, state: &state, delta: delta)
+            self = .removeEntity(remove)
+            return effect
+            
         }
     }
     
@@ -168,6 +178,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         case .timing(var timing):
             timing.reset()
             self = .timing(timing)
+        case .removeEntity(var remove):
+            remove.reset()
         }
     }
     
@@ -325,5 +337,19 @@ public extension OperationType {
 public extension OperationType {
     func timing(_ strategy: TimingOperation<GameAction>.Strategy) -> Self {
         .timing(TimingOperation(strategy: strategy, operation: self))
+    }
+}
+
+
+public extension OperationType {
+    static func removeEntity() -> Self {
+        .removeEntity(.init())
+    }
+    
+    func removeEntity() -> Self {
+        var component = self
+        let removeOp = RemoveEntityOperation<GameAction>()
+        component.appendOperation(.removeEntity(removeOp))
+        return component
     }
 }
