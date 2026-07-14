@@ -1,4 +1,5 @@
 import MetalKit
+import QuartzCore
 import RedECS
 import Geometry
 import GeometryAlgorithms
@@ -115,16 +116,20 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         viewportSize.height = size.height
     }
     
-    var lastDrawTime: Date?
-    
+    // A *monotonic* timestamp (seconds). `Date()` is the wall clock and can jump
+    // backward on NTP corrections, sleep/wake, or manual clock changes, which
+    // produced negative frame deltas; `CACurrentMediaTime()` never goes back.
+    var lastDrawTime: CFTimeInterval?
+
     public func updateDelta() {
-        guard let drawTime = lastDrawTime else {
-            lastDrawTime = Date()
-            return
-        }
-        let delta = Date().timeIntervalSince(drawTime)
+        let now = CACurrentMediaTime()
+        defer { lastDrawTime = now }
+        guard let drawTime = lastDrawTime else { return }
+        let delta = now - drawTime
+        // Should always hold with a monotonic clock, but guard so two draws in
+        // the same instant (delta == 0) can't trip sendDelta's `delta > 0`.
+        guard delta > 0 else { return }
         deltaCallback?(delta)
-        lastDrawTime = Date()
     }
     
     public func draw(in view: MTKView) {
