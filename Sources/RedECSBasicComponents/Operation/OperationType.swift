@@ -3,6 +3,7 @@ import Geometry
 
 public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & Equatable {
     case move(MoveOperation)
+    case jump(JumpOperation)
     case rotate(RotateOperation)
     case scale(ScaleOperation)
     case wait(WaitOperation)
@@ -20,6 +21,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         switch self {
         case .move(let moveOperation):
             return moveOperation.duration
+        case .jump(let jumpOperation):
+            return jumpOperation.duration
         case .rotate(let rotateOperation):
             return rotateOperation.duration
         case .scale(let scaleOperation):
@@ -51,6 +54,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         switch self {
         case .move(let moveOperation):
             return moveOperation.isComplete
+        case .jump(let jumpOperation):
+            return jumpOperation.isComplete
         case .rotate(let rotateOperation):
             return rotateOperation.isComplete
         case .scale(let scaleOperation):
@@ -103,6 +108,10 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         case .move(var move):
             _ = move.run(id: id, state: &state, delta: delta)
             self = .move(move)
+            return .none
+        case .jump(var jump):
+            _ = jump.run(id: id, state: &state, delta: delta)
+            self = .jump(jump)
             return .none
         case .sequence(var sequence):
             let effect = sequence.run(id: id, state: &state, delta: delta)
@@ -157,6 +166,9 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         case .move(var move):
             move.reset()
             self = .move(move)
+        case .jump(var jump):
+            jump.reset()
+            self = .jump(jump)
         case .sequence(var sequence):
             sequence.reset()
             self = .sequence(sequence)
@@ -229,6 +241,29 @@ public extension OperationType {
         var component = self
         let moveOp = MoveOperation(strategy: strategy, duration: duration)
         component.appendOperation(.move(moveOp))
+        return component
+    }
+}
+
+public extension OperationType {
+    static func jump(
+        _ strategy: JumpOperation.Strategy,
+        height: Double,
+        jumps: Int = 1,
+        duration: Double
+    ) -> Self {
+        .jump(JumpOperation(strategy: strategy, height: height, jumps: jumps, duration: duration))
+    }
+
+    func jump(
+        _ strategy: JumpOperation.Strategy,
+        height: Double,
+        jumps: Int = 1,
+        duration: Double
+    ) -> Self {
+        var component = self
+        let jumpOp = JumpOperation(strategy: strategy, height: height, jumps: jumps, duration: duration)
+        component.appendOperation(.jump(jumpOp))
         return component
     }
 }
