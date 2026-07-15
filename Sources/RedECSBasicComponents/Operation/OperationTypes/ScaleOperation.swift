@@ -34,7 +34,13 @@ public struct ScaleOperation: Operation {
             }
         }
         
-        let percentage = delta / duration
+        // Clamp this step to the time actually remaining so a sub-frame
+        // `duration` (delta > duration) can't drive `percentage` past 1 and
+        // overshoot the target. A `.to` operation then lands exactly on its
+        // target on the completing frame instead of flying past it.
+        let remaining = max(0, duration - currentTime)
+        let step = min(delta, remaining)
+        let percentage = duration > 0 ? step / duration : 1
         let scaleIncrement = amount * percentage
         state.transform[id]?.scale += scaleIncrement
         currentTime += delta
