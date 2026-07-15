@@ -32,12 +32,19 @@ public struct KeyboardKeyMapReducer<Action: Equatable & Codable>: Reducer {
         environment: Void
     ) -> GameEffect<KeyboardInputReducerContext<Action>, Action> {
         var effects: [GameEffect<KeyboardInputReducerContext<Action>, Action>] = []
-        for keyboard in state.keyboardInput.values {
+        for (id, keyboard) in state.keyboardInput {
             for mapping in keyboard.keyMap {
-                if keyboard.isAnyKeyPressed(in: mapping.keySet) {
-                    effects.append(.game(mapping.action))
+                let pressed = keyboard.isAnyKeyPressed(in: mapping.keySet)
+                switch mapping.trigger {
+                case .whileHeld:
+                    if pressed { effects.append(.game(mapping.action)) }
+                case .onPress:
+                    if pressed && !keyboard.wasAnyKeyPressed(in: mapping.keySet) {
+                        effects.append(.game(mapping.action))
+                    }
                 }
             }
+            state.keyboardInput[id]?.previousPressedKeys = keyboard.pressedKeys
         }
         return .many(effects)
     }
