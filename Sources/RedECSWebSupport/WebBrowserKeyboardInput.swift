@@ -7,7 +7,8 @@ public enum WebBrowserKeyboardInput: String, Codable {
     case q = "KeyQ"
     case w = "KeyW"
     case e = "KeyE"
-    
+    case r = "KeyR"
+
     case enter = "Enter"
     case space = "Space"
     case esc = "Escape"
@@ -33,6 +34,8 @@ public extension WebBrowserKeyboardInput {
             return .w
         case .e:
             return .e
+        case .r:
+            return .r
         case .enter:
             return .enter
         case .space:

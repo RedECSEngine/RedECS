@@ -7,7 +7,8 @@ public enum KeyboardInput: UInt16, Codable, Equatable {
     case q = 12
     case w = 13
     case e = 14
-    
+    case r = 15
+
     case enter = 36
     case space = 49
     case esc = 53
