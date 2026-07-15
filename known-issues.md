@@ -1,0 +1,324 @@
+# Known Issues — RedECS
+
+Durable record of diagnosed issues (where / symptom / cause). Issues live in the
+repo where the symptom is felt. Added from a full-engine audit, 2026-07-15.
+
+## Active
+
+### Core ECS / Store
+
+- **`.resending` disables delta and entity-event reduction**
+  Where: `Sources/RedECS/Reducer/Reducers/Resending.swift:6,17`
+  Symptom: any reducer wrapped in `.resending { }` silently stops doing per-frame
+  work and stops reacting to entity added/removed events.
+  Cause: the `AnyReducer` it builds stubs the delta and entityEvent positions with
+  `{ _,_,_ in .none }` instead of forwarding to `self.reduce`.
+
+- **`setParent` drops the moved entity's entire subtree from the render tree**
+  Where: `Sources/RedECS/Entity/EntityRepository.swift:140-142`
+  Symptom: reparenting an entity that has children makes all descendants vanish
+  from rendering; later `removeEntity` no longer cascades to them (leak).
+  Cause: `removeEntity(_:fromTree:)` removes the node *with* its children, then
+  `insertEntity` re-inserts a fresh childless node. Also: if the new parent is a
+  descendant of the moved entity (or missing), the insert fails and in release
+  builds the entity disappears from the tree entirely (assert-only guard).
+
+- **Cold `Future` re-executes work per subscribe; `zip` can double-resolve**
+  Where: `Sources/RedECS/Utilities/Future.swift:11-15, 69-86, 120-131`
+  Symptom: multiple subscriptions re-run the underlying load; zero subscriptions
+  run nothing (see WebRenderer texture-poisoning issue below). When ≥2 zipped
+  futures fail, the resolver fires once per failure, so downstream effects
+  (including `GameStore` `.deferred` handling) execute multiple times.
+  Cause: `subscribe` re-invokes the observer block each call; `zip` has no
+  already-resolved flag. Also no thread-safety on `zip`'s captured state.
+
+- **Effect/action cycles recurse without bound in the dispatch loop**
+  Where: `Sources/RedECS/Store/GameStore.swift:43-60`
+  Symptom: a reducer that (transitively) re-emits the action it handles crashes
+  with stack overflow.
+  Cause: `handleEffect` → `sendAction` → `handleEffect` is direct recursion; no
+  queue/trampoline or depth cap.
+
+- **`newEntityId()` is collision-prone and nondeterministic**
+  Where: `Sources/RedECS/Entity/GameEntity.swift:5`
+  Symptom: possible silent state corruption on ID collision (duplicate-entity
+  check is assert-only, `EntityRepository.swift:29`); replay/lockstep determinism
+  impossible; weaker on wasm32 where `Int` is 32-bit.
+  Cause: two `Int.random` values concatenated without a separator (so distinct
+  pairs can collide textually), system RNG. Known TODO in code.
+
+- **Unregistered component types leak on entity destruction (release builds)**
+  Where: `Sources/RedECS/Store/GameStore.swift:75-77` vs `96-98`
+  Symptom: components of unregistered types survive entity removal forever.
+  Cause: registration check is assert-only, but the destroy sweep iterates only
+  `registeredComponentTypes`. Related: component ids are `String(describing: C.self)`
+  (`AnyComponent.swift:8`) — same-named types in different modules collide.
+
+- **`awaitingEffects` grows without bound**
+  Where: `Sources/RedECS/Store/GameStore.swift:57-58`
+  Symptom: memory growth and per-action O(pending × outstanding) scan cost when
+  awaited actions never arrive (entity died, scene changed).
+  Cause: `waitFor` effects have no timeout/cancellation/cap.
+
+- **`waitFor` continuations run before the triggering action is reduced**
+  Where: `Sources/RedECS/Store/GameStore.swift:28-40`
+  Symptom: a continuation waiting on action A observes state that A's reducer has
+  not yet updated.
+  Cause: `completedEffects.forEach(handleEffect)` executes before
+  `reducer.reduce(state:action:)`.
+
+### Rendering (cross-platform)
+
+- **Tile atlas math breaks every last-column tile**
+  Where: `Sources/RedECS/Rendering/Sprite/SpriteComponent.swift:382-383`
+  Symptom: tiles from the last column of a tileset render the wrong texel region
+  (`tileSetCol == -1`, row one too high).
+  Cause: `(tileIndex) % columns - 1` instead of `(tileIndex - 1) % columns` (GIDs
+  are 1-based); crashes with division-by-zero when a tileset declares
+  `columns: 0` (legal Tiled output for image-collection tilesets).
+
+- **Tilemap culling ignores the entity's own transform**
+  Where: `Sources/RedECS/Rendering/Sprite/SpriteComponent.swift:373-375`
+  Symptom: a tilemap entity positioned away from the origin has visible tiles
+  culled and off-screen tiles submitted.
+  Cause: per-tile cull test projects tile-local centers with `cameraMatrix` only,
+  omitting the `contentMatrix` (entity transform + anchor) used for drawing.
+  Related: sprite culling tests only the transform origin with a fixed 1.05 NDC
+  threshold (`:276-279`), so large sprites pop out while partially visible.
+
+- **Animation frame-duration units are inconsistent (ms vs s)**
+  Where: `Sources/RedECS/Rendering/Sprite/SpriteComponent.swift:15` (`/ 1000`,
+  ms) vs `SpriteAnimationDictionary.swift:33` (`?? 0.16` fallback, seconds-flavored)
+  Symptom: frames without an explicit duration flash by (0.16 ms effective).
+  Cause: consumer divides by 1000; the default was authored in seconds.
+  Related: frame timer resets to 0 dropping overshoot and advances ≤1 frame per
+  tick (`SpriteComponent.swift:106-107`) — animations run slower than authored.
+
+- **Camera selection uses an invalid sort comparator**
+  Where: `Sources/RedECS/Rendering/RenderableComponent.swift:50`
+  Symptom: with >1 camera, the chosen camera is nondeterministic frame-to-frame
+  (and the comparator violates strict weak ordering).
+  Cause: `sorted(by: { $1.isPrimaryCamera ? false : true })` never inspects `$0`,
+  over unordered `Dictionary.values`. Also `CameraComponent.offset` is declared
+  but never applied (`CameraComponent.swift:7`).
+
+- **BitmapFont parser traps on ordinary .fnt files**
+  Where: `Sources/RedECS/Rendering/Label/BitmapFont.swift:27-32`
+  Symptom: crash loading a font whose quoted values contain spaces (e.g.
+  `face="Arial Black"`), tokens without `=`, or whitespace-only lines.
+  Cause: naive space-split then `parts[1]` with no bounds check.
+  Related: glyph layout ignores `xoffset` and kerning; `\n` collapses to one line
+  (`SpriteComponent.swift:224-231`); character map keys on the nonstandard
+  `letter=` attribute (`BitmapFont.swift:55-57`).
+
+- **Opacity dropped for shape and tilemap render groups**
+  Where: `Sources/RedECS/Rendering/Sprite/SpriteComponent.swift:173-180, 427-432`
+  Symptom: `sprite.opacity` has no effect on shapes/tilemaps; Tiled layer
+  `opacity`/`visible` are parsed but ignored.
+  Cause: `RenderGroup` built without the `opacity:` argument in those two paths.
+
+- **Atlas `rotated`/`trimmed` frames render wrong**
+  Where: `Sources/RedECS/Rendering/Sprite/SpriteComponent.swift:287-292`
+  Symptom: atlases packed with rotation/trim enabled render sideways/offset.
+  Cause: UV rect uses `frameInfo.frame` only; `rotated`/`trimmed`/
+  `spriteSourceSize` are decoded but never consulted (`TextureMap.swift:17-20`).
+
+- **Hostile/degenerate animation data traps**
+  Where: `Sources/RedECS/Rendering/Sprite/SpriteAnimationDictionary.swift:30-32`
+  (`frames[(from...to)]` unvalidated range), `SpriteComponent.swift:88,15`
+  (empty `frames` array).
+  Symptom: crash on malformed atlas JSON or empty animation.
+  Cause: no validation of decoded indices/ranges.
+
+### TiledInterpreter
+
+- **`totalRows` bound to `width` (typo) in `tileDataAt`**
+  Where: `Sources/TiledInterpreter/TiledMap/TiledLayer.swift:22`
+  Symptom: any non-square map: taller-than-wide traps on negative index;
+  wider-than-tall renders vertically garbled. Engine always calls with
+  `flipY: true` (`SpriteComponent.swift:378`).
+  Cause: `let totalRows = width` should be `height` (sibling
+  `flipYDataIterator` gets it right).
+
+- **Layer data indexed without bounds checks**
+  Where: `Sources/TiledInterpreter/TiledMap/TiledLayer.swift:29,48`
+  Symptom: a map whose `data` array is shorter than width×height (or the typo
+  above) traps at first render — remote crash for downloaded maps on web.
+  Cause: `data[flatIndex]` with no validation of index, column, row, or
+  data.count; no dimension sanity checks anywhere post-decode (negative or huge
+  width/height also trap or DoS).
+
+- **Tile GID flip flags never masked**
+  Where: module-wide (no `0x1FFFFFFF` masking anywhere; `TiledLayer.data: [Int]`)
+  Symptom: any tile flipped in the Tiled editor renders garbage; on wasm32 a
+  flipped tile's GID (≥ 0x80000000) doesn't fit `Int` → whole map fails to load.
+  Cause: Tiled stores flip flags in the top 3 bits of the GID; nothing strips them.
+
+- **`firstgid` ignored; only the first tileset is ever used**
+  Where: `Sources/TiledInterpreter/TiledMap/TiledMapJSON.swift:2` (decoded, never
+  read), `SpriteComponent.swift:351` (`tileSets.first`),
+  `TiledTilesetJSON.swift:52` (hardcodes `id + 1`)
+  Symptom: multi-tileset maps render wrong tiles everywhere.
+  Cause: GIDs are never rebased by tileset firstgid; layer→tileset resolution
+  not implemented.
+
+- **Common Tiled exports fail to decode at all**
+  Where: `TiledLayerType.swift:1-4` (unknown layer types), `TiledMapJSON.swift:2-3`
+  (embedded tilesets lack `source`), `TiledTilesetJSON.swift:22` (`tiles`
+  required but omitted when no tile metadata), `Tile.swift:3` (`class` required),
+  no base64/compressed layer support, no infinite-map `chunks` support.
+  Symptom: adding an image layer, embedding a tileset, or using default export
+  options makes the whole map (or tileset) fail to load; infinite maps load and
+  render empty.
+  Cause: decode-strict optionality choices that don't match Tiled's
+  omit-defaults JSON output.
+
+- **Division by zero from tileset fields**
+  Where: `TiledTilesetJSON.swift:25` (`imageHeight / tileHeight`),
+  `SpriteComponent.swift:382-383` (`% columns`)
+  Symptom: crash on `tileheight: 0` or `columns: 0` (the latter is legal Tiled
+  output for image-collection tilesets).
+  Cause: no range validation after decode.
+
+### Gameplay components (RedECSBasicComponents)
+
+- **`RepeatOperation.times(n)` completion math is wrong; can trap**
+  Where: `Sources/RedECSBasicComponents/Operation/OperationTypes/RepeatOperation.swift:46`
+  Symptom: `.times(1)` completes on the first tick; `.times(n≥2)` completes after
+  ~1 iteration; `delta == 0` on the first tick traps (`Int(0/0)` = Int(NaN)).
+  Cause: `Int(totalTime / currentTime) >= count` divides elapsed total by
+  time-in-current-iteration instead of tracking completed iterations.
+
+- **Move/Rotate/Opacity operations overshoot and divide by zero**
+  Where: `MoveOperation.swift:36-39`, `RotateOperation.swift:48-51`,
+  `OpacityOperation.swift:48-50`
+  Symptom: `.to` tweens land past their target by up to one frame's fraction;
+  `duration: 0` produces inf/NaN transform values.
+  Cause: `percentage = delta / duration` unclamped to remaining time.
+  Note: `ScaleOperation.swift:41-43` already contains the correct clamped
+  implementation — port it to the other three.
+
+- **Pathing can oscillate forever at a waypoint**
+  Where: `Sources/RedECSBasicComponents/Pathing/PathingReducer.swift:42,50-53`
+  Symptom: when per-frame travel exceeds `allowableProximityVariance`, the entity
+  crosses the waypoint each frame, never satisfies the arrival test, and
+  `.pathingComplete` never fires; `allowableProximityVariance = 0` is
+  unsatisfiable (strict `<`). Diagonal movement is also up to 41% faster than
+  axis-aligned (Chebyshev normalization of the steering vector).
+  Cause: no step clamping / arrival slowdown; `<` instead of `<=`; per-component
+  division by max component instead of Euclidean normalization.
+
+- **Animation/sequence timing drops frame-time remainders**
+  Where: `SequenceOperation.swift:30-33`, `AnimateOperation.swift:39-53`,
+  `TimingOperation.swift:20,30`
+  Symptom: sequences of instant ops take one frame each; animations run slower
+  than authored, frame-rate dependently; easing overshoots on the final frame;
+  `TimingOperation` over an instant or `.forever` inner op breaks (NaN percent /
+  immediate completion).
+  Cause: completed child ops don't pass unused delta onward; timers reset to 0
+  instead of subtracting; ease input unclamped; duration algebra inconsistent
+  across combinators.
+
+- **`InteractionWhenNearbyReducer` fires every frame while in range**
+  Where: `Sources/RedECSBasicComponents/InteractionComponent.swift:77-79`
+  Symptom: non-idempotent actions (pickup, dialogue, sfx) dispatch ~60×/s per
+  in-range triggerer.
+  Cause: no edge-triggering/enter-leave state. The `.selection` interaction type
+  has no reducer handling anywhere (dead case).
+
+- **Resource-load failure asserts in debug, hangs silently in release**
+  Where: `Sources/RedECSBasicComponents/ResourceLoading/ResourceLoadingReducer.swift:29`
+  Symptom: a missing asset crashes debug; in release nothing awaiting
+  `.loadComplete` ever proceeds.
+  Cause: `.loadingError` handler is `assertionFailure` + print, with no recovery
+  effect.
+
+### Platform: Web (RedECSWebSupport)
+
+- **Discarded cold Future permanently poisons texture loading**
+  Where: `Sources/RedECSWebSupport/WebRenderer.swift:91` +
+  `WebResourceManager.swift:32-38`
+  Symptom: a texture first referenced by a render group before being preloaded
+  never loads and can never be loaded (stuck `.loading`).
+  Cause: `startTextureLoadIfNeeded` marks `.loading` eagerly but returns a cold
+  Future that the caller discards — nothing subscribes, the fetch never starts,
+  and the `textures[id] == nil` guard blocks all retries.
+
+- **Image load has no `onerror`; missing asset hangs preload forever**
+  Where: `Sources/RedECSWebSupport/WebResourceManager.swift:114-129`
+  Symptom: one misnamed PNG and the game silently never starts (preload `.zip`
+  never completes); a 404 also isn't detected (`response.ok` unchecked).
+  Cause: only `image.onload` is wired; no error path resolves the Future.
+
+- **WebGL objects created per group per frame, never deleted**
+  Where: `Sources/RedECSWebSupport/WebGL/Draw2DProgram.swift:87,104,124,129,146`
+  Symptom: GPU memory grows until the browser kills the WebGL context (context
+  loss is also unhandled).
+  Cause: `createBuffer`×3 + `createTexture` + full `texImage2D` re-upload inside
+  the per-group draw path; no `deleteBuffer`/`deleteTexture` anywhere.
+
+- **Draw error path calls `fatalError()`**
+  Where: `Sources/RedECSWebSupport/WebRenderer.swift:95-98`
+  Symptom: a single recoverable GL error kills the wasm instance.
+
+- **Per-frame `JSClosure` allocations never released; input listeners can't be removed**
+  Where: `Sources/RedECSWebSupport/WebBrowserWindow.swift:44-127`
+  Symptom: closure leak per frame (rAF) and per listener; calling
+  `addAllInputListeners()` twice double-dispatches all input.
+  Cause: fire-and-forget `JSClosure` with no retention/release management.
+
+- **Touch coordinates skip the canvas-offset correction mouse events get**
+  Where: `Sources/RedECSWebSupport/WebBrowserWindow.swift:84-86`
+  Symptom: taps land offset from the touch point when the canvas isn't at the
+  document origin.
+  Cause: raw `pageX/pageY` used instead of `position(for:in:)`.
+
+- **Font cache checked under filename, stored under face name**
+  Where: `Sources/RedECSWebSupport/WebResourceManager.swift:197,236`
+  Symptom: fonts re-fetched and re-parsed on every load when filename ≠ face.
+
+- **`WebHUDRenderingReducer` is entirely dead code**
+  Where: `Sources/RedECSWebSupport/WebHUDRenderingReducer.swift`
+  Symptom: file is one large block comment referencing a removed PIXI-based API;
+  web HUD input/rendering doesn't exist despite the type being shipped.
+
+### Platform: Metal (RedECSAppleSupport)
+
+- **`fatalError` on routinely-nil MTKView state**
+  Where: `Sources/RedECSAppleSupport/MetalRenderer.swift:143,149,163,252`
+  Symptom: minimizing/occluding the window (drawable pool exhaustion) crashes
+  the app instead of skipping the frame.
+  Cause: `currentRenderPassDescriptor`/`currentDrawable`/command buffer nils are
+  treated as fatal.
+
+- **Missing texture leaves a stale or unbound fragment texture + NaN texcoords**
+  Where: `Sources/RedECSAppleSupport/MetalRenderer.swift:203-208,219-226`,
+  `Shaders.metal:78`
+  Symptom: groups whose texture isn't loaded sample the previous group's texture
+  (or an unbound one), and `texSize = (0,0)` divides to NaN texcoords. Unlike
+  the web path, nothing triggers a load for missing textures.
+  Cause: nil-texture branch is a commented-out print; no fallback binding.
+
+- **Shaders make alpha binary; blending mismatched with premultiplied content**
+  Where: `Shaders.metal:98-101` and `Draw2DProgram.swift:264-269` (same logic)
+  Symptom: anti-aliased sprite edges render as hard opaque fringes; texture tint
+  RGB ignored; MTKTextureLoader premultiplied content blended with
+  `.sourceAlpha` double-darkens edges.
+  Cause: `if (alpha == 0) ... else alpha = group opacity` discards partial alpha.
+
+- **One draw call per triangle + `waitUntilCompleted` per frame**
+  Where: `MetalRenderer.swift:234-246,257`
+  Symptom: draw-call count equals triangle count (chunked `setVertexBytes` of 3
+  vertices) and the CPU blocks until the GPU finishes each frame — no
+  pipelining; performance ceiling is very low.
+  Cause: 4KB `setVertexBytes` limit worked around by chunking instead of a
+  shared/ring `MTLBuffer`; unnecessary full-frame wait.
+
+- **Failed texture loads are unretryable (both platforms)**
+  Where: `MetalResourceManager.swift:91,109`; `WebResourceManager.swift:32,50`
+  Symptom: a transient load failure permanently loses the texture.
+  Cause: `.failedToLoad` state satisfies the `!= nil` short-circuit guard forever.
+
+## Resolved
+
+(none yet)

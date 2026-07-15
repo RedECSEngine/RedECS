@@ -1,5 +1,3 @@
-/// A deterministic `RandomNumberGenerator` (SplitMix64) — same seed, same
-/// sequence, on every platform. Use it wherever a run needs to be reproducible.
 public struct SeededRandomNumberGenerator: RandomNumberGenerator {
     private var state: UInt64
 
@@ -16,10 +14,6 @@ public struct SeededRandomNumberGenerator: RandomNumberGenerator {
     }
 }
 
-/// The engine-wide shared generator. `newEntityId` and any gameplay randomness
-/// that wants to be reproducible draw from here, so a game configures the whole
-/// run from one place by calling `seed(_:)` once at startup. Left unseeded it
-/// picks a random seed, matching the old non-deterministic behaviour.
 public enum GameRandom {
     nonisolated(unsafe) private static var generator = SeededRandomNumberGenerator(
         seed: .random(in: .min ... .max)
