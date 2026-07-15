@@ -54,6 +54,23 @@ public extension EntityRepository {
         self.tree = tree
         entities[id] = nil
     }
+
+    /// Adds `tag` to an existing entity, keeping the reverse `tags` index in
+    /// sync. No-op if the entity is unknown or already carries the tag.
+    mutating func addTag(_ tag: String, to id: EntityId) {
+        guard entities[id] != nil else {
+            assertionFailure("adding tag '\(tag)' to unknown entity '\(id)'")
+            return
+        }
+        entities[id]?.tags.insert(tag)
+        tags[tag, default: []].insert(id)
+    }
+
+    /// Removes `tag` from an entity, keeping the reverse `tags` index in sync.
+    mutating func removeTag(_ tag: String, from id: EntityId) {
+        entities[id]?.tags.remove(tag)
+        tags[tag]?.remove(id)
+    }
 }
 
 // MARK: - Tree Management

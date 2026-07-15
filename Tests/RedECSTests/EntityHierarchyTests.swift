@@ -23,6 +23,45 @@ final class EntityHierarchyTests: XCTestCase {
         XCTAssertEqual(store.state.entities.tree.children?.map(\.id), ["a"])
     }
 
+    func testAddAndRemoveTagKeepsReverseIndexInSync() {
+        let store = makeStore()
+        store.sendSystemAction(.addEntity("a", ["initial"]))
+
+        // Adding a tag updates both the entity and the reverse index.
+        store.sendSystemAction(.addTag("a", "player"))
+        XCTAssertEqual(store.state.entities["a"]?.tags, ["initial", "player"])
+        XCTAssertEqual(store.state.entities.tags["player"], ["a"])
+
+        // Removing it clears both sides.
+        store.sendSystemAction(.removeTag("a", "player"))
+        XCTAssertEqual(store.state.entities["a"]?.tags, ["initial"])
+        XCTAssertFalse(store.state.entities.tags["player"]?.contains("a") ?? false)
+    }
+
+    func testMovingATagBetweenEntities() {
+        let store = makeStore()
+        store.sendSystemAction(.addEntity("hero", ["player"]))
+        store.sendSystemAction(.addEntity("companion", []))
+
+        // Hand the "player" marker from one entity to another.
+        store.sendSystemAction(.removeTag("hero", "player"))
+        store.sendSystemAction(.addTag("companion", "player"))
+
+        XCTAssertEqual(store.state.entities.tags["player"], ["companion"])
+        XCTAssertFalse(store.state.entities["hero"]?.tags.contains("player") ?? true)
+        XCTAssertTrue(store.state.entities["companion"]?.tags.contains("player") ?? false)
+    }
+
+    func testRemovingAnEntityDropsItsTagsFromTheIndex() {
+        let store = makeStore()
+        store.sendSystemAction(.addEntity("a", ["player"]))
+        store.sendSystemAction(.addEntity("b", ["player"]))
+        XCTAssertEqual(store.state.entities.tags["player"], ["a", "b"])
+
+        store.sendSystemAction(.removeEntity("a"))
+        XCTAssertEqual(store.state.entities.tags["player"], ["b"])
+    }
+
     func testSetParentMovesEntityInTree() {
         let store = makeStore()
         store.sendSystemAction(.addEntity("parent", []))

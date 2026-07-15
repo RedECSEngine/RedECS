@@ -67,6 +67,10 @@ public final class GameStore<R: Reducer> {
             handleEffect(removeEntity(entityId))
         case .setParent(let entityId, let parentId):
             state.entities.setParent(of: entityId, to: parentId)
+        case .addTag(let entityId, let tag):
+            state.entities.addTag(tag, to: entityId)
+        case .removeTag(let entityId, let tag):
+            state.entities.removeTag(tag, from: entityId)
         case .addComponent(let entityId, let componentRegistration):
             assert(isComponentTypeRegistered(id: componentRegistration.id), "Attempting to add a component type that is not registered \(String(describing: componentRegistration.id))")
             componentRegistration.onAdd(entityId, &state)
