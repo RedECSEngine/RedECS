@@ -19,39 +19,52 @@ public enum KeyboardInput: UInt16, Codable, Equatable {
     case leftKey = 123
 }
 
+public enum KeyboardTrigger: Equatable, Codable {
+    case whileHeld
+    case onPress
+}
+
 public struct KeyboardInputComponent<Action: Equatable & Codable>: GameComponent {
     public struct Mapping: Equatable, Codable {
         public var keySet: Set<KeyboardInput>
         public var action: Action
-        public init(keySet: Set<KeyboardInput>, action: Action) {
+        public var trigger: KeyboardTrigger
+        public init(keySet: Set<KeyboardInput>, action: Action, trigger: KeyboardTrigger = .whileHeld) {
             self.keySet = keySet
             self.action = action
+            self.trigger = trigger
         }
     }
-    
+
     public var entity: EntityId
     public var pressedKeys: [KeyboardInput: Bool]
+    public var previousPressedKeys: [KeyboardInput: Bool]
     public var keyMap: [Mapping]
-    
+
     public init(entity: EntityId) {
         self = .init(entity: entity, pressedKeys: [:], keyMap: [])
     }
-    
+
     public init(
         entity: EntityId,
         pressedKeys: [KeyboardInput: Bool] = [:],
-        keyMap: [(Set<KeyboardInput>, Action)] = []
+        keyMap: [Mapping] = []
     ) {
         self.entity = entity
         self.pressedKeys = pressedKeys
-        self.keyMap = keyMap.map { Mapping(keySet: $0.0, action: $0.1) }
+        self.previousPressedKeys = [:]
+        self.keyMap = keyMap
     }
-    
+
     public func isKeyPressed(_ key: KeyboardInput) -> Bool {
        pressedKeys[key] == true
     }
-    
+
     public func isAnyKeyPressed(in keySet: Set<KeyboardInput>) -> Bool {
         return keySet.contains(where: isKeyPressed)
+    }
+
+    func wasAnyKeyPressed(in keySet: Set<KeyboardInput>) -> Bool {
+        return keySet.contains { previousPressedKeys[$0] == true }
     }
 }
