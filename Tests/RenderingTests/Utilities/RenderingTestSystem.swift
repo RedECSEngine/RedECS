@@ -3,13 +3,15 @@ import Foundation
 import Geometry
 import RedECSBasicComponents
 import RedECSAppleSupport
+import RedHUD
 
-struct RenderingTestState: RenderableGameState {
+struct RenderingTestState: RenderableGameState, HUDRenderableGameState {
     var entities: EntityRepository = .init()
 
     var transform: [EntityId: TransformComponent] = [:]
     var sprite: [EntityId: SpriteComponent] = [:]
     var camera: [EntityId: CameraComponent] = [:]
+    var hud: [EntityId: HUDComponent] = [:]
 }
 
 enum RenderingTestAction: Equatable {
