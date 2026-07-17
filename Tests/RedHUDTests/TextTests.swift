@@ -35,12 +35,6 @@ final class TextTests: XCTestCase {
         XCTAssertTrue(Text("AB").render(context: noFonts, size: .zero).isEmpty)
     }
 
-    func testExplicitFontOverridesContext() {
-        let size = Text("A", font: "TestFont")
-            .size(proposed: ProposedSize(), context: context)
-        XCTAssertEqual(size.width, 24)
-    }
-
     func testRenderFlipsIntoTopLeftYDownSpace() throws {
         let groups = Text("A").render(context: context, size: Size(width: 24, height: 40))
         XCTAssertEqual(groups.count, 1)

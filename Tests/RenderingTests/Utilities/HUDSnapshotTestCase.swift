@@ -8,13 +8,16 @@ import Geometry
 import GeometryAlgorithms
 
 /// Shared harness for RedHUD snapshot tests: a 480x480 Metal view driven by
-/// the world RenderingReducer zipped with the HUDRenderingReducer, mirroring
-/// how a game composes them.
+/// the world RenderingReducer zipped with a HUDRenderingReducer, mirroring
+/// how a game composes them. The reducer derives the HUD from state via its
+/// content function; here that function reads `hudView`, which tests set
+/// with `setHUD` (nil renders no HUD).
 @MainActor
 class HUDSnapshotTestCase: XCTestCase {
     var mtkView: MTKView!
     var renderer: MetalRenderer!
     var store: GameStore<AnyReducer<RenderingTestState, RenderingTestAction, RenderingTestEnvironment>>!
+    var hudView: AnyHUDView?
 
     override func setUp() async throws {
         let device = MTLCreateSystemDefaultDevice()!
@@ -35,7 +38,9 @@ class HUDSnapshotTestCase: XCTestCase {
                 RenderingReducer(renderableComponentTypes: [
                     .init(keyPath: \.sprite)
                 ]),
-                HUDRenderingReducer()
+                HUDRenderingReducer { [weak self] (_: RenderingTestState) in
+                    self?.hudView
+                }
             )
             .pullback(
                 toLocalState: \.self,
@@ -54,7 +59,6 @@ class HUDSnapshotTestCase: XCTestCase {
                 .init(keyPath: \.transform),
                 .init(keyPath: \.sprite),
                 .init(keyPath: \.camera),
-                .init(keyPath: \.hud),
             ]
         )
     }
@@ -72,17 +76,15 @@ class HUDSnapshotTestCase: XCTestCase {
         waitForExpectations(timeout: 2)
     }
 
-    func setHUD(
-        entity: EntityId = "hud",
-        zIndex: Int = 0,
-        @HUDViewBuilder content: () -> [AnyHUDView]
-    ) {
-        store.sendSystemAction(.removeEntity(entity))
-        store.sendSystemAction(.addEntity(entity, []))
-        store.sendSystemAction(.addComponent(
-            HUDComponent(entity: entity, zIndex: zIndex, content: content),
-            into: \.hud
-        ))
+    func setHUD(@HUDViewBuilder content: () -> [AnyHUDView]) {
+        let views = content()
+        if views.count == 1 {
+            hudView = views[0]
+        } else if views.isEmpty {
+            hudView = nil
+        } else {
+            hudView = AnyHUDView(VStack { views })
+        }
     }
 
     func snapshotFrame(

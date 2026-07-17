@@ -8,7 +8,7 @@ class HUDTextTests: HUDSnapshotTestCase {
     func testTextCentered() throws {
         preloadFont()
         setHUD {
-            Text("Hello HUD", font: "PT-Mono")
+            Text("Hello HUD").font("PT-Mono")
         }
         snapshotFrame()
     }

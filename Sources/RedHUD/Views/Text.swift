@@ -2,18 +2,11 @@ import Geometry
 import GeometryAlgorithms
 import RedECS
 
-/// A single line of bitmap-font text at the font's native size. Uses the
-/// context's font (set with `.font(_:)`) unless one is given explicitly;
-/// with no resolvable font it occupies no space (the engine's silent-skip
-/// convention for missing resources). Ignores the proposal: no wrapping
-/// or truncation.
 public struct Text: BuiltinHUDView {
     public var text: String
-    public var fontName: String?
 
-    public init(_ text: String, font fontName: String? = nil) {
+    public init(_ text: String) {
         self.text = text
-        self.fontName = fontName
     }
 
     public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
@@ -47,7 +40,7 @@ public struct Text: BuiltinHUDView {
     }
 
     private func resolvedFont(_ context: HUDRenderContext) -> BitmapFont? {
-        guard let name = fontName ?? context.font else { return nil }
+        guard let name = context.font else { return nil }  // todo: keep a default font in this module to fallback on. PTMono acceptable
         return context.fonts[name]
     }
 }
