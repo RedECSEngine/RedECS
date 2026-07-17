@@ -13,20 +13,13 @@ public struct AnyHUDView: BuiltinHUDView {
         self.box = HUDViewBox(view)
     }
 
-    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
-        box.size(proposed: proposed, context: context)
-    }
-
-    public func render(context: HUDRenderContext, size: Size) -> [RenderGroup] {
-        box.render(context: context, size: size)
+    public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
+        box.resolve(proposed: proposed, context: context)
     }
 }
 
 private class AnyHUDViewBox {
-    func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
-        fatalError("abstract")
-    }
-    func render(context: HUDRenderContext, size: Size) -> [RenderGroup] {
+    func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         fatalError("abstract")
     }
 }
@@ -38,11 +31,7 @@ private final class HUDViewBox<V: HUDView>: AnyHUDViewBox {
         self.view = view
     }
 
-    override func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
-        view._size(proposed: proposed, context: context)
-    }
-
-    override func render(context: HUDRenderContext, size: Size) -> [RenderGroup] {
-        view._render(context: context, size: size)
+    override func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
+        view._resolve(proposed: proposed, context: context)
     }
 }

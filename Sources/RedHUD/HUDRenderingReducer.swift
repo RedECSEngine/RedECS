@@ -31,10 +31,10 @@ public struct HUDRenderingReducer<ContextState: GameState>: Reducer {
         let context = HUDRenderContext(
             resourceManager: environment.resourceManager
         )
-        let rootSize = root.size(proposed: ProposedSize(viewport), context: context)
-        let offset = Alignment.center.offset(forChild: rootSize, in: viewport)
+        let tree = root.resolve(proposed: ProposedSize(viewport), context: context)
+        let offset = Alignment.center.offset(forChild: tree.frame.size, in: viewport)
         var z = 0
-        let groups = root.render(context: context, size: rootSize)
+        let groups = tree.flattenedGroups()
             .map { group -> RenderGroup in
                 defer { z += 1 }
                 return group

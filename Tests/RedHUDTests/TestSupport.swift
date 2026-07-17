@@ -41,3 +41,11 @@ struct FakeEnvironment: RenderingEnvironment {
     let fakeRenderer: FakeRenderer
     let fakeResourceManager = FakeResourceManager()
 }
+
+extension HUDView {
+    /// Pre-resolve-refactor test shape: resolve at the given size and
+    /// flatten to transform-composed render groups.
+    func render(context: HUDRenderContext, size: Size) -> [RenderGroup] {
+        _resolve(proposed: ProposedSize(size), context: context).flattenedGroups()
+    }
+}

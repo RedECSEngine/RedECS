@@ -38,16 +38,13 @@ public struct ViewportStack: BuiltinHUDView {
         self.pins = content()
     }
 
-    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
-        proposed.orDefault()
-    }
-
-    public func render(context: HUDRenderContext, size: Size) -> [RenderGroup] {
-        pins.flatMap { pin -> [RenderGroup] in
-            let childSize = pin.content.size(proposed: ProposedSize(size), context: context)
-            let offset = pin.alignment.offset(forChild: childSize, in: size)
-            return pin.content.render(context: context, size: childSize)
-                .map { $0.reparented(by: offset) }
+    public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
+        let size = proposed.orDefault()
+        let placed = pins.map { pin -> HUDNode in
+            var child = pin.content.resolve(proposed: ProposedSize(size), context: context)
+            child.frame.origin = pin.alignment.offset(forChild: child.frame.size, in: size)
+            return child
         }
+        return HUDNode(frame: Rect(origin: .zero, size: size), children: placed)
     }
 }

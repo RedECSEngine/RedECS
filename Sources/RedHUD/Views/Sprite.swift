@@ -26,33 +26,34 @@ public struct Sprite: BuiltinHUDView {
         self.source = .animation(textureId: textureId, name: name, time: time)
     }
 
-    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
-        resolve(context)?.textureRect.size ?? .zero
-    }
-
-    public func render(context: HUDRenderContext, size: Size) -> [RenderGroup] {
-        guard let resolved = resolve(context) else { return [] }
+    public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
+        guard let resolved = resolveFrame(context) else {
+            return HUDNode(frame: Rect(origin: .zero, size: .zero))
+        }
         let renderRect = Rect(origin: .zero, size: resolved.textureRect.size)
         guard let renderTris = try? renderRect.triangulate(),
               let textureTris = try? resolved.textureRect.triangulate() else {
-            return []
+            return HUDNode(frame: renderRect)
         }
         // Texture quads use the engine's y-up math (shared with sprites and
         // glyphs); flip into local y-down space like Text does.
         let flip = Matrix3.identity
             .translatedBy(tx: 0, ty: renderRect.size.height)
             .scaledBy(sx: 1, sy: -1)
-        return [
-            RenderGroup(
-                triangles: zip(renderTris, textureTris).map {
-                    RenderTriangle(triangle: $0, textureTriangle: $1)
-                },
-                transformMatrix: flip,
-                fragmentType: .texture(resolved.textureId),
-                zIndex: 0,
-                opacity: context.opacity
-            )
-        ]
+        return HUDNode(
+            frame: renderRect,
+            groups: [
+                RenderGroup(
+                    triangles: zip(renderTris, textureTris).map {
+                        RenderTriangle(triangle: $0, textureTriangle: $1)
+                    },
+                    transformMatrix: flip,
+                    fragmentType: .texture(resolved.textureId),
+                    zIndex: 0,
+                    opacity: context.opacity
+                )
+            ]
+        )
     }
 
     private struct ResolvedFrame {
@@ -61,7 +62,7 @@ public struct Sprite: BuiltinHUDView {
         var textureRect: Rect
     }
 
-    private func resolve(_ context: HUDRenderContext) -> ResolvedFrame? {
+    private func resolveFrame(_ context: HUDRenderContext) -> ResolvedFrame? {
         guard let resourceManager = context.resourceManager else { return nil }
         let reference: TextureReference
         switch source {

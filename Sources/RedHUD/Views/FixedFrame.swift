@@ -10,25 +10,20 @@ public struct FixedFrame<Content: HUDView>: BuiltinHUDView {
     public var alignment: Alignment
     public var content: Content
 
-    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
-        let childSize = content._size(
+    public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
+        var child = content._resolve(
             proposed: ProposedSize(
                 width: width ?? proposed.width,
                 height: height ?? proposed.height
             ),
             context: context
         )
-        return Size(
-            width: width ?? childSize.width,
-            height: height ?? childSize.height
+        let size = Size(
+            width: width ?? child.frame.size.width,
+            height: height ?? child.frame.size.height
         )
-    }
-
-    public func render(context: HUDRenderContext, size: Size) -> [RenderGroup] {
-        let childSize = content._size(proposed: ProposedSize(size), context: context)
-        let offset = alignment.offset(forChild: childSize, in: size)
-        return content._render(context: context, size: childSize)
-            .map { $0.reparented(by: offset) }
+        child.frame.origin = alignment.offset(forChild: child.frame.size, in: size)
+        return HUDNode(frame: Rect(origin: .zero, size: size), children: [child])
     }
 }
 

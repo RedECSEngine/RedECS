@@ -9,34 +9,33 @@ public struct Text: BuiltinHUDView {
         self.text = text
     }
 
-    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
-        guard let font = resolvedFont(context) else { return .zero }
-        return Size(
+    public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
+        guard let font = resolvedFont(context),
+              let layout = try? font.layoutText(text) else {
+            return HUDNode(frame: Rect(origin: .zero, size: .zero))
+        }
+        let size = Size(
             width: font.measure(text).width,
             height: font.common.lineHeight
         )
-    }
-
-    public func render(context: HUDRenderContext, size: Size) -> [RenderGroup] {
-        guard let font = resolvedFont(context),
-              let layout = try? font.layoutText(text) else {
-            return []
-        }
         // Glyph quads are laid out y-up with the top of the line box at
         // common.base; flip them into local y-down space so the line's top
         // sits at the origin.
         let flip = Matrix3.identity
             .translatedBy(tx: 0, ty: font.common.base)
             .scaledBy(sx: 1, sy: -1)
-        return [
-            RenderGroup(
-                triangles: layout.triangles,
-                transformMatrix: flip,
-                fragmentType: .texture(font.pageTextureName),
-                zIndex: 0,
-                opacity: context.opacity
-            )
-        ]
+        return HUDNode(
+            frame: Rect(origin: .zero, size: size),
+            groups: [
+                RenderGroup(
+                    triangles: layout.triangles,
+                    transformMatrix: flip,
+                    fragmentType: .texture(font.pageTextureName),
+                    zIndex: 0,
+                    opacity: context.opacity
+                )
+            ]
+        )
     }
 
     /// The context's font when it names a loaded one; otherwise the loaded

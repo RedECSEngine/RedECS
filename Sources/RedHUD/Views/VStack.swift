@@ -17,53 +17,43 @@ public struct VStack: BuiltinHUDView {
         self.spacing = spacing
     }
 
-    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
-        let sizes = layout(proposed: proposed, context: context)
-        return Size(
-            width: sizes.reduce(0) { max($0, $1.width) },
-            height: sizes.reduce(0) { $0 + $1.height } + totalSpacing
-        )
-    }
+    public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
+        var placed: [HUDNode] = []
+        if let totalHeight = proposed.height {
+            var remaining = totalHeight - totalSpacing
+            var childrenLeft = children.count
+            for child in children {
+                let share = max(0, remaining) / Double(childrenLeft)
+                let node = child.resolve(
+                    proposed: ProposedSize(width: proposed.width, height: share),
+                    context: context
+                )
+                remaining -= node.frame.size.height
+                childrenLeft -= 1
+                placed.append(node)
+            }
+        } else {
+            placed = children.map {
+                $0.resolve(proposed: ProposedSize(width: proposed.width, height: nil), context: context)
+            }
+        }
 
-    public func render(context: HUDRenderContext, size: Size) -> [RenderGroup] {
-        let sizes = layout(proposed: ProposedSize(size), context: context)
-        var groups: [RenderGroup] = []
+        let size = Size(
+            width: placed.reduce(0) { max($0, $1.frame.size.width) },
+            height: placed.reduce(0) { $0 + $1.frame.size.height } + totalSpacing
+        )
         var y: Double = 0
-        for (child, childSize) in zip(children, sizes) {
-            let offset = Point(
-                x: alignment.value(in: size.width) - alignment.value(in: childSize.width),
+        for i in placed.indices {
+            placed[i].frame.origin = Point(
+                x: alignment.value(in: size.width) - alignment.value(in: placed[i].frame.size.width),
                 y: y
             )
-            groups.append(contentsOf: child.render(context: context, size: childSize)
-                .map { $0.reparented(by: offset) })
-            y += childSize.height + spacing
+            y += placed[i].frame.size.height + spacing
         }
-        return groups
+        return HUDNode(frame: Rect(origin: .zero, size: size), children: placed)
     }
 
     private var totalSpacing: Double {
         spacing * Double(max(0, children.count - 1))
-    }
-
-    private func layout(proposed: ProposedSize, context: HUDRenderContext) -> [Size] {
-        guard let totalHeight = proposed.height else {
-            return children.map {
-                $0.size(proposed: ProposedSize(width: proposed.width, height: nil), context: context)
-            }
-        }
-        var remaining = totalHeight - totalSpacing
-        var childrenLeft = children.count
-        var sizes: [Size] = []
-        for child in children {
-            let share = max(0, remaining) / Double(childrenLeft)
-            let childSize = child.size(
-                proposed: ProposedSize(width: proposed.width, height: share),
-                context: context
-            )
-            sizes.append(childSize)
-            remaining -= childSize.height
-            childrenLeft -= 1
-        }
-        return sizes
     }
 }

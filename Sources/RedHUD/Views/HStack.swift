@@ -20,54 +20,44 @@ public struct HStack: BuiltinHUDView {
         self.spacing = spacing
     }
 
-    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
-        let sizes = layout(proposed: proposed, context: context)
-        return Size(
-            width: sizes.reduce(0) { $0 + $1.width } + totalSpacing,
-            height: sizes.reduce(0) { max($0, $1.height) }
-        )
-    }
-
-    public func render(context: HUDRenderContext, size: Size) -> [RenderGroup] {
-        let sizes = layout(proposed: ProposedSize(size), context: context)
-        var groups: [RenderGroup] = []
-        var x: Double = 0
-        for (child, childSize) in zip(children, sizes) {
-            let offset = Point(
-                x: x,
-                y: alignment.value(in: size.height) - alignment.value(in: childSize.height)
-            )
-            groups.append(contentsOf: child.render(context: context, size: childSize)
-                .map { $0.reparented(by: offset) })
-            x += childSize.width + spacing
+    public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
+        var placed: [HUDNode] = []
+        if let totalWidth = proposed.width {
+            var remaining = totalWidth - totalSpacing
+            var childrenLeft = children.count
+            for child in children {
+                let share = max(0, remaining) / Double(childrenLeft)
+                let node = child.resolve(
+                    proposed: ProposedSize(width: share, height: proposed.height),
+                    context: context
+                )
+                remaining -= node.frame.size.width
+                childrenLeft -= 1
+                placed.append(node)
+            }
+        } else {
+            // No proposal along the major axis: every child gets its ideal.
+            placed = children.map {
+                $0.resolve(proposed: ProposedSize(width: nil, height: proposed.height), context: context)
+            }
         }
-        return groups
+
+        let size = Size(
+            width: placed.reduce(0) { $0 + $1.frame.size.width } + totalSpacing,
+            height: placed.reduce(0) { max($0, $1.frame.size.height) }
+        )
+        var x: Double = 0
+        for i in placed.indices {
+            placed[i].frame.origin = Point(
+                x: x,
+                y: alignment.value(in: size.height) - alignment.value(in: placed[i].frame.size.height)
+            )
+            x += placed[i].frame.size.width + spacing
+        }
+        return HUDNode(frame: Rect(origin: .zero, size: size), children: placed)
     }
 
     private var totalSpacing: Double {
         spacing * Double(max(0, children.count - 1))
-    }
-
-    private func layout(proposed: ProposedSize, context: HUDRenderContext) -> [Size] {
-        guard let totalWidth = proposed.width else {
-            // No proposal along the major axis: every child gets its ideal.
-            return children.map {
-                $0.size(proposed: ProposedSize(width: nil, height: proposed.height), context: context)
-            }
-        }
-        var remaining = totalWidth - totalSpacing
-        var childrenLeft = children.count
-        var sizes: [Size] = []
-        for child in children {
-            let share = max(0, remaining) / Double(childrenLeft)
-            let childSize = child.size(
-                proposed: ProposedSize(width: share, height: proposed.height),
-                context: context
-            )
-            sizes.append(childSize)
-            remaining -= childSize.width
-            childrenLeft -= 1
-        }
-        return sizes
     }
 }

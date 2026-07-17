@@ -6,18 +6,10 @@ public struct FontModifier<Content: HUDView>: BuiltinHUDView {
     public var fontName: String
     public var content: Content
 
-    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
-        content._size(proposed: proposed, context: modified(context))
-    }
-
-    public func render(context: HUDRenderContext, size: Size) -> [RenderGroup] {
-        content._render(context: modified(context), size: size)
-    }
-
-    private func modified(_ context: HUDRenderContext) -> HUDRenderContext {
+    public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         var context = context
         context.font = fontName
-        return context
+        return content._resolve(proposed: proposed, context: context)
     }
 }
 

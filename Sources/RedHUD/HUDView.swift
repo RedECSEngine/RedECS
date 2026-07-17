@@ -8,12 +8,15 @@ public protocol HUDView {
     var body: Body { get }
 }
 
-/// A leaf (or container) view that participates in layout directly:
-/// it answers a proposed size and emits render groups in its own local
-/// space, with the origin at its top-left corner (y-down, viewport points).
+/// A leaf (or container) view that participates in layout directly: given a
+/// proposal it resolves to a `HUDNode` sized to its answer, containing its
+/// own draw output (local space, origin at its top-left, y-down viewport
+/// points) and its placed children.
+///
+/// Invariant: a view always resolves to the size it would report for that
+/// proposal — parents place children at exactly the size the child chose.
 public protocol BuiltinHUDView: HUDView where Body == Never {
-    func size(proposed: ProposedSize, context: HUDRenderContext) -> Size
-    func render(context: HUDRenderContext, size: Size) -> [RenderGroup]
+    func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode
 }
 
 extension Never: HUDView {
@@ -27,17 +30,18 @@ public extension HUDView where Body == Never {
 }
 
 extension HUDView {
-    func _size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+    func _resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         if let builtin = self as? any BuiltinHUDView {
-            return builtin.size(proposed: proposed, context: context)
+            return builtin.resolve(proposed: proposed, context: context)
         }
-        return body._size(proposed: proposed, context: context)
+        return body._resolve(proposed: proposed, context: context)
     }
+}
 
-    func _render(context: HUDRenderContext, size: Size) -> [RenderGroup] {
-        if let builtin = self as? any BuiltinHUDView {
-            return builtin.render(context: context, size: size)
-        }
-        return body._render(context: context, size: size)
+public extension HUDView {
+    /// The size this view resolves to for a proposal; a convenience over
+    /// `resolve` for measurement and tests.
+    func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        _resolve(proposed: proposed, context: context).frame.size
     }
 }
