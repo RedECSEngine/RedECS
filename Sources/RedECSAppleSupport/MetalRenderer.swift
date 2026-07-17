@@ -49,6 +49,9 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
     public var deltaCallback: ((Double) -> Void)?
     
     var projectionMatrix: matrix_float4x4 = matrix_float4x4()
+    /// Projection for `.screen` render groups (viewport points, top-left
+    /// origin); tracks the drawable size, independent of the world camera.
+    var screenProjectionMatrix: matrix_float4x4 = matrix_float4x4()
     
     private lazy var emptyTexture: MTLTexture = {
         creatyEmptyPixelTexture(device: device)!
@@ -114,6 +117,9 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         viewportSize.width = size.width
         viewportSize.height = size.height
+        if size.width > 0 && size.height > 0 {
+            screenProjectionMatrix = Matrix3.screenProjection(size: viewportSize).asMatrix4x4
+        }
     }
     
     // A *monotonic* timestamp (seconds). `Date()` is the wall clock and can jump
@@ -176,12 +182,22 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         
         var lastBoundTexture: TextureId?
 
-        for renderGroup in queuedWork.sorted(by: { $0.zIndex < $1.zIndex }) {
+        // Screen-space groups draw after (above) all world groups, each
+        // space z-sorted within itself.
+        let sortedWork = queuedWork.sorted { a, b in
+            if a.projectionSpace != b.projectionSpace {
+                return a.projectionSpace == .world
+            }
+            return a.zIndex < b.zIndex
+        }
+        for renderGroup in sortedWork {
             let color = renderGroup.color?.asVectorFloat4 ?? vector_float4(0, 0, 0, Float(renderGroup.opacity))
             var triangleVertices: [AAPLVertex] = []
             var textureVertices: [TextureInfo] = []
             var uniforms = Uniforms(
-                projectionMatrix: projectionMatrix,
+                projectionMatrix: renderGroup.projectionSpace == .screen
+                    ? screenProjectionMatrix
+                    : projectionMatrix,
                 modelViewMatrix: renderGroup.transformMatrix.asMatrix4x4
             )
             

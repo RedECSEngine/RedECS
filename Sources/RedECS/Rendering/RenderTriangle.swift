@@ -6,25 +6,37 @@ public struct RenderGroup {
         case color(Color)
         case texture(TextureId)
     }
-    
+
+    /// Which projection the renderer applies to this group's vertices.
+    /// `.world` goes through the primary camera; `.screen` maps viewport
+    /// points (top-left origin, y-down) straight to clip space and always
+    /// draws above all world groups.
+    public enum ProjectionSpace {
+        case world
+        case screen
+    }
+
     public let triangles: [RenderTriangle]
     public let transformMatrix: Matrix3
     public let fragmentType: FragmentType
     public let zIndex: Int
     public let opacity: Double
-    
+    public let projectionSpace: ProjectionSpace
+
     public init(
         triangles: [RenderTriangle],
         transformMatrix: Matrix3,
         fragmentType: FragmentType,
         zIndex: Int,
-        opacity: Double = 1
+        opacity: Double = 1,
+        projectionSpace: ProjectionSpace = .world
     ) {
         self.triangles = triangles
         self.transformMatrix = transformMatrix
         self.fragmentType = fragmentType
         self.zIndex = zIndex
         self.opacity = opacity
+        self.projectionSpace = projectionSpace
     }
 }
 
@@ -37,7 +49,21 @@ public extension RenderGroup {
             transformMatrix: matrix,
             fragmentType: fragmentType,
             zIndex: zIndex,
-            opacity: opacity
+            opacity: opacity,
+            projectionSpace: projectionSpace
+        )
+    }
+
+    /// A copy of this group re-slotted into a draw-order position and
+    /// projection space; used when assembling screen-space HUD output.
+    func with(zIndex: Int, projectionSpace: ProjectionSpace) -> RenderGroup {
+        RenderGroup(
+            triangles: triangles,
+            transformMatrix: transformMatrix,
+            fragmentType: fragmentType,
+            zIndex: zIndex,
+            opacity: opacity,
+            projectionSpace: projectionSpace
         )
     }
 
