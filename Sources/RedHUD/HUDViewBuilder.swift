@@ -6,6 +6,10 @@ public enum HUDViewBuilder {
         [AnyHUDView(view)]
     }
 
+    public static func buildExpression(_ views: [AnyHUDView]) -> [AnyHUDView] {
+        views
+    }
+
     public static func buildBlock(_ components: [AnyHUDView]...) -> [AnyHUDView] {
         components.flatMap { $0 }
     }
