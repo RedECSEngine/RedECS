@@ -1,5 +1,6 @@
 import Foundation
 import RedECS
+import RedHUD
 import TiledInterpreter
 import MetalKit
 
@@ -24,6 +25,33 @@ public final class MetalResourceManager: ResourceManager {
     public init(resourceBundle: Bundle = .main, metalDevice: MTLDevice) {
         self.resourceBundle = resourceBundle
         self.metalDevice = metalDevice
+        registerDefaultHUDFont()
+    }
+
+    /// Makes RedHUD's embedded fallback font renderable with no game-side
+    /// setup: the metrics go into `fonts` and the embedded atlas page into
+    /// `textureImages`. A game that later preloads the same face overwrites
+    /// the metrics; the atlas entry short-circuits that load's image fetch.
+    private func registerDefaultHUDFont() {
+        let font = DefaultHUDFont.font
+        fonts[font.info.face] = font
+        guard let data = Data(base64Encoded: DefaultHUDFont.pageImageBase64) else {
+            assertionFailure("embedded default HUD font atlas is not valid base64")
+            return
+        }
+        let textureLoader = MTKTextureLoader(device: metalDevice)
+        do {
+            textureImages[font.pageTextureName] = try textureLoader.newTexture(
+                data: data,
+                options: [
+                    .textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
+                    .textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue),
+                    .SRGB: NSNumber(value: false)
+                ]
+            )
+        } catch {
+            print("⚠️ failed to load default HUD font atlas:", error)
+        }
     }
     
     public func loadJSONFile<T: Decodable>(

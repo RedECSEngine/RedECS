@@ -39,8 +39,13 @@ public struct Text: BuiltinHUDView {
         ]
     }
 
+    /// The context's font when it names a loaded one; otherwise the loaded
+    /// copy of the default face, falling back to the embedded default so
+    /// text always measures and renders without game-side font setup.
     private func resolvedFont(_ context: HUDRenderContext) -> BitmapFont? {
-        guard let name = context.font else { return nil }  // todo: keep a default font in this module to fallback on. PTMono acceptable
-        return context.fonts[name]
+        if let name = context.font, let font = context.fonts[name] {
+            return font
+        }
+        return context.fonts[DefaultHUDFont.font.info.face] ?? DefaultHUDFont.font
     }
 }

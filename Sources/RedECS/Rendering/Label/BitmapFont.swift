@@ -1,4 +1,4 @@
-public struct BitmapFont: Codable {
+public struct BitmapFont: Codable, Sendable {
     public var info: Info
     public var common: Common
     public var page: Page
@@ -63,7 +63,7 @@ extension BitmapFont {
         case missingInfoOrPropsData
     }
     
-    public struct Common: Codable {
+    public struct Common: Codable, Sendable {
         public var lineHeight: Double = 0
         public var base: Double = 0
         public var scaleW: Double = 0
@@ -86,7 +86,7 @@ extension BitmapFont {
         }
     }
     
-    public struct Info: Codable {
+    public struct Info: Codable, Sendable {
         public var face: String = ""
         public var size: Double = 0
         public var bold: Bool = false
@@ -109,7 +109,7 @@ extension BitmapFont {
         }
     }
     
-    public struct Page: Codable {
+    public struct Page: Codable, Sendable {
         public var id: String = ""
         public var file: String = ""
         
@@ -126,7 +126,7 @@ extension BitmapFont {
         }
     }
     
-    public struct Character: Codable {
+    public struct Character: Codable, Sendable {
         public var id: String = ""
         public var x: Double = 0
         public var y: Double = 0

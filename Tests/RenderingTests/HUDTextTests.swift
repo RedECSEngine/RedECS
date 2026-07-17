@@ -13,6 +13,15 @@ class HUDTextTests: HUDSnapshotTestCase {
         snapshotFrame()
     }
 
+    /// No preload, no .font(): the embedded default font registered by
+    /// MetalResourceManager at init renders with zero game-side setup.
+    func testTextRendersWithEmbeddedDefaultFont() throws {
+        setHUD {
+            Text("Default Font")
+        }
+        snapshotFrame()
+    }
+
     func testTextPinnedWithShapesInHStack() throws {
         preloadFont()
         setHUD {

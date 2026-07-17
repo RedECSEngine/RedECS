@@ -26,13 +26,29 @@ final class TextTests: XCTestCase {
         XCTAssertEqual(size, Size(width: 24 + 22 + 10 + 24, height: 40))
     }
 
-    func testMissingFontOccupiesNoSpace() {
+    func testFallsBackToEmbeddedDefaultFont() {
         let noFonts = HUDRenderContext()
-        XCTAssertEqual(
-            Text("AB").size(proposed: ProposedSize(), context: noFonts),
-            .zero
-        )
-        XCTAssertTrue(Text("AB").render(context: noFonts, size: .zero).isEmpty)
+        let size = Text("AB").size(proposed: ProposedSize(), context: noFonts)
+        XCTAssertEqual(size.width, DefaultHUDFont.font.measure("AB").width)
+        XCTAssertEqual(size.height, DefaultHUDFont.font.common.lineHeight)
+
+        let groups = Text("AB").render(context: noFonts, size: size)
+        XCTAssertEqual(groups.first?.textureId, DefaultHUDFont.font.pageTextureName)
+    }
+
+    func testUnloadedNamedFontFallsBackToDefault() {
+        var noFonts = HUDRenderContext()
+        noFonts.font = "Font-Nobody-Loaded"
+        let size = Text("AB").size(proposed: ProposedSize(), context: noFonts)
+        XCTAssertEqual(size.height, DefaultHUDFont.font.common.lineHeight)
+    }
+
+    func testEmbeddedDefaultFontParses() {
+        let font = DefaultHUDFont.font
+        XCTAssertEqual(font.info.face, "PT-Mono")
+        XCTAssertEqual(font.characters.count, 95)
+        XCTAssertEqual(font.pageTextureName, "pt-mono")
+        XCTAssertFalse(DefaultHUDFont.pageImageBase64.isEmpty)
     }
 
     func testRenderFlipsIntoTopLeftYDownSpace() throws {
