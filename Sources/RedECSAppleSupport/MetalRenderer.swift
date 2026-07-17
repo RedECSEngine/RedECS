@@ -63,9 +63,9 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         resourceManager: MetalResourceManager
     ) {
         self.resourceManager = resourceManager
-        
+
         self.device = device
-        
+
         guard let defaultLibrary = Self.makeShaderLibrary(device: device) else {
             return nil
         }
@@ -100,9 +100,13 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         self.commandQueue = commandQueue
     }
 
-    /// Xcode compiles a package's .metal resources into a default.metallib,
-    /// but `swift build`/`swift test` only copy the source file into the
-    /// bundle, so fall back to compiling the shaders at runtime.
+    /// Shaders.metal is bundled as a plain resource (`.copy` in
+    /// Package.swift) and compiled here at runtime, so Xcode and
+    /// `swift build`/`swift test` render identically — a precompiled
+    /// default.metallib produced subtly different texture sampling than the
+    /// runtime compiler, which broke snapshot references across the two
+    /// (see known-issues.md). The metallib path is kept as a preference in
+    /// case a future build produces one deliberately.
     private static func makeShaderLibrary(device: MTLDevice) -> MTLLibrary? {
         if let library = try? device.makeDefaultLibrary(bundle: .module) {
             return library
