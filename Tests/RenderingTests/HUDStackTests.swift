@@ -9,19 +9,19 @@ class HUDStackTests: HUDSnapshotTestCase {
         setHUD {
             VStack(spacing: 20) {
                 HStack(alignment: .top, spacing: 10) {
-                    RedHUD.Rectangle().frame(width: 40, height: 20).foregroundColor(.red)
-                    RedHUD.Rectangle().frame(width: 40, height: 60).foregroundColor(.green)
-                    RedHUD.Rectangle().frame(width: 40, height: 40).foregroundColor(.blue)
+                    Rectangle().frame(width: 40, height: 20).foregroundColor(.red)
+                    Rectangle().frame(width: 40, height: 60).foregroundColor(.green)
+                    Rectangle().frame(width: 40, height: 40).foregroundColor(.blue)
                 }
                 HStack(alignment: .center, spacing: 10) {
-                    RedHUD.Rectangle().frame(width: 40, height: 20).foregroundColor(.red)
-                    RedHUD.Rectangle().frame(width: 40, height: 60).foregroundColor(.green)
-                    RedHUD.Rectangle().frame(width: 40, height: 40).foregroundColor(.blue)
+                    Rectangle().frame(width: 40, height: 20).foregroundColor(.red)
+                    Rectangle().frame(width: 40, height: 60).foregroundColor(.green)
+                    Rectangle().frame(width: 40, height: 40).foregroundColor(.blue)
                 }
                 HStack(alignment: .bottom, spacing: 10) {
-                    RedHUD.Rectangle().frame(width: 40, height: 20).foregroundColor(.red)
-                    RedHUD.Rectangle().frame(width: 40, height: 60).foregroundColor(.green)
-                    RedHUD.Rectangle().frame(width: 40, height: 40).foregroundColor(.blue)
+                    Rectangle().frame(width: 40, height: 20).foregroundColor(.red)
+                    Rectangle().frame(width: 40, height: 60).foregroundColor(.green)
+                    Rectangle().frame(width: 40, height: 40).foregroundColor(.blue)
                 }
             }
         }
@@ -33,9 +33,9 @@ class HUDStackTests: HUDSnapshotTestCase {
             ViewportStack {
                 Pin(.topTrailing) {
                     VStack(alignment: .trailing, spacing: 8) {
-                        RedHUD.Rectangle().frame(width: 120, height: 24).foregroundColor(.red)
-                        RedHUD.Rectangle().frame(width: 80, height: 24).foregroundColor(.yellow)
-                        RedHUD.Rectangle().frame(width: 40, height: 24).foregroundColor(.green)
+                        Rectangle().frame(width: 120, height: 24).foregroundColor(.red)
+                        Rectangle().frame(width: 80, height: 24).foregroundColor(.yellow)
+                        Rectangle().frame(width: 40, height: 24).foregroundColor(.green)
                     }
                 }
             }

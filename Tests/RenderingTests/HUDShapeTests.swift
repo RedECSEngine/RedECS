@@ -7,7 +7,7 @@ import Geometry
 class HUDShapeTests: HUDSnapshotTestCase {
     func testCenteredRectangle() throws {
         setHUD {
-            RedHUD.Rectangle()
+            Rectangle()
                 .frame(width: 200, height: 120)
                 .foregroundColor(.red)
         }
@@ -18,7 +18,7 @@ class HUDShapeTests: HUDSnapshotTestCase {
         // Frames draw nothing themselves; the blue box lands bottom-trailing
         // of the inner frame, which is centered in the outer one.
         setHUD {
-            RedHUD.Rectangle()
+            Rectangle()
                 .foregroundColor(.blue)
                 .frame(width: 60, height: 60)
                 .frame(width: 300, height: 200, alignment: .bottomTrailing)

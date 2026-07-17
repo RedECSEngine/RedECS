@@ -8,7 +8,7 @@ class HUDTextTests: HUDSnapshotTestCase {
     func testTextCentered() throws {
         preloadFont()
         setHUD {
-            RedHUD.Text("Hello HUD", font: "PT-Mono")
+            Text("Hello HUD", font: "PT-Mono")
         }
         snapshotFrame()
     }
@@ -19,14 +19,14 @@ class HUDTextTests: HUDSnapshotTestCase {
             ViewportStack {
                 Pin(.topLeading) {
                     HStack(alignment: .center, spacing: 12) {
-                        RedHUD.Rectangle()
+                        Rectangle()
                             .frame(width: 40, height: 40)
                             .foregroundColor(.red)
-                        RedHUD.Text("Score: 120")
+                        Text("Score: 120")
                     }
                 }
                 Pin(.bottom) {
-                    RedHUD.Text("descenders gyp")
+                    Text("descenders gyp")
                 }
             }
             .font("PT-Mono")

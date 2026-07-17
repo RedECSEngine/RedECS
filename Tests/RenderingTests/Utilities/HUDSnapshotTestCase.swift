@@ -87,6 +87,7 @@ class HUDSnapshotTestCase: XCTestCase {
 
     func snapshotFrame(
         named name: String? = nil,
+        record: Bool = false,
         file: StaticString = #filePath,
         testName: String = #function,
         line: UInt = #line
@@ -97,6 +98,7 @@ class HUDSnapshotTestCase: XCTestCase {
             matching: mtkView,
             as: .image(renderer: renderer),
             named: name,
+            record: record,
             file: file,
             testName: testName,
             line: line

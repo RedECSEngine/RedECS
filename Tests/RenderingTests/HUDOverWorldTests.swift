@@ -31,20 +31,20 @@ class HUDOverWorldTests: HUDSnapshotTestCase {
             into: \.transform
         ))
         store.sendSystemAction(.addComponent(
-            CameraComponent(entity: cameraId),
+            CameraComponent(entity: cameraId, zoom: 2),
             into: \.camera
         ))
 
         setHUD {
             ViewportStack {
                 Pin(.topLeading) {
-                    RedHUD.Rectangle().frame(width: 60, height: 60).foregroundColor(.red)
+                    Rectangle().frame(width: 60, height: 60).foregroundColor(.red)
                 }
                 Pin(.bottomTrailing) {
-                    RedHUD.Rectangle().frame(width: 60, height: 60).foregroundColor(.blue)
+                    Rectangle().frame(width: 60, height: 60).foregroundColor(.blue)
                 }
                 Pin(.center) {
-                    RedHUD.Rectangle().frame(width: 40, height: 40).foregroundColor(.white)
+                    Rectangle().frame(width: 40, height: 40).foregroundColor(.white)
                 }
             }
         }
