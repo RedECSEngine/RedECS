@@ -20,8 +20,8 @@ let package = Package(
             targets: ["RedECSBasicComponents"]
         ),
         .library(
-            name: "RedECSUIComponents",
-            targets: ["RedECSUIComponents"]
+            name: "RedHUD",
+            targets: ["RedHUD"]
         ),
 
         .library(
@@ -61,7 +61,7 @@ let package = Package(
             dependencies: [
                 "RedECS",
                 "RedECSBasicComponents",
-                "RedECSUIComponents"
+                "RedHUD"
             ]
         ),
 
@@ -79,8 +79,8 @@ let package = Package(
             dependencies: ["RedECS"]
         ),
         .target(
-            name: "RedECSUIComponents",
-            dependencies: ["RedECS", "RedECSBasicComponents"]
+            name: "RedHUD",
+            dependencies: ["RedECS"]
         ),
 
         .target(
@@ -108,10 +108,15 @@ let package = Package(
             dependencies: ["RedECS", "RedECSBasicComponents", "RedECSAppleSupport"]
         ),
         .testTarget(
+            name: "RedHUDTests",
+            dependencies: ["RedHUD"]
+        ),
+        .testTarget(
             name: "RenderingTests",
             dependencies: [
                 "RedECS",
                 "RedECSAppleSupport",
+                "RedHUD",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
             ],
             exclude: ["__Snapshots__"],

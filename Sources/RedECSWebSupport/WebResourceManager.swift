@@ -1,6 +1,5 @@
 import JavaScriptKit
 import RedECS
-import RedECSUIComponents
 import TiledInterpreter
 
 public final class WebResourceManager: ResourceManager {

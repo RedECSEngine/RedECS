@@ -2,7 +2,6 @@ import JavaScriptKit
 import RedECS
 import Geometry
 import GeometryAlgorithms
-import RedECSUIComponents
 
 open class WebRenderer {
     public enum State {
