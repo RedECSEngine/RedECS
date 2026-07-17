@@ -29,7 +29,7 @@ public struct HUDRenderingReducer<ContextState: GameState>: Reducer {
         }
 
         let context = HUDRenderContext(
-            fonts: environment.resourceManager.fonts
+            resourceManager: environment.resourceManager
         )
         let rootSize = root.size(proposed: ProposedSize(viewport), context: context)
         let offset = Alignment.center.offset(forChild: rootSize, in: viewport)

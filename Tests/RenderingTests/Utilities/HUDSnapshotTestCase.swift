@@ -64,9 +64,13 @@ class HUDSnapshotTestCase: XCTestCase {
     }
 
     func preloadFont() {
-        let exp = expectation(description: "font preload")
+        preloadResources([.init(name: "pt-mono.fnt", type: .bitmapFont)])
+    }
+
+    func preloadResources(_ resources: [LoadableResource]) {
+        let exp = expectation(description: "resource preload")
         renderer.resourceManager.resourceBundle = .module
-        renderer.resourceManager.preload([.init(name: "pt-mono.fnt", type: .bitmapFont)])
+        renderer.resourceManager.preload(resources)
             .subscribe { result in
                 if case .failure(let err) = result {
                     XCTFail("\(err)")

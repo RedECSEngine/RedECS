@@ -18,7 +18,9 @@ final class TextTests: XCTestCase {
 
     var context: HUDRenderContext {
         let font = try! BitmapFont(fromString: Self.fontData)
-        return HUDRenderContext(fonts: ["TestFont": font], font: "TestFont")
+        let resourceManager = FakeResourceManager()
+        resourceManager.fonts = ["TestFont": font]
+        return HUDRenderContext(resourceManager: resourceManager, font: "TestFont")
     }
 
     func testMeasuresAdvancesAndLineHeight() {
