@@ -33,20 +33,31 @@ class HUDSnapshotTestCase: XCTestCase {
         mtkView.delegate = renderer
         renderer.mtkView(mtkView, drawableSizeWillChange: .init(width: 480, height: 480))
 
+        let world = RenderingReducer(renderableComponentTypes: [
+            .init(keyPath: \.sprite)
+        ])
+        .pullback(
+            toLocalState: \.self,
+            toLocalEnvironment: { $0 as RenderingEnvironment }
+        ) as Pullback<RenderingTestState, RenderingTestAction, RenderingTestEnvironment, RenderingReducer<RenderingTestState>>
+
+        let hud = HUDRenderingReducer<RenderingTestState, String> { [weak self] _ in
+            self?.hudView
+        }
+        .pullback(
+            toLocalState: \.self,
+            toLocalAction: { (action: RenderingTestAction) in
+                if case .hud(let hudAction) = action { return hudAction }
+                return nil
+            },
+            toGlobalAction: { RenderingTestAction.hud($0) },
+            toLocalEnvironment: { (environment: RenderingTestEnvironment) in
+                environment as RenderingEnvironment
+            }
+        )
+
         let reducer: AnyReducer<RenderingTestState, RenderingTestAction, RenderingTestEnvironment> =
-            zip(
-                RenderingReducer(renderableComponentTypes: [
-                    .init(keyPath: \.sprite)
-                ]),
-                HUDRenderingReducer { [weak self] (_: RenderingTestState) in
-                    self?.hudView
-                }
-            )
-            .pullback(
-                toLocalState: \.self,
-                toLocalEnvironment: { $0 as RenderingEnvironment }
-            )
-            .eraseToAnyReducer()
+            zip(world, hud).eraseToAnyReducer()
 
         store = GameStore(
             state: RenderingTestState(),

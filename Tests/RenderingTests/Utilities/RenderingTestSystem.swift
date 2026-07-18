@@ -3,6 +3,7 @@ import Foundation
 import Geometry
 import RedECSBasicComponents
 import RedECSAppleSupport
+import RedHUD
 
 struct RenderingTestState: RenderableGameState {
     var entities: EntityRepository = .init()
@@ -13,7 +14,9 @@ struct RenderingTestState: RenderableGameState {
 }
 
 enum RenderingTestAction: Equatable {
-
+    /// Pointer events in, `.triggered` back out; test buttons use String
+    /// as the game-action type.
+    case hud(HUDAction<String>)
 }
 
 struct RenderingTestEnvironment: RenderingEnvironment {

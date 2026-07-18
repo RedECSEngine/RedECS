@@ -22,11 +22,19 @@ final class HUDCache {
     var animationSlots: [AnimationKey: AnimationSlot] = [:]
     var touchedAnimationKeys: Set<AnimationKey> = []
 
+    /// The button the pointer went down on; its `up` action fires only if
+    /// the release lands on the same button.
+    var pressedIdentity: [Int]?
+    /// The button currently under the pointer; hover fires on entry only.
+    var hoveredIdentity: [Int]?
+
     func clear() {
         lastTree = nil
         lastViewport = .zero
         lastRootOffset = .zero
         animationSlots.removeAll()
         touchedAnimationKeys.removeAll()
+        pressedIdentity = nil
+        hoveredIdentity = nil
     }
 }

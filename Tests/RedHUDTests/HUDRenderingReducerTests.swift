@@ -17,13 +17,13 @@ final class HUDRenderingReducerTests: XCTestCase {
     }
 
     func testNilContentRendersNothing() {
-        let reducer = HUDRenderingReducer<TestState> { _ in nil }
+        let reducer = HUDRenderingReducer<TestState, Never> { _ in nil }
         _ = reducer.reduce(state: &state, delta: 1, environment: environment)
         XCTAssertTrue(renderer.queuedWork.isEmpty)
     }
 
     func testContentDerivesFromState() {
-        let reducer = HUDRenderingReducer<TestState> { state in
+        let reducer = HUDRenderingReducer<TestState, Never> { state in
             state.score > 0
                 ? AnyHUDView(Rectangle().frame(width: 10, height: 10))
                 : nil
@@ -37,7 +37,7 @@ final class HUDRenderingReducerTests: XCTestCase {
     }
 
     func testGroupsAreScreenSpaceInPaintOrderAndCentered() {
-        let reducer = HUDRenderingReducer<TestState> { _ in
+        let reducer = HUDRenderingReducer<TestState, Never> { _ in
             AnyHUDView(HStack {
                 Rectangle().frame(width: 20, height: 10)
                 Rectangle().frame(width: 20, height: 10)
@@ -58,7 +58,7 @@ final class HUDRenderingReducerTests: XCTestCase {
     }
 
     func testCacheRetainsLastDrawnTree() {
-        let reducer = HUDRenderingReducer<TestState> { _ in
+        let reducer = HUDRenderingReducer<TestState, Never> { _ in
             AnyHUDView(Rectangle().frame(width: 40, height: 10))
         }
         _ = reducer.reduce(state: &state, delta: 1, environment: environment)
@@ -72,7 +72,7 @@ final class HUDRenderingReducerTests: XCTestCase {
 
     func testCacheClearsWhenContentHides() {
         var visible = true
-        let reducer = HUDRenderingReducer<TestState> { _ in
+        let reducer = HUDRenderingReducer<TestState, Never> { _ in
             visible ? AnyHUDView(Rectangle()) : nil
         }
         _ = reducer.reduce(state: &state, delta: 1, environment: environment)
@@ -85,7 +85,7 @@ final class HUDRenderingReducerTests: XCTestCase {
 
     func testZeroViewportRendersNothing() {
         renderer.viewportSize = .zero
-        let reducer = HUDRenderingReducer<TestState> { _ in
+        let reducer = HUDRenderingReducer<TestState, Never> { _ in
             AnyHUDView(Rectangle())
         }
         _ = reducer.reduce(state: &state, delta: 1, environment: environment)
