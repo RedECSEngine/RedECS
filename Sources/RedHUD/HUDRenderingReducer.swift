@@ -30,10 +30,14 @@ public struct HUDRenderingReducer<ContextState: GameState>: Reducer {
             return .none
         }
 
-        let context = HUDRenderContext(
+        var context = HUDRenderContext(
             resourceManager: environment.resourceManager
         )
+        context.cache = cache
+        context.delta = delta
+        cache.beginAnimationFrame()
         let tree = root.resolve(proposed: ProposedSize(viewport), context: context)
+        cache.endAnimationFrame()
         let offset = Alignment.center.offset(forChild: tree.frame.size, in: viewport)
         cache.lastTree = tree
         cache.lastViewport = viewport

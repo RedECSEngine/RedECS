@@ -22,19 +22,22 @@ public struct VStack: BuiltinHUDView {
         if let totalHeight = proposed.height {
             var remaining = totalHeight - totalSpacing
             var childrenLeft = children.count
-            for child in children {
+            for (index, child) in children.enumerated() {
                 let share = max(0, remaining) / Double(childrenLeft)
                 let node = child.resolve(
                     proposed: ProposedSize(width: proposed.width, height: share),
-                    context: context
+                    context: context.descending(into: index)
                 )
                 remaining -= node.frame.size.height
                 childrenLeft -= 1
                 placed.append(node)
             }
         } else {
-            placed = children.map {
-                $0.resolve(proposed: ProposedSize(width: proposed.width, height: nil), context: context)
+            placed = children.enumerated().map { index, child in
+                child.resolve(
+                    proposed: ProposedSize(width: proposed.width, height: nil),
+                    context: context.descending(into: index)
+                )
             }
         }
 

@@ -14,6 +14,17 @@ public struct HUDRenderContext {
     public var font: String?
     public var opacity: Double
 
+    /// The active animation transaction, set by `.animated`; animatable
+    /// modifiers below it ease their values through cache slots.
+    var animation: HUDAnimation?
+    /// Persistent per-HUD storage (animation slots); wired by the reducer.
+    var cache: HUDCache?
+    /// Structural position of the view being resolved — containers append
+    /// their child's index as they descend. Keys animation slots.
+    var identityPath: [Int] = []
+    /// Frame time from `reduce(delta:)`; advances animation slots.
+    var delta: Double = 0
+
     public var fonts: [String: BitmapFont] {
         resourceManager?.fonts ?? [:]
     }
@@ -28,5 +39,13 @@ public struct HUDRenderContext {
         self.fillColor = fillColor
         self.font = font
         self.opacity = opacity
+    }
+
+    /// The context for resolving the child at `index` of a structural
+    /// container; maintains the identity path that keys animation slots.
+    func descending(into index: Int) -> HUDRenderContext {
+        var context = self
+        context.identityPath.append(index)
+        return context
     }
 }

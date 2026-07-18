@@ -54,6 +54,18 @@ public extension RenderGroup {
         )
     }
 
+    /// A copy of this group at a different opacity.
+    func withOpacity(_ opacity: Double) -> RenderGroup {
+        RenderGroup(
+            triangles: triangles,
+            transformMatrix: transformMatrix,
+            fragmentType: fragmentType,
+            zIndex: zIndex,
+            opacity: opacity,
+            projectionSpace: projectionSpace
+        )
+    }
+
     /// A copy of this group re-slotted into a draw-order position and
     /// projection space; used when assembling screen-space HUD output.
     func with(zIndex: Int, projectionSpace: ProjectionSpace) -> RenderGroup {

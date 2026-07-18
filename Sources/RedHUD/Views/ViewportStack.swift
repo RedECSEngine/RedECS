@@ -40,8 +40,11 @@ public struct ViewportStack: BuiltinHUDView {
 
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         let size = proposed.orDefault()
-        let placed = pins.map { pin -> HUDNode in
-            var child = pin.content.resolve(proposed: ProposedSize(size), context: context)
+        let placed = pins.enumerated().map { index, pin -> HUDNode in
+            var child = pin.content.resolve(
+                proposed: ProposedSize(size),
+                context: context.descending(into: index)
+            )
             child.frame.origin = pin.alignment.offset(forChild: child.frame.size, in: size)
             return child
         }

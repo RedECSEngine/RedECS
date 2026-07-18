@@ -17,9 +17,16 @@ final class HUDCache {
     /// points are translated by its inverse before walking the tree.
     var lastRootOffset: Point = .zero
 
+    /// Tween state for animatable modifiers, keyed by tree position; pruned
+    /// each frame to the modifiers that actually resolved.
+    var animationSlots: [AnimationKey: AnimationSlot] = [:]
+    var touchedAnimationKeys: Set<AnimationKey> = []
+
     func clear() {
         lastTree = nil
         lastViewport = .zero
         lastRootOffset = .zero
+        animationSlots.removeAll()
+        touchedAnimationKeys.removeAll()
     }
 }

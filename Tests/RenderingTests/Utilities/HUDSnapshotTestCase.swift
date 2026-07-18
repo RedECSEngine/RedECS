@@ -94,12 +94,13 @@ class HUDSnapshotTestCase: XCTestCase {
     func snapshotFrame(
         named name: String? = nil,
         record: Bool = false,
+        delta: Double = 1,
         file: StaticString = #filePath,
         testName: String = #function,
         line: UInt = #line
     ) {
         renderer.clearQueue()
-        store.sendDelta(1)
+        store.sendDelta(delta)
         assertSnapshot(
             matching: mtkView,
             as: .image(renderer: renderer),

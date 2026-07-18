@@ -25,11 +25,11 @@ public struct HStack: BuiltinHUDView {
         if let totalWidth = proposed.width {
             var remaining = totalWidth - totalSpacing
             var childrenLeft = children.count
-            for child in children {
+            for (index, child) in children.enumerated() {
                 let share = max(0, remaining) / Double(childrenLeft)
                 let node = child.resolve(
                     proposed: ProposedSize(width: share, height: proposed.height),
-                    context: context
+                    context: context.descending(into: index)
                 )
                 remaining -= node.frame.size.width
                 childrenLeft -= 1
@@ -37,8 +37,11 @@ public struct HStack: BuiltinHUDView {
             }
         } else {
             // No proposal along the major axis: every child gets its ideal.
-            placed = children.map {
-                $0.resolve(proposed: ProposedSize(width: nil, height: proposed.height), context: context)
+            placed = children.enumerated().map { index, child in
+                child.resolve(
+                    proposed: ProposedSize(width: nil, height: proposed.height),
+                    context: context.descending(into: index)
+                )
             }
         }
 

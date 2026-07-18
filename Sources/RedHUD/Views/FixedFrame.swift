@@ -16,7 +16,7 @@ public struct FixedFrame<Content: HUDView>: BuiltinHUDView {
                 width: width ?? proposed.width,
                 height: height ?? proposed.height
             ),
-            context: context
+            context: context.descending(into: 0)
         )
         let size = Size(
             width: width ?? child.frame.size.width,

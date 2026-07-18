@@ -1,4 +1,5 @@
 import Geometry
+import GeometryAlgorithms
 import RedECS
 
 /// The resolved form of a view: its frame, what it draws itself, and its
@@ -15,6 +16,12 @@ public struct HUDNode {
     public var children: [HUDNode]
     /// Interaction payloads volunteered for hit testing (set by `Button`).
     public var hit: ButtonHit?
+    /// Render-only local transform (e.g. `scaleEffect`): applied to this
+    /// node's whole subtree at emit, in local space, without affecting
+    /// layout frames or hit geometry.
+    public var transform: Matrix3?
+    /// Render-only opacity multiplier for the whole subtree.
+    public var opacityFactor: Double?
 
     public init(
         frame: Rect,
@@ -34,10 +41,20 @@ public extension HUDNode {
     /// content, then its children in order). Reparenting is applied level by
     /// level — child groups first, then this node's translation — which
     /// reproduces the exact floating-point operation order of the previous
-    /// recursive render path, keeping snapshot output bit-identical.
+    /// recursive render path, keeping snapshot output bit-identical when no
+    /// render effects are present.
     func flattenedGroups() -> [RenderGroup] {
-        groups + children.flatMap { child in
+        var flattened = groups + children.flatMap { child in
             child.flattenedGroups().map { $0.reparented(by: child.frame.origin) }
         }
+        if let transform = transform {
+            flattened = flattened.map {
+                $0.withTransformMatrix(.multiply(transform, $0.transformMatrix))
+            }
+        }
+        if let opacityFactor = opacityFactor {
+            flattened = flattened.map { $0.withOpacity($0.opacity * opacityFactor) }
+        }
+        return flattened
     }
 }
