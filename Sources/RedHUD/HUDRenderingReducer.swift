@@ -12,6 +12,7 @@ public struct HUDRenderingReducer<ContextState: GameState>: Reducer {
     public typealias Environment = RenderingEnvironment
 
     let content: (ContextState) -> AnyHUDView?
+    let cache = HUDCache()
 
     public init(content: @escaping (ContextState) -> AnyHUDView?) {
         self.content = content
@@ -25,6 +26,7 @@ public struct HUDRenderingReducer<ContextState: GameState>: Reducer {
         let viewport = environment.renderer.viewportSize
         guard viewport.width > 0, viewport.height > 0,
               let root = content(state) else {
+            cache.clear()
             return .none
         }
 
@@ -33,6 +35,9 @@ public struct HUDRenderingReducer<ContextState: GameState>: Reducer {
         )
         let tree = root.resolve(proposed: ProposedSize(viewport), context: context)
         let offset = Alignment.center.offset(forChild: tree.frame.size, in: viewport)
+        cache.lastTree = tree
+        cache.lastViewport = viewport
+        cache.lastRootOffset = offset
         var z = 0
         let groups = tree.flattenedGroups()
             .map { group -> RenderGroup in

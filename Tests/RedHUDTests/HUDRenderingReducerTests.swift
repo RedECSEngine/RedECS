@@ -57,6 +57,32 @@ final class HUDRenderingReducerTests: XCTestCase {
         XCTAssertEqual(firstOrigin, Point(x: 220, y: 155))
     }
 
+    func testCacheRetainsLastDrawnTree() {
+        let reducer = HUDRenderingReducer<TestState> { _ in
+            AnyHUDView(Rectangle().frame(width: 40, height: 10))
+        }
+        _ = reducer.reduce(state: &state, delta: 1, environment: environment)
+
+        XCTAssertNotNil(reducer.cache.lastTree)
+        XCTAssertEqual(reducer.cache.lastViewport, Size(width: 480, height: 320))
+        // 40x10 root centered in 480x320
+        XCTAssertEqual(reducer.cache.lastRootOffset, Point(x: 220, y: 155))
+        XCTAssertEqual(reducer.cache.lastTree?.frame.size, Size(width: 40, height: 10))
+    }
+
+    func testCacheClearsWhenContentHides() {
+        var visible = true
+        let reducer = HUDRenderingReducer<TestState> { _ in
+            visible ? AnyHUDView(Rectangle()) : nil
+        }
+        _ = reducer.reduce(state: &state, delta: 1, environment: environment)
+        XCTAssertNotNil(reducer.cache.lastTree)
+
+        visible = false
+        _ = reducer.reduce(state: &state, delta: 1, environment: environment)
+        XCTAssertNil(reducer.cache.lastTree, "a hidden HUD must not retain hit geometry")
+    }
+
     func testZeroViewportRendersNothing() {
         renderer.viewportSize = .zero
         let reducer = HUDRenderingReducer<TestState> { _ in

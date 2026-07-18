@@ -13,15 +13,19 @@ public struct HUDNode {
     /// containers usually leave this empty).
     public var groups: [RenderGroup]
     public var children: [HUDNode]
+    /// Interaction payloads volunteered for hit testing (set by `Button`).
+    public var hit: ButtonHit?
 
     public init(
         frame: Rect,
         groups: [RenderGroup] = [],
-        children: [HUDNode] = []
+        children: [HUDNode] = [],
+        hit: ButtonHit? = nil
     ) {
         self.frame = frame
         self.groups = groups
         self.children = children
+        self.hit = hit
     }
 }
 
