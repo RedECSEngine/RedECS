@@ -53,7 +53,7 @@ public extension HUDNode {
             }
         }
         if let opacityFactor = opacityFactor {
-            flattened = flattened.map { $0.withOpacity($0.opacity * opacityFactor) }
+            flattened = flattened.map { $0.applyingOpacityFactor(opacityFactor) }
         }
         return flattened
     }

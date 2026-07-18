@@ -110,6 +110,18 @@ final class AnimationSlotTests: XCTestCase {
         XCTAssertEqual(step(target: 3.0, duration: 0, delta: 1), 3.0)
     }
 
+    func testOpacityFactorRoutesPerFragmentType() {
+        // The renderers only read RenderGroup.opacity for texture groups;
+        // color groups blend with their fill color's alpha.
+        let view = Rectangle()
+            .frame(width: 10, height: 10)
+            .foregroundColor(.green)
+            .opacity(0.5)
+        let groups = view.render(context: HUDRenderContext(), size: Size(width: 10, height: 10))
+        XCTAssertEqual(groups.first?.color, Color.green.withAlpha(0.5))
+        XCTAssertEqual(groups.first?.opacity, 0.5)
+    }
+
     func testUntouchedSlotsArePrunedEachFrame() {
         _ = step(target: 1.0, delta: 1)
         cache.endAnimationFrame()

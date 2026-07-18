@@ -13,4 +13,24 @@ extension RenderGroup {
             )
         )
     }
+
+    /// A copy at `factor` of this group's opacity, routed the way each
+    /// fragment type actually blends: the renderers read `opacity` only for
+    /// texture groups, while color groups blend with their fill color's own
+    /// alpha — so the factor must fold into the color there.
+    func applyingOpacityFactor(_ factor: Double) -> RenderGroup {
+        switch fragmentType {
+        case .color(let color):
+            return RenderGroup(
+                triangles: triangles,
+                transformMatrix: transformMatrix,
+                fragmentType: .color(color.withAlpha(color.alpha * factor)),
+                zIndex: zIndex,
+                opacity: opacity * factor,
+                projectionSpace: projectionSpace
+            )
+        case .texture:
+            return withOpacity(opacity * factor)
+        }
+    }
 }
