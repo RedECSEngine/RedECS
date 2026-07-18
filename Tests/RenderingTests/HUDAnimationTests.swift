@@ -39,7 +39,7 @@ class HUDAnimationTests: HUDSnapshotTestCase {
     }
 
     /// Scale and opacity share one transaction: a fade-in growing from
-    /// nothing, snapshotted mid-flight (easeOut(0.5) = 0.75).
+    /// nothing, snapshotted mid-flight (easeOut(0.25) = 0.4375).
     func testScaleAndOpacityShareTransactionMidFlight() throws {
         setHUD {
             Rectangle()
@@ -50,7 +50,7 @@ class HUDAnimationTests: HUDSnapshotTestCase {
                 .animated(duration: 1, timing: .easeOut, on: .appear)
         }
         snapshotFrame(named: "start")
-        snapshotFrame(named: "middle", delta: 0.25)
-        snapshotFrame(named: "end", delta: 0.5)
+        snapshotFrame(named: "middle", delta: 0.25)  // t=0.25 → 52.5pt at 0.4375
+        snapshotFrame(named: "end", delta: 0.75)     // t=1.0 → settled, full
     }
 }
