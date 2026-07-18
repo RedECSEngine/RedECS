@@ -49,6 +49,9 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
     public var deltaCallback: ((Double) -> Void)?
     
     var projectionMatrix: matrix_float4x4 = matrix_float4x4()
+    /// Projection for `.screen` render groups (viewport points, top-left
+    /// origin); tracks the drawable size, independent of the world camera.
+    var screenProjectionMatrix: matrix_float4x4 = matrix_float4x4()
     
     private lazy var emptyTexture: MTLTexture = {
         creatyEmptyPixelTexture(device: device)!
@@ -60,9 +63,9 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         resourceManager: MetalResourceManager
     ) {
         self.resourceManager = resourceManager
-        
+
         self.device = device
-        
+
         guard let defaultLibrary = Self.makeShaderLibrary(device: device) else {
             return nil
         }
@@ -97,9 +100,13 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         self.commandQueue = commandQueue
     }
 
-    /// Xcode compiles a package's .metal resources into a default.metallib,
-    /// but `swift build`/`swift test` only copy the source file into the
-    /// bundle, so fall back to compiling the shaders at runtime.
+    /// Shaders.metal is bundled as a plain resource (`.copy` in
+    /// Package.swift) and compiled here at runtime, so Xcode and
+    /// `swift build`/`swift test` render identically — a precompiled
+    /// default.metallib produced subtly different texture sampling than the
+    /// runtime compiler, which broke snapshot references across the two
+    /// (see known-issues.md). The metallib path is kept as a preference in
+    /// case a future build produces one deliberately.
     private static func makeShaderLibrary(device: MTLDevice) -> MTLLibrary? {
         if let library = try? device.makeDefaultLibrary(bundle: .module) {
             return library
@@ -114,6 +121,9 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         viewportSize.width = size.width
         viewportSize.height = size.height
+        if size.width > 0 && size.height > 0 {
+            screenProjectionMatrix = Matrix3.screenProjection(size: viewportSize).asMatrix4x4
+        }
     }
     
     // A *monotonic* timestamp (seconds). `Date()` is the wall clock and can jump
@@ -176,12 +186,22 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         
         var lastBoundTexture: TextureId?
 
-        for renderGroup in queuedWork.sorted(by: { $0.zIndex < $1.zIndex }) {
+        // Screen-space groups draw after (above) all world groups, each
+        // space z-sorted within itself.
+        let sortedWork = queuedWork.sorted { a, b in
+            if a.projectionSpace != b.projectionSpace {
+                return a.projectionSpace == .world
+            }
+            return a.zIndex < b.zIndex
+        }
+        for renderGroup in sortedWork {
             let color = renderGroup.color?.asVectorFloat4 ?? vector_float4(0, 0, 0, Float(renderGroup.opacity))
             var triangleVertices: [AAPLVertex] = []
             var textureVertices: [TextureInfo] = []
             var uniforms = Uniforms(
-                projectionMatrix: projectionMatrix,
+                projectionMatrix: renderGroup.projectionSpace == .screen
+                    ? screenProjectionMatrix
+                    : projectionMatrix,
                 modelViewMatrix: renderGroup.transformMatrix.asMatrix4x4
             )
             

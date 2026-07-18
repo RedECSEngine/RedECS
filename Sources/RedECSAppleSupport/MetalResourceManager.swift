@@ -1,5 +1,6 @@
 import Foundation
 import RedECS
+import RedHUD
 import TiledInterpreter
 import MetalKit
 
@@ -24,6 +25,33 @@ public final class MetalResourceManager: ResourceManager {
     public init(resourceBundle: Bundle = .main, metalDevice: MTLDevice) {
         self.resourceBundle = resourceBundle
         self.metalDevice = metalDevice
+        registerDefaultHUDFont()
+    }
+
+    /// Makes RedHUD's embedded fallback font renderable with no game-side
+    /// setup: the metrics go into `fonts` and the embedded atlas page into
+    /// `textureImages`. A game that later preloads the same face overwrites
+    /// the metrics; the atlas entry short-circuits that load's image fetch.
+    private func registerDefaultHUDFont() {
+        let font = DefaultHUDFont.font
+        fonts[font.info.face] = font
+        guard let data = Data(base64Encoded: DefaultHUDFont.pageImageBase64) else {
+            assertionFailure("embedded default HUD font atlas is not valid base64")
+            return
+        }
+        let textureLoader = MTKTextureLoader(device: metalDevice)
+        do {
+            textureImages[font.pageTextureName] = try textureLoader.newTexture(
+                data: data,
+                options: [
+                    .textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
+                    .textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue),
+                    .SRGB: NSNumber(value: false)
+                ]
+            )
+        } catch {
+            print("⚠️ failed to load default HUD font atlas:", error)
+        }
     }
     
     public func loadJSONFile<T: Decodable>(
@@ -169,29 +197,29 @@ public final class MetalResourceManager: ResourceManager {
         }
     }
 
-    /// Asset catalogs are only compiled by Xcode; `swift build`/`swift test`
-    /// leave loose image files in the bundle instead, so fall back to loading
-    /// the texture by file URL.
+    /// Prefer the loose image file over an asset catalog entry: the catalog
+    /// is only compiled by Xcode, and its compiler re-encodes/color-manages
+    /// the image, so the same texture sampled from a catalog build has
+    /// subtly different texels than the raw file — which broke snapshot
+    /// references between Xcode and `swift test` (see known-issues.md).
+    /// The raw file is byte-identical in both environments; the catalog
+    /// remains the fallback for resources shipped only that way.
     private func loadTexture(
         name: String,
         textureLoader: MTKTextureLoader,
         options: [MTKTextureLoader.Option: NSNumber]
     ) throws -> MTLTexture {
-        do {
-            return try textureLoader.newTexture(
-                name: name,
-                scaleFactor: 1.0,
-                bundle: resourceBundle,
-                options: options
-            )
-        } catch {
-            for ext in ["png", "jpg", "jpeg"] {
-                if let url = resourceBundle.url(forResource: name, withExtension: ext) {
-                    return try textureLoader.newTexture(URL: url, options: options)
-                }
+        for ext in ["png", "jpg", "jpeg"] {
+            if let url = resourceBundle.url(forResource: name, withExtension: ext) {
+                return try textureLoader.newTexture(URL: url, options: options)
             }
-            throw error
         }
+        return try textureLoader.newTexture(
+            name: name,
+            scaleFactor: 1.0,
+            bundle: resourceBundle,
+            options: options
+        )
     }
 
     public func loadBitmapFontTextFile(_ name: String) -> Future<BitmapFont, Swift.Error> {

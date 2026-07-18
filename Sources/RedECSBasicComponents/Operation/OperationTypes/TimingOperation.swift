@@ -45,34 +45,17 @@ public struct TimingOperation<GameAction: Equatable & Codable>: Operation {
 }
 
 public extension TimingOperation.Strategy {
-    func timing(_ t: Double) -> Double {
+    /// The shared engine curve this strategy maps to; the math lives in
+    /// `TimingFunction` so operations and RedHUD ease identically.
+    var timingFunction: TimingFunction {
         switch self {
-        case .easeIn:
-            return easeIn(t)
-        case .easeOut:
-            return easeOut(t)
-        case .easeInOut:
-            return lerp(easeIn(t), easeOut(t), t)
+        case .easeIn: return .easeIn
+        case .easeOut: return .easeOut
+        case .easeInOut: return .easeInOut
         }
     }
-    
-    func easeIn(_ t: Double) -> Double {
-        square(t)
-    }
-    
-    func easeOut(_ t: Double) -> Double {
-        flip(square(flip(t)))
-    }
-    
-    func flip(_ t: Double) -> Double {
-       1 - t
-    }
-    
-    func square(_ t: Double) -> Double {
-        t * t
-    }
-    
-    func lerp(_ a: Double, _ b: Double, _ t: Double) -> Double {
-        ((b - a) * t) + a
+
+    func timing(_ t: Double) -> Double {
+        timingFunction(t)
     }
 }

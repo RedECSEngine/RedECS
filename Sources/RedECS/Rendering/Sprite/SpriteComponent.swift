@@ -208,54 +208,16 @@ extension SpriteComponent {
         guard let font = resourceManager.fonts[font] else {
             return []
         }
-        
-        var currentOffsetX: Double = 0
-        var maxHeight: Double = 0
-        var renderTriangles: [RenderTriangle] = []
         do {
-            for character in text {
-                let characterData: BitmapFont.Character
-                if let data = font.characterMap[String(character)] {
-                    characterData = data
-                } else if character == " ", let data = font.characterMap["space"] {
-                    currentOffsetX += data.xadvance
-                    continue
-                } else {
-                    continue
-                }
-                let renderRect = Rect(
-                    x: currentOffsetX,
-                    y: (font.common.base - characterData.height - characterData.yoffset),
-                    width: characterData.width,
-                    height: characterData.height
-                )
-                let textureY = font.common.scaleH - (characterData.y + characterData.height)
-                let textureRect = Rect(
-                    origin: .init(x: characterData.x, y: textureY),
-                    size: Size(width: characterData.width, height: characterData.height)
-                )
-                let renderTris = try renderRect.triangulate()
-                let textureTris = try textureRect.triangulate()
-                for i in 0..<2 {
-                    renderTriangles.append(
-                        RenderTriangle(
-                            triangle: renderTris[i],
-                            textureTriangle: textureTris[i]
-                        )
-                    )
-                }
-                maxHeight = max(maxHeight, characterData.height)
-                currentOffsetX += characterData.xadvance
-            }
-            let textureName = font.page.file.split(separator: ".").dropLast().joined(separator: ".")
+            let layout = try font.layoutText(text)
             return [
                 RenderGroup(
-                    triangles: renderTriangles,
+                    triangles: layout.triangles,
                     transformMatrix: contentMatrix(
                         transform: transform,
-                        containerSize: Size(width: currentOffsetX, height: maxHeight)
+                        containerSize: layout.size
                     ),
-                    fragmentType: .texture(textureName),
+                    fragmentType: .texture(font.pageTextureName),
                     zIndex: transform.zIndex,
                     opacity: opacity
                 )

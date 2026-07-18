@@ -20,8 +20,8 @@ let package = Package(
             targets: ["RedECSBasicComponents"]
         ),
         .library(
-            name: "RedECSUIComponents",
-            targets: ["RedECSUIComponents"]
+            name: "RedHUD",
+            targets: ["RedHUD"]
         ),
 
         .library(
@@ -61,7 +61,7 @@ let package = Package(
             dependencies: [
                 "RedECS",
                 "RedECSBasicComponents",
-                "RedECSUIComponents"
+                "RedHUD"
             ]
         ),
 
@@ -79,15 +79,20 @@ let package = Package(
             dependencies: ["RedECS"]
         ),
         .target(
-            name: "RedECSUIComponents",
-            dependencies: ["RedECS", "RedECSBasicComponents"]
+            name: "RedHUD",
+            dependencies: ["RedECS"]
         ),
 
         .target(
             name: "RedECSAppleSupport",
             dependencies: ["RedECSKit"],
             resources: [
-                .process("Shaders.metal")
+                // .copy (not .process) so Xcode bundles the source verbatim
+                // instead of precompiling a default.metallib: the runtime
+                // source compile is then the single shader path everywhere,
+                // keeping snapshot pixels identical between Xcode and
+                // `swift test`.
+                .copy("Shaders.metal")
             ]
         ),
         .target(
@@ -108,10 +113,15 @@ let package = Package(
             dependencies: ["RedECS", "RedECSBasicComponents", "RedECSAppleSupport"]
         ),
         .testTarget(
+            name: "RedHUDTests",
+            dependencies: ["RedHUD"]
+        ),
+        .testTarget(
             name: "RenderingTests",
             dependencies: [
                 "RedECS",
                 "RedECSAppleSupport",
+                "RedHUD",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
             ],
             exclude: ["__Snapshots__"],

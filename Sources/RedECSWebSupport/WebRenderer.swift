@@ -2,7 +2,6 @@ import JavaScriptKit
 import RedECS
 import Geometry
 import GeometryAlgorithms
-import RedECSUIComponents
 
 open class WebRenderer {
     public enum State {
@@ -19,6 +18,11 @@ open class WebRenderer {
     public var queuedWork: [RenderGroup] = []
     
     private(set) var projectionMatrix: Matrix3 = .identity
+    /// Projection for `.screen` render groups (viewport points, top-left
+    /// origin), independent of the world camera.
+    var screenProjectionMatrix: Matrix3 {
+        .screenProjection(size: size)
+    }
     
     lazy var drawProgram: Draw2DProgram = {
         Draw2DProgram(
@@ -57,7 +61,18 @@ open class WebRenderer {
     public func draw() {
         do {
             clearCanvas()
-            for renderGroup in queuedWork.sorted(by: { $0.zIndex < $1.zIndex }) {
+            // Screen-space groups draw after (above) all world groups, each
+            // space z-sorted within itself.
+            let sortedWork = queuedWork.sorted { a, b in
+                if a.projectionSpace != b.projectionSpace {
+                    return a.projectionSpace == .world
+                }
+                return a.zIndex < b.zIndex
+            }
+            for renderGroup in sortedWork {
+                let groupProjection = renderGroup.projectionSpace == .screen
+                    ? screenProjectionMatrix
+                    : projectionMatrix
                 switch renderGroup.fragmentType {
                 case .color:
                     drawProgram.update(
@@ -65,7 +80,7 @@ open class WebRenderer {
                         textureSize: .init(width: 1, height: 1),
                         image: emptyImage,
                         color: renderGroup.color ?? .clear,
-                        projectionMatrix: projectionMatrix,
+                        projectionMatrix: groupProjection,
                         modelMatrix: renderGroup.transformMatrix
                     )
                     try drawProgram.execute(with: self)
@@ -82,7 +97,7 @@ open class WebRenderer {
                             ),
                             image: image,
                             color: renderGroup.color ?? .init(red: 0, green: 0, blue: 0, alpha: renderGroup.opacity),
-                            projectionMatrix: projectionMatrix,
+                            projectionMatrix: groupProjection,
                             modelMatrix: renderGroup.transformMatrix
                         )
                         try drawProgram.execute(with: self)

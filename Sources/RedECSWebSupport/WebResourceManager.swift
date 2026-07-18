@@ -1,6 +1,6 @@
 import JavaScriptKit
 import RedECS
-import RedECSUIComponents
+import RedHUD
 import TiledInterpreter
 
 public final class WebResourceManager: ResourceManager {
@@ -25,6 +25,26 @@ public final class WebResourceManager: ResourceManager {
     
     public init(resourcePath: String) {
         self.resourcePath = resourcePath
+        registerDefaultHUDFont()
+    }
+
+    /// Makes RedHUD's embedded fallback font renderable with no game-side
+    /// setup: the metrics go into `fonts` and the embedded atlas page is
+    /// decoded from a data URL into `textureImages`. A game that later
+    /// preloads the same face overwrites the metrics; the atlas entries
+    /// short-circuit that load's image fetch.
+    private func registerDefaultHUDFont() {
+        let font = DefaultHUDFont.font
+        fonts[font.info.face] = font
+        guard let image = JSObject.global.Image.function?.new() else {
+            print("⚠️ failed to create image for default HUD font atlas")
+            return
+        }
+        image.src = .string("data:image/png;base64," + DefaultHUDFont.pageImageBase64)
+        textureImages[font.pageTextureName] = image.jsValue
+        // loadBitmapFontTextFile fetches the page by file name; alias it so
+        // a later preload of the same face reuses this image.
+        textureImages[font.page.file] = image.jsValue
     }
     
     @discardableResult
