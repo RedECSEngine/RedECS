@@ -41,7 +41,7 @@ class HUDSnapshotTestCase: XCTestCase {
             toLocalEnvironment: { $0 as RenderingEnvironment }
         ) as Pullback<RenderingTestState, RenderingTestAction, RenderingTestEnvironment, RenderingReducer<RenderingTestState>>
 
-        let hud = HUDRenderingReducer<RenderingTestState, String> { [weak self] _ in
+        let hud = HUDRenderingReducer<RenderingTestState, RenderingTestAction> { [weak self] _ in
             self?.hudView
         }
         .pullback(
@@ -50,14 +50,17 @@ class HUDSnapshotTestCase: XCTestCase {
                 if case .hud(let hudAction) = action { return hudAction }
                 return nil
             },
-            toGlobalAction: { RenderingTestAction.hud($0) },
+            toGlobalAction: { hudAction in
+                if case .triggered(let action) = hudAction { return action }
+                return .hud(hudAction)  // unreachable: only .triggered is emitted
+            },
             toLocalEnvironment: { (environment: RenderingTestEnvironment) in
                 environment as RenderingEnvironment
             }
         )
 
         let reducer: AnyReducer<RenderingTestState, RenderingTestAction, RenderingTestEnvironment> =
-            zip(world, hud).eraseToAnyReducer()
+            zip(world, hud, TestGameLogicReducer()).eraseToAnyReducer()
 
         store = GameStore(
             state: RenderingTestState(),

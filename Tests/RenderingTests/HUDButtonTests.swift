@@ -11,7 +11,7 @@ class HUDButtonTests: HUDSnapshotTestCase {
     func testPressedStateStylesButton() throws {
         preloadFont()
         setHUD {
-            Button(up: "tapped") { interaction in
+            Button(up: RenderingTestAction.buttonFired("tapped")) { interaction in
                 ViewportStack {
                     Pin(.center) {
                         Rectangle()
@@ -29,8 +29,12 @@ class HUDButtonTests: HUDSnapshotTestCase {
 
         store.sendAction(.hud(.pointerDown(Point(x: 240, y: 240))))
         snapshotFrame(named: "pressed")
+        XCTAssertEqual(store.state.firedActions, [], "up-only button must not fire on press")
 
         store.sendAction(.hud(.pointerUp(Point(x: 240, y: 240))))
         snapshotFrame(named: "released")
+        // the .triggered round trip: HUD reducer → pullback wrap →
+        // TestGameLogicReducer observes it, exactly once
+        XCTAssertEqual(store.state.firedActions, ["tapped"])
     }
 }
