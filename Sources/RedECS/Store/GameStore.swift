@@ -93,11 +93,17 @@ public final class GameStore<R: Reducer> {
     private func removeEntity(_ id: EntityId) -> GameEffect<R.State, R.Action> {
         let idsToRemove = state.entities.descendants(of: id).reversed() + [id]
         let effects = idsToRemove.map { id -> GameEffect<R.State, R.Action> in
+            let preRemoveEffects = reducer.reduce(state: &state, entityEvent: .willRemove(id), environment: environment)
             registeredComponentTypes.values.forEach { componentType in
                 componentType.onEntityDestroyed(id, &state)
             }
             state.entities.removeEntity(id)
-            return reducer.reduce(state: &state, entityEvent: .removed(id), environment: environment)
+            return .many(
+                [
+                    preRemoveEffects ,
+                    reducer.reduce(state: &state, entityEvent: .didRemove(id), environment: environment)
+                ]
+            )
         }
         return .many(effects)
     }

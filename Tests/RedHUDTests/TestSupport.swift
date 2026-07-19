@@ -4,9 +4,11 @@ import RedECS
 import TiledInterpreter
 @testable import RedHUD
 
-struct TestState: GameState {
+struct TestState: RenderableGameState {
     var entities: EntityRepository = .init()
     var score: Int = 0
+    var transform: [EntityId: TransformComponent] = [:]
+    var camera: [EntityId: CameraComponent] = [:]
 }
 
 final class FakeRenderer: Renderer {

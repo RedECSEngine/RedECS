@@ -1,27 +1,34 @@
+import Geometry
+import GeometryAlgorithms
 import RedECS
 
 /// Environment values flowing down the view tree during layout and rendering.
 /// Modifier views copy it before passing it to their content; render groups
 /// flow back up, so no state escapes a subtree.
 public struct HUDRenderContext {
-    /// Resource access for views that measure or draw loaded assets
-    /// (`Text` fonts, `Sprite` texture maps/animations). Nil in pure
-    /// layout contexts (unit tests); views fall back to their
-    /// missing-resource behavior.
     public var resourceManager: ResourceManager?
     public var fillColor: Color
     /// The bitmap font face name `Text` uses when none is given explicitly.
     public var font: String?
+    /// The point size `Text` renders at; nil renders at the font's native size.
+    public var fontSize: Double?
     public var opacity: Double
+    
+    /// The projection each leaf stamps onto the `RenderGroup`s it emits.
+    /// Read-only to callers: the only way to change it is `enteringWorldSpace()`,
+    /// which also hands back the required y-flip — so a subtree can never end
+    /// up in `.world` without the flip that keeps it upright.
+    public private(set) var projectionSpace: RenderGroup.ProjectionSpace = .screen
 
     /// The active animation transaction, set by `.animated`; animatable
     /// modifiers below it ease their values through cache slots.
     var animation: HUDAnimation?
     /// Persistent per-HUD storage (animation slots); wired by the reducer.
     var cache: HUDCache?
-    /// Structural position of the view being resolved — containers append
-    /// their child's index as they descend. Keys animation slots.
-    var identityPath: [Int] = []
+    /// Structural identity of the view being resolved — containers append a
+    /// token per child as they descend (`.index` positionally, `.id` for
+    /// `ForEach` elements). Keys animation slots and pressed/hovered tracking.
+    var identityPath: [IdentityToken] = []
     /// Frame time from `reduce(delta:)`; advances animation slots.
     var delta: Double = 0
 
@@ -41,11 +48,28 @@ public struct HUDRenderContext {
         self.opacity = opacity
     }
 
-    /// The context for resolving the child at `index` of a structural
-    /// container; maintains the identity path that keys animation slots.
-    func descending(into index: Int) -> HUDRenderContext {
+    /// Crosses the screen→world boundary for a subtree, binding its two
+    /// facets so they cannot drift: it switches `projectionSpace` to `.world`
+    /// (so the subtree's leaves stamp their groups `.world`) and returns the
+    /// y-flip that a y-down layout needs to render upright under the y-up world
+    /// projection. Exit is implicit — the caller keeps its own context by value
+    /// semantics, so the transition never escapes the subtree.
+    func enteringWorldSpace() -> (context: HUDRenderContext, flip: Matrix3) {
+        var world = self
+        world.projectionSpace = .world
+        return (world, Matrix3.identity.scaledBy(sx: 1, sy: -1))
+    }
+
+    /// The context for resolving a child, appending its identity `token` to
+    /// the path that keys animation slots and input tracking.
+    func descending(into token: IdentityToken) -> HUDRenderContext {
         var context = self
-        context.identityPath.append(index)
+        context.identityPath.append(token)
         return context
+    }
+
+    /// Convenience for the common positional case.
+    func descending(into index: Int) -> HUDRenderContext {
+        descending(into: .index(index))
     }
 }

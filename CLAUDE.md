@@ -6,6 +6,38 @@ tagged GitHub release: `../Geometry`, `../RPTrunk`, `../swift-random-dungeon-gen
 `../swift-graphs`, and the game `../dungeon-cleaners`. These rules apply across the
 whole ecosystem.
 
+## Never edit downstream consumers without permission
+
+When modifying this library, never assume you can edit a downstream project that
+depends on it via a local path reference — not even to test or verify your
+changes, and not even for a mechanical rename. Those repos are separate, often
+hold the developer's own uncommitted work, and a rename here breaking their build
+is expected fallout for them to resolve. Make the change here, flag the downstream
+breakage, and explicitly ask for permission (or wait until you are prompted)
+before touching another repo.
+
+## API ergonomics come first
+
+RedECS is shared across many kinds of projects, so its public surface must be
+simple, consistent, and free of gotchas — a caller should be able to reach for
+the obvious thing and have it work, without knowing hidden preconditions.
+
+- **Consistency over cleverness.** Similar concepts should look and behave
+  alike: same argument shapes, same defaults, same naming patterns. When two
+  APIs do parallel things (e.g. the stack family, the render reducers), justify
+  any divergence — an inconsistency the caller has to memorize is a bug.
+- **No silent gotchas.** Avoid APIs that compile and run but do the wrong thing
+  when a hidden precondition isn't met (wrong reducer order, missing camera,
+  a field set directly instead of through its intended mutator). Prefer designs
+  that make misuse impossible; where that's impractical, fail loudly (assert) or
+  document the precondition at the call site, never leave it to silently misrender.
+- **One obvious way in.** If there's a correct path to do something, don't also
+  leave an incorrect-looking shortcut exposed. Prefer the pit of success.
+- **Defaults should fit the common case.** A default a caller must override to
+  get sensible behavior is a gotcha; pick the value most projects actually want.
+- Weigh ergonomics explicitly when adding or reviewing public API, and surface
+  trade-offs rather than quietly picking convenience over consistency.
+
 ## Foundation is banned in cross-platform code
 
 - Core/cross-platform modules do not `import Foundation`, and new code must not

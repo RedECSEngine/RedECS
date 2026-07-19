@@ -15,31 +15,41 @@ public struct Sprite: BuiltinHUDView {
     }
 
     public var source: Source
+    /// Multiplies the frame's native size in both layout and render, so a
+    /// scaled sprite occupies a matching layout slot (unlike `scaleEffect`,
+    /// which scales the drawing only and leaves the native footprint behind).
+    public var scale: Double
 
-    public init(_ textureId: TextureId, frame frameId: String? = nil) {
+    public init(_ textureId: TextureId, frame frameId: String? = nil, scale: Double = 1) {
         self.source = .texture(TextureReference(textureId: textureId, frameId: frameId))
+        self.scale = scale
     }
 
     /// `time` is in seconds and wraps around the animation's total duration,
     /// so a game clock or state-derived elapsed time loops the animation.
-    public init(_ textureId: TextureId, animation name: String, time: Double) {
+    public init(_ textureId: TextureId, animation name: String, time: Double, scale: Double = 1) {
         self.source = .animation(textureId: textureId, name: name, time: time)
+        self.scale = scale
     }
 
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         guard let resolved = resolveFrame(context) else {
             return HUDNode(frame: Rect(origin: .zero, size: .zero))
         }
-        let renderRect = Rect(origin: .zero, size: resolved.textureRect.size)
+        let renderRect = Rect(
+            origin: .zero,
+            size: Size(
+                width: resolved.textureRect.size.width * scale,
+                height: resolved.textureRect.size.height * scale
+            )
+        )
         guard let renderTris = try? renderRect.triangulate(),
               let textureTris = try? resolved.textureRect.triangulate() else {
             return HUDNode(frame: renderRect)
         }
-        // Texture quads use the engine's y-up math (shared with sprites and
-        // glyphs); flip into local y-down space like Text does.
-        let flip = Matrix3.identity
-            .translatedBy(tx: 0, ty: renderRect.size.height)
-            .scaledBy(sx: 1, sy: -1)
+        // Texture quads arrive in the engine's y-up math; flip into local
+        // y-down space (same as Text's glyph quads).
+        let flip = Matrix3.flippingYUpToLocal(height: renderRect.size.height)
         return HUDNode(
             frame: renderRect,
             groups: [
@@ -50,7 +60,8 @@ public struct Sprite: BuiltinHUDView {
                     transformMatrix: flip,
                     fragmentType: .texture(resolved.textureId),
                     zIndex: 0,
-                    opacity: context.opacity
+                    opacity: context.opacity,
+                    projectionSpace: context.projectionSpace
                 )
             ]
         )

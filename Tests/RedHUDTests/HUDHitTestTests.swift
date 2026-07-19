@@ -7,13 +7,16 @@ final class HUDHitTestTests: XCTestCase {
     private func node(
         x: Double, y: Double, width: Double, height: Double,
         hit: ButtonHit? = nil,
+        identity: [IdentityToken] = [],
         children: [HUDNode] = []
     ) -> HUDNode {
-        HUDNode(
+        var node = HUDNode(
             frame: Rect(x: x, y: y, width: width, height: height),
             children: children,
             hit: hit
         )
+        node.identity = identity
+        return node
     }
 
     func testPointInsideAndOutside() {
@@ -68,7 +71,12 @@ final class HUDHitTestTests: XCTestCase {
     }
 
     func testIdentityPathReflectsStructure() {
-        let target = node(x: 0, y: 0, width: 10, height: 10, hit: ButtonHit(up: "t"))
+        // Hit testing reports the identity stamped on the node during
+        // resolve (here set to mimic the wrapper's second child).
+        let target = node(
+            x: 0, y: 0, width: 10, height: 10,
+            hit: ButtonHit(up: "t"), identity: [.index(1), .index(1)]
+        )
         let wrapper = node(x: 10, y: 10, width: 20, height: 20, children: [
             node(x: 0, y: 0, width: 5, height: 5),
             target,
@@ -78,7 +86,7 @@ final class HUDHitTestTests: XCTestCase {
             wrapper,
         ])
         let result = root.hitTest(Point(x: 12, y: 12))
-        XCTAssertEqual(result?.identity, [1, 1])
+        XCTAssertEqual(result?.identity, [.index(1), .index(1)])
     }
 
     func testNonInteractiveTreeReturnsNil() {

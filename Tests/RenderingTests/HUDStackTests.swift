@@ -30,7 +30,7 @@ class HUDStackTests: HUDSnapshotTestCase {
 
     func testVStackNestedInPinnedCorner() throws {
         setHUD {
-            ViewportStack {
+            ScreenSpace {
                 Pin(.topTrailing) {
                     VStack(alignment: .trailing, spacing: 8) {
                         Rectangle().frame(width: 120, height: 24).foregroundColor(.red)

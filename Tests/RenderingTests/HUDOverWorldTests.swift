@@ -36,7 +36,7 @@ class HUDOverWorldTests: HUDSnapshotTestCase {
         ))
 
         setHUD {
-            ViewportStack {
+            ScreenSpace {
                 Pin(.topLeading) {
                     Rectangle().frame(width: 60, height: 60).foregroundColor(.red)
                 }

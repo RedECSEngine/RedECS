@@ -1,24 +1,36 @@
 import Geometry
 import RedECS
 
-/// Renders a HUD over the world each frame in screen space (top-left origin,
-/// y-down viewport points), camera-free. The initializer takes a function
-/// from game state to the HUD's root view, so the HUD is always derived
-/// from — and in sync with — state; return nil to hide the HUD entirely.
-/// Compose it after the world `RenderingReducer` in a game's reducer chain.
+/// Renders a HUD each frame from a single view tree that can mix **screen**
+/// and **world** space. The initializer takes a function from game state to
+/// the HUD's root view, so the HUD is always derived from — and in sync with —
+/// state; return nil to hide it entirely. Screen content (`ScreenSpace`/`Pin`,
+/// or a bare stack) maps to viewport points; world content (`WorldSpace`/
+/// `WorldPosition`) is projected by the primary camera and pans/zooms with the
+/// scene. `Viewport`/`Layer` compose the two and order their layers.
 ///
-/// `GameAction` is the game's own action type, fired by `Button`s: forward
-/// pointer events in as `HUDAction` cases and map `.triggered` back out
-/// (see `HUDAction`). HUDs without buttons use `Never`.
-public struct HUDRenderingReducer<ContextState: GameState, GameAction: Equatable>: Reducer {
+/// Compose it **after** the world `RenderingReducer`, which sets the camera
+/// projection this reducer's world groups ride. The state is constrained to
+/// `RenderableGameState` so a camera is always part of the model. Every emitted
+/// group is offset by `baseZIndex` (default 1000) so world HUD paints above the
+/// scene's sprites; screen groups draw above all world groups regardless.
+///
+/// `GameAction` is the game's own action type, fired by `Button`s (screen
+/// space only for now): forward pointer events in as `HUDAction` cases and map
+/// `.triggered` back out (see `HUDAction`). HUDs without buttons use `Never`.
+public struct HUDRenderingReducer<ContextState: RenderableGameState, GameAction: Equatable>: Reducer {
     public typealias State = ContextState
     public typealias Action = HUDAction<GameAction>
     public typealias Environment = RenderingEnvironment
 
     let content: (ContextState) -> AnyHUDView?
+    /// Draw-order base for every emitted group; the default clears typical
+    /// sprite `zIndex`es so world HUD content paints above the scene.
+    var baseZIndex: Int
     let cache = HUDCache()
 
-    public init(content: @escaping (ContextState) -> AnyHUDView?) {
+    public init(baseZIndex: Int = 1000, content: @escaping (ContextState) -> AnyHUDView?) {
+        self.baseZIndex = baseZIndex
         self.content = content
     }
 
@@ -46,13 +58,17 @@ public struct HUDRenderingReducer<ContextState: GameState, GameAction: Equatable
         cache.lastTree = tree
         cache.lastViewport = viewport
         cache.lastRootOffset = offset
-        var z = 0
+        var z = baseZIndex
         let groups = tree.flattenedGroups()
             .map { group -> RenderGroup in
                 defer { z += 1 }
-                return group
-                    .reparented(by: offset)
-                    .with(zIndex: z, projectionSpace: .screen)
+                // The center offset positions screen content in the viewport;
+                // world content carries its own world coordinates and must not
+                // be shifted by it.
+                let positioned = group.projectionSpace == .screen
+                    ? group.reparented(by: offset)
+                    : group
+                return positioned.with(zIndex: z, projectionSpace: group.projectionSpace)
             }
         environment.renderer.enqueue(groups)
         return .none

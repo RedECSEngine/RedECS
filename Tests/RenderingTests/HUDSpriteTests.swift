@@ -26,7 +26,7 @@ class HUDSpriteTests: HUDSnapshotTestCase {
     func testAnimationFrameSelectedByTime() throws {
         preloadResources([.init(name: "hud-sprite", type: .image)])
         setHUD {
-            ViewportStack {
+            ScreenSpace {
                 Pin(.topLeading) {
                     Sprite("hud-sprite", animation: "blink", time: 0)
                 }

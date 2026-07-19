@@ -5,7 +5,7 @@ import RedECS
 
 final class AnimationSlotTests: XCTestCase {
     private var cache: HUDCache!
-    private let key = AnimationKey(path: [0], kind: "scale")
+    private let key = AnimationKey(path: [.index(0)], kind: "scale")
 
     override func setUp() {
         cache = HUDCache()

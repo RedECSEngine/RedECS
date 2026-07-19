@@ -24,9 +24,9 @@ final class HUDCache {
 
     /// The button the pointer went down on; its `up` action fires only if
     /// the release lands on the same button.
-    var pressedIdentity: [Int]?
+    var pressedIdentity: [IdentityToken]?
     /// The button currently under the pointer; hover fires on entry only.
-    var hoveredIdentity: [Int]?
+    var hoveredIdentity: [IdentityToken]?
 
     func clear() {
         lastTree = nil

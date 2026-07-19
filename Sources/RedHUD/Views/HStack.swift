@@ -29,7 +29,7 @@ public struct HStack: BuiltinHUDView {
                 let share = max(0, remaining) / Double(childrenLeft)
                 let node = child.resolve(
                     proposed: ProposedSize(width: share, height: proposed.height),
-                    context: context.descending(into: index)
+                    context: context.descending(into: child.identityToken(at: index))
                 )
                 remaining -= node.frame.size.width
                 childrenLeft -= 1
@@ -40,7 +40,7 @@ public struct HStack: BuiltinHUDView {
             placed = children.enumerated().map { index, child in
                 child.resolve(
                     proposed: ProposedSize(width: nil, height: proposed.height),
-                    context: context.descending(into: index)
+                    context: context.descending(into: child.identityToken(at: index))
                 )
             }
         }

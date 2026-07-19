@@ -5,7 +5,7 @@ import RedECS
 /// and `opacity` chained on the same view keep separate slots. (Stacking
 /// two modifiers of the same kind at the same position is unsupported.)
 struct AnimationKey: Hashable {
-    var path: [Int]
+    var path: [IdentityToken]
     var kind: String
 }
 

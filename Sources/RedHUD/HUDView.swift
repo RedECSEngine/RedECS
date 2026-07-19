@@ -31,10 +31,17 @@ public extension HUDView where Body == Never {
 
 extension HUDView {
     func _resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
+        var node: HUDNode
         if let builtin = self as? any BuiltinHUDView {
-            return builtin.resolve(proposed: proposed, context: context)
+            node = builtin.resolve(proposed: proposed, context: context)
+        } else {
+            node = body._resolve(proposed: proposed, context: context)
         }
-        return body._resolve(proposed: proposed, context: context)
+        // Stamp the resolve-time identity so hit testing reports the same
+        // path that keys animation (modifiers share their content's path;
+        // re-stamping it is a no-op).
+        node.identity = context.identityPath
+        return node
     }
 }
 

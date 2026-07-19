@@ -244,8 +244,13 @@ extension SpriteComponent {
             return []
         }
         let textureRect: Rect
-        if let frameId = texture.frameId,
-            let frameInfo = textureMap.frames.first(where: { $0.filename == frameId }) {
+        if let frameId = texture.frameId {
+            // A named frame that isn't in the atlas is always a bug; drawing
+            // the whole sheet as a fallback painted sprite sheets over the map.
+            guard let frameInfo = textureMap.frames.first(where: { $0.filename == frameId }) else {
+                print("frame \(frameId) not found in texture \(texture.textureId); not rendering")
+                return []
+            }
             textureRect = Rect(
                 x: frameInfo.frame.x,
                 y: textureMap.meta.size.h - frameInfo.frame.y - frameInfo.frame.h,
@@ -253,12 +258,14 @@ extension SpriteComponent {
                 height: frameInfo.frame.h
             )
         } else {
-            print("using full texture, no frame info", textureMap.frames)
+            // No frame requested: single-image textures draw whole.
             let size = textureMap.meta.size
             textureRect = Rect(x: 0, y: 0, width: size.w, height: size.h)
         }
         
-        let renderRect = Rect(center: .zero, size: textureRect.size)
+        // Corner-origin like every other sprite type, so `contentMatrix`'s
+        // anchor offset means the same thing for textures as for shapes.
+        let renderRect = Rect(origin: .zero, size: textureRect.size)
         let topRenderTri = RenderTriangle(
             triangle: Triangle(
                 a: Point(x: renderRect.minX, y: renderRect.maxY),

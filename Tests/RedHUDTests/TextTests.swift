@@ -71,4 +71,29 @@ final class TextTests: XCTestCase {
         let size = Text("A?B").size(proposed: ProposedSize(), context: context)
         XCTAssertEqual(size.width, 24 + 22)
     }
+
+    func testFontSizeScalesLayout() {
+        var sized = context
+        sized.fontSize = 16 // half the font's native 32
+        let size = Text("AB").size(proposed: ProposedSize(), context: sized)
+        XCTAssertEqual(size, Size(width: (24 + 22) / 2, height: 20))
+    }
+
+    func testFontSizeScalesGlyphs() {
+        var sized = context
+        sized.fontSize = 16
+        let groups = Text("A").render(context: sized, size: Size(width: 12, height: 20))
+        // 'A' spans y 2...32 at native size; at half size it spans 1...16.
+        let ys = groups[0].triangles
+            .flatMap { [$0.triangle.a, $0.triangle.b, $0.triangle.c] }
+            .map { $0.multiplyingMatrix(groups[0].transformMatrix).y }
+        XCTAssertEqual(ys.min(), 1)
+        XCTAssertEqual(ys.max(), 16)
+    }
+
+    func testFontModifierSetsSize() {
+        let view = Text("AB").font("TestFont", size: 16)
+        let size = view.size(proposed: ProposedSize(), context: context)
+        XCTAssertEqual(size, Size(width: 23, height: 20))
+    }
 }

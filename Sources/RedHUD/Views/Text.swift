@@ -14,16 +14,15 @@ public struct Text: BuiltinHUDView {
               let layout = try? font.layoutText(text) else {
             return HUDNode(frame: Rect(origin: .zero, size: .zero))
         }
+        let scale = fontScale(font, context)
         let size = Size(
-            width: font.measure(text).width,
-            height: font.common.lineHeight
+            width: font.measure(text).width * scale,
+            height: font.common.lineHeight * scale
         )
         // Glyph quads are laid out y-up with the top of the line box at
-        // common.base; flip them into local y-down space so the line's top
-        // sits at the origin.
-        let flip = Matrix3.identity
-            .translatedBy(tx: 0, ty: font.common.base)
-            .scaledBy(sx: 1, sy: -1)
+        // common.base; flip them into local y-down space (scaled to the
+        // context's font size) so the line's top sits at the origin.
+        let flip = Matrix3.flippingYUpToLocal(height: font.common.base, scale: scale)
         return HUDNode(
             frame: Rect(origin: .zero, size: size),
             groups: [
@@ -32,10 +31,18 @@ public struct Text: BuiltinHUDView {
                     transformMatrix: flip,
                     fragmentType: .texture(font.pageTextureName),
                     zIndex: 0,
-                    opacity: context.opacity
+                    opacity: context.opacity,
+                    projectionSpace: context.projectionSpace
                 )
             ]
         )
+    }
+
+    /// Layout-and-render scale from the font's native size to the context's
+    /// `fontSize`; 1 when no size is set or the font declares none.
+    private func fontScale(_ font: BitmapFont, _ context: HUDRenderContext) -> Double {
+        guard let fontSize = context.fontSize, font.info.size > 0 else { return 1 }
+        return fontSize / font.info.size
     }
 
     /// The context's font when it names a loaded one; otherwise the loaded

@@ -25,7 +25,7 @@ class HUDTextTests: HUDSnapshotTestCase {
     func testTextPinnedWithShapesInHStack() throws {
         preloadFont()
         setHUD {
-            ViewportStack {
+            ScreenSpace {
                 Pin(.topLeading) {
                     HStack(alignment: .center, spacing: 12) {
                         Rectangle()

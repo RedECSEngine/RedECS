@@ -1,7 +1,7 @@
 import Geometry
 import RedECS
 
-/// One corner/edge/center-pinned entry in a `ViewportStack`. Multiple views
+/// One corner/edge/center-pinned entry in a `ScreenSpace`. Multiple views
 /// in the builder are implicitly wrapped in a `VStack`.
 public struct Pin {
     public var alignment: Alignment
@@ -19,7 +19,7 @@ public struct Pin {
 }
 
 @resultBuilder
-public enum ViewportStackBuilder {
+public enum ScreenSpaceBuilder {
     public static func buildExpression(_ pin: Pin) -> [Pin] { [pin] }
     public static func buildBlock(_ components: [Pin]...) -> [Pin] { components.flatMap { $0 } }
     public static func buildOptional(_ component: [Pin]?) -> [Pin] { component ?? [] }
@@ -28,13 +28,15 @@ public enum ViewportStackBuilder {
     public static func buildArray(_ components: [[Pin]]) -> [Pin] { components.flatMap { $0 } }
 }
 
-/// The HUD root: fills whatever it is proposed (normally the viewport) and
-/// pins each entry's content to its own corner, edge, or center. Later
-/// entries paint over earlier ones.
-public struct ViewportStack: BuiltinHUDView {
+/// A screen-space layer: fills whatever it is proposed (normally the viewport)
+/// and pins each entry's content to its own corner, edge, or center. Leaves
+/// stamp `.screen` (the context default), so its output maps straight to
+/// viewport points regardless of the camera. Later entries paint over earlier
+/// ones. It is *positional*, not a flow stack — hence `Space`, not `Stack`.
+public struct ScreenSpace: BuiltinHUDView {
     public var pins: [Pin]
 
-    public init(@ViewportStackBuilder content: () -> [Pin]) {
+    public init(@ScreenSpaceBuilder content: () -> [Pin]) {
         self.pins = content()
     }
 

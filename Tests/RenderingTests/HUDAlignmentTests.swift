@@ -14,7 +14,7 @@ class HUDAlignmentTests: HUDSnapshotTestCase {
             (.bottomLeading, .pink), (.bottom, .orange), (.bottomTrailing, .grey),
         ]
         setHUD {
-            ViewportStack {
+            ScreenSpace {
                 for (alignment, color) in positions {
                     Pin(alignment) {
                         RedHUD.Rectangle()

@@ -19,7 +19,8 @@ public struct Rectangle: BuiltinHUDView {
                     transformMatrix: .identity,
                     fragmentType: .color(context.fillColor),
                     zIndex: 0,
-                    opacity: context.opacity
+                    opacity: context.opacity,
+                    projectionSpace: context.projectionSpace
                 )
             ]
         )

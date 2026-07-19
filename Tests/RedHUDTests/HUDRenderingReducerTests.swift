@@ -47,7 +47,9 @@ final class HUDRenderingReducerTests: XCTestCase {
 
         XCTAssertEqual(renderer.queuedWork.count, 2)
         for (i, group) in renderer.queuedWork.enumerated() {
-            XCTAssertEqual(group.zIndex, i)
+            // z is offset by the default baseZIndex (1000) so HUD paints above
+            // the scene; paint order is preserved within that base.
+            XCTAssertEqual(group.zIndex, 1000 + i)
             if case .world = group.projectionSpace {
                 XCTFail("HUD groups must be screen-space")
             }

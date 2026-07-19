@@ -15,12 +15,12 @@ public struct ButtonHit {
     }
 }
 
-/// A resolved hit: the payloads plus the structural identity (child-index
-/// path from the root) of the node that owns them — the key for pressed
-/// and hovered tracking across frames.
+/// A resolved hit: the payloads plus the structural identity of the node
+/// that owns them (its stamped `identityPath`) — the key for pressed and
+/// hovered tracking across frames.
 public struct HUDHitResult {
     public var hit: ButtonHit
-    public var identity: [Int]
+    public var identity: [IdentityToken]
 }
 
 public extension HUDNode {
@@ -31,22 +31,15 @@ public extension HUDNode {
     /// Containment is half-open ([min, max)), so adjacent buttons never
     /// double-claim a shared edge.
     func hitTest(_ point: Point) -> HUDHitResult? {
-        hitTest(point, path: [])
-    }
-
-    private func hitTest(_ point: Point, path: [Int]) -> HUDHitResult? {
         guard Rect(origin: .zero, size: frame.size).contains(point) else {
             return nil
         }
         for index in children.indices.reversed() {
             let child = children[index]
-            if let result = child.hitTest(
-                point.diffOf(child.frame.origin),
-                path: path + [index]
-            ) {
+            if let result = child.hitTest(point.diffOf(child.frame.origin)) {
                 return result
             }
         }
-        return hit.map { HUDHitResult(hit: $0, identity: path) }
+        return hit.map { HUDHitResult(hit: $0, identity: identity) }
     }
 }

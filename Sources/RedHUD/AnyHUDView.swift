@@ -4,6 +4,10 @@ import RedECS
 /// Type-erased view; the currency of result builders and stack children.
 public struct AnyHUDView: BuiltinHUDView {
     private let box: AnyHUDViewBox
+    /// An explicit identity supplied by a data-driven container (`ForEach`),
+    /// used in place of the positional index when a parent descends into
+    /// this child. Nil for statically-placed views.
+    var explicitIdentity: AnyHashable?
 
     public init<V: HUDView>(_ view: V) {
         if let erased = view as? AnyHUDView {
@@ -15,6 +19,19 @@ public struct AnyHUDView: BuiltinHUDView {
 
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         box.resolve(proposed: proposed, context: context)
+    }
+
+    /// A copy tagged with a data-driven identity (see `explicitIdentity`).
+    func identified(by id: AnyHashable) -> AnyHUDView {
+        var copy = self
+        copy.explicitIdentity = id
+        return copy
+    }
+
+    /// The identity token a parent uses to descend into this child: the
+    /// explicit id when present (`ForEach`), else the positional `index`.
+    func identityToken(at index: Int) -> IdentityToken {
+        explicitIdentity.map(IdentityToken.id) ?? .index(index)
     }
 }
 

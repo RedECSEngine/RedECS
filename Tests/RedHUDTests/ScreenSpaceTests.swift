@@ -3,12 +3,12 @@ import Geometry
 import RedECS
 @testable import RedHUD
 
-final class ViewportStackTests: XCTestCase {
+final class ScreenSpaceTests: XCTestCase {
     let context = HUDRenderContext()
     let viewport = Size(width: 480, height: 320)
 
     func testFillsProposal() {
-        let stack = ViewportStack {
+        let stack = ScreenSpace {
             Pin(.center) { Rectangle().frame(width: 10, height: 10) }
         }
         XCTAssertEqual(
@@ -18,7 +18,7 @@ final class ViewportStackTests: XCTestCase {
     }
 
     func testPinsChildrenToTheirCorners() {
-        let stack = ViewportStack {
+        let stack = ScreenSpace {
             Pin(.topLeading) { Rectangle().frame(width: 20, height: 10) }
             Pin(.bottomTrailing) { Rectangle().frame(width: 20, height: 10) }
             Pin(.center) { Rectangle().frame(width: 20, height: 10) }
@@ -32,7 +32,7 @@ final class ViewportStackTests: XCTestCase {
     }
 
     func testMultipleViewsInAPinWrapInVStack() {
-        let stack = ViewportStack {
+        let stack = ScreenSpace {
             Pin(.topTrailing) {
                 Rectangle().frame(width: 20, height: 10)
                 Rectangle().frame(width: 20, height: 10)
@@ -48,7 +48,7 @@ final class ViewportStackTests: XCTestCase {
 
     func testConditionalPins() {
         let showCentre = false
-        let stack = ViewportStack {
+        let stack = ScreenSpace {
             Pin(.top) { Rectangle() }
             if showCentre {
                 Pin(.center) { Rectangle() }

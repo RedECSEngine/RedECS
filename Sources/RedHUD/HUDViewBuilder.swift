@@ -10,6 +10,12 @@ public enum HUDViewBuilder {
         views
     }
 
+    /// `ForEach` is transparent: it splices its (identity-tagged) element
+    /// views directly into the enclosing container's child list.
+    public static func buildExpression(_ forEach: ForEach) -> [AnyHUDView] {
+        forEach.expanded
+    }
+
     public static func buildBlock(_ components: [AnyHUDView]...) -> [AnyHUDView] {
         components.flatMap { $0 }
     }

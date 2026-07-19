@@ -12,7 +12,7 @@ class HUDButtonTests: HUDSnapshotTestCase {
         preloadFont()
         setHUD {
             Button(up: RenderingTestAction.buttonFired("tapped")) { interaction in
-                ViewportStack {
+                ScreenSpace {
                     Pin(.center) {
                         Rectangle()
                             .frame(width: 120, height: 60)

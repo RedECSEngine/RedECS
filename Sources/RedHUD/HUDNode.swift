@@ -22,6 +22,12 @@ public struct HUDNode {
     public var transform: Matrix3?
     /// Render-only opacity multiplier for the whole subtree.
     public var opacityFactor: Double?
+    /// Structural identity of the view that produced this node (its
+    /// resolve-time `identityPath`), stamped in `_resolve`. Hit testing
+    /// reports it so input tracking keys the same identity as animation —
+    /// and, unlike a path rebuilt from child indices, it carries `ForEach`'s
+    /// `.id` tokens.
+    public var identity: [IdentityToken] = []
 
     public init(
         frame: Rect,

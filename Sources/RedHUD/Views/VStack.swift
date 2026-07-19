@@ -26,7 +26,7 @@ public struct VStack: BuiltinHUDView {
                 let share = max(0, remaining) / Double(childrenLeft)
                 let node = child.resolve(
                     proposed: ProposedSize(width: proposed.width, height: share),
-                    context: context.descending(into: index)
+                    context: context.descending(into: child.identityToken(at: index))
                 )
                 remaining -= node.frame.size.height
                 childrenLeft -= 1
@@ -36,7 +36,7 @@ public struct VStack: BuiltinHUDView {
             placed = children.enumerated().map { index, child in
                 child.resolve(
                     proposed: ProposedSize(width: proposed.width, height: nil),
-                    context: context.descending(into: index)
+                    context: context.descending(into: child.identityToken(at: index))
                 )
             }
         }
