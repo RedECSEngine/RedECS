@@ -58,6 +58,11 @@ public struct AnimatedModifier<Content: HUDView>: BuiltinHUDView {
     public var animation: HUDAnimation
     public var content: Content
 
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        // Animation is render-only; layout size is the content's.
+        content._size(proposed: proposed, context: context)
+    }
+
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         var context = context
         context.animation = animation

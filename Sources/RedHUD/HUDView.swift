@@ -15,8 +15,15 @@ public protocol HUDView {
 ///
 /// Invariant: a view always resolves to the size it would report for that
 /// proposal — parents place children at exactly the size the child chose.
-public protocol BuiltinHUDView: HUDView where Body == Never {
+protocol BuiltinHUDView: HUDView where Body == Never {
     func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode
+    func size(proposed: ProposedSize, context: HUDRenderContext) -> Size
+}
+
+extension BuiltinHUDView {
+    func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        resolve(proposed: proposed, context: context).frame.size
+    }
 }
 
 extension Never: HUDView {
@@ -43,12 +50,21 @@ extension HUDView {
         node.identity = context.identityPath
         return node
     }
+
+    /// Dispatches `size` to a builtin's (possibly cheap) implementation, or a composite view's `body`.
+    func _size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        if let builtin = self as? any BuiltinHUDView {
+            return builtin.size(proposed: proposed, context: context)
+        }
+        return body._size(proposed: proposed, context: context)
+    }
 }
 
 public extension HUDView {
-    /// The size this view resolves to for a proposal; a convenience over
+    /// The size this view resolves to for a proposal — cheap where the view
+    /// provides a layout-only `size`, else a full `resolve`. A convenience over
     /// `resolve` for measurement and tests.
     func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
-        _resolve(proposed: proposed, context: context).frame.size
+        _size(proposed: proposed, context: context)
     }
 }

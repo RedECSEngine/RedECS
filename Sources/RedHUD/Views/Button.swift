@@ -33,6 +33,12 @@ public struct Button<Content: HUDView>: BuiltinHUDView {
         self.content = resolvedContent
     }
 
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        // Interaction styles are render-only; size is interaction-independent.
+        content(ButtonInteraction(isPressed: false, isHovered: false))
+            ._size(proposed: proposed, context: context)
+    }
+
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         let interaction = ButtonInteraction(
             isPressed: context.cache?.pressedIdentity == context.identityPath,

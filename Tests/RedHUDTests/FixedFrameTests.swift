@@ -23,7 +23,8 @@ final class FixedFrameTests: XCTestCase {
     func testUnproposedOpenAxisFallsBackToChildDefault() {
         let view = Rectangle().frame(width: 80)
         let size = view.size(proposed: ProposedSize(), context: context)
-        XCTAssertEqual(size, Size(width: 80, height: 10))
+        // Open axis falls back to the child's ideal (ProposedSize.orDefault → 100).
+        XCTAssertEqual(size, Size(width: 80, height: 100))
     }
 
     func testAlignmentOffsetsChildGroups() {

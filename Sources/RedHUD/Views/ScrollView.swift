@@ -7,10 +7,8 @@ import RedECS
 /// offset persists in the cache (keyed by identity) and is driven by drag
 /// (see the reducer) or by `scrollTo`.
 ///
-/// `scrollTo` is declarative and edge-triggered like `.change(of:)`: pass an
-/// element id derived from state and, when it changes, the ScrollView scrolls
-/// that element into view. There is no imperative proxy — RedHUD is `f(state)`,
-/// so a scroll target is just more state.
+/// `scrollTo` is declarative. pass an element id derived from state
+/// and, when it changes, the ScrollView scrolls that element into view.
 ///
 ///     ScrollView(.vertical, scrollTo: state.focusedRowID) {
 ///         VStack(spacing: 8) { ForEach(rows, id: \.id) { RowView($0) } }
@@ -30,21 +28,33 @@ public struct ScrollView: BuiltinHUDView {
         self.content = AnyHUDView.wrapping(content())
     }
 
+    // A ScrollView fills its proposal (its window), so measuring it never needs
+    // to resolve — or scroll — its content. Real cheap size when a scroll is
+    // nested inside a lazy row.
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        proposed.orDefault()
+    }
+
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
-        let window = proposed.orDefault()
+        let window = size(proposed: proposed, context: context)
+
+        // Read the current (last-frame) offset first, and publish the window to
+        // the content so a lazy container can realize only the visible rows.
+        var slot = context.cache?.scrollSlot(for: context.identityPath) ?? ScrollState()
+        slot.axis = axis
+        var contentContext = context.descending(into: 0)
+        contentContext.scrollWindow = ScrollWindow(offset: slot.offset, viewport: window)
+
         // Propose the cross axis; leave the scroll axis unbounded so content
         // takes its ideal length.
         let contentProposal = axis == .vertical
             ? ProposedSize(width: window.width, height: nil)
             : ProposedSize(width: nil, height: window.height)
-        var content = content.resolve(proposed: contentProposal, context: context.descending(into: 0))
+        var content = content.resolve(proposed: contentProposal, context: contentContext)
 
         let contentExtent = axis == .vertical ? content.frame.size.height : content.frame.size.width
         let windowExtent = axis == .vertical ? window.height : window.width
         let maxOffset = max(0, contentExtent - windowExtent)
-
-        var slot = context.cache?.scrollSlot(for: context.identityPath) ?? ScrollState()
-        slot.axis = axis
         slot.range = 0...maxOffset
 
         // Declarative scrollTo: edge-triggered on target change.

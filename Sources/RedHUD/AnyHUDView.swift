@@ -21,6 +21,12 @@ public struct AnyHUDView: BuiltinHUDView {
         box.resolve(proposed: proposed, context: context)
     }
 
+    /// Forwards to the boxed view's `size` so its cheap layout-only path (if
+    /// any) is used, rather than the type-erased default's full resolve.
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        box.size(proposed: proposed, context: context)
+    }
+
     /// A copy tagged with a data-driven identity (see `explicitIdentity`).
     func identified(by id: AnyHashable) -> AnyHUDView {
         var copy = self
@@ -39,6 +45,9 @@ private class AnyHUDViewBox {
     func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         fatalError("abstract")
     }
+    func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        fatalError("abstract")
+    }
 }
 
 private final class HUDViewBox<V: HUDView>: AnyHUDViewBox {
@@ -50,5 +59,9 @@ private final class HUDViewBox<V: HUDView>: AnyHUDViewBox {
 
     override func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         view._resolve(proposed: proposed, context: context)
+    }
+
+    override func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        view._size(proposed: proposed, context: context)
     }
 }

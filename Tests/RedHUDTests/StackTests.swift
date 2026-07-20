@@ -89,9 +89,9 @@ final class StackTests: XCTestCase {
     func testUnproposedAxisUsesIdealSizes() {
         let stack = HStack {
             Rectangle().frame(width: 25, height: 10)
-            Rectangle() // ideal 10x10
+            Rectangle() // ideal 100x100 (ProposedSize.orDefault)
         }
         let size = stack.size(proposed: ProposedSize(), context: context)
-        XCTAssertEqual(size, Size(width: 35, height: 10))
+        XCTAssertEqual(size, Size(width: 125, height: 100))
     }
 }

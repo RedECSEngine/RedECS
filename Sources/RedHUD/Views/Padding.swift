@@ -8,23 +8,29 @@ public struct Padding<Content: HUDView>: BuiltinHUDView {
     public var length: Double
     public var content: Content
 
-    public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
-        var child = content._resolve(
-            proposed: ProposedSize(
-                width: proposed.width.map { max(0, $0 - length * 2) },
-                height: proposed.height.map { max(0, $0 - length * 2) }
-            ),
-            context: context.descending(into: 0)
+    /// The proposal handed to the content: the parent's, shrunk by the insets.
+    /// Shared by `size` and `resolve`.
+    private func contentProposal(_ proposed: ProposedSize) -> ProposedSize {
+        ProposedSize(
+            width: proposed.width.map { max(0, $0 - length * 2) },
+            height: proposed.height.map { max(0, $0 - length * 2) }
         )
+    }
+
+    /// The padded size: the content's size grown by the insets on all sides.
+    private func paddedSize(contentSize: Size) -> Size {
+        Size(width: contentSize.width + length * 2, height: contentSize.height + length * 2)
+    }
+
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        paddedSize(contentSize: content._size(proposed: contentProposal(proposed), context: context))
+    }
+
+    public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
+        var child = content._resolve(proposed: contentProposal(proposed), context: context.descending(into: 0))
         child.frame.origin = Point(x: length, y: length)
         return HUDNode(
-            frame: Rect(
-                origin: .zero,
-                size: Size(
-                    width: child.frame.size.width + length * 2,
-                    height: child.frame.size.height + length * 2
-                )
-            ),
+            frame: Rect(origin: .zero, size: paddedSize(contentSize: child.frame.size)),
             children: [child]
         )
     }

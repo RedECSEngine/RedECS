@@ -64,7 +64,7 @@ final class HUDViewBuilderTests: XCTestCase {
         let context = HUDRenderContext()
         XCTAssertEqual(
             rect.size(proposed: ProposedSize(), context: context),
-            Size(width: 10, height: 10)
+            Size(width: 100, height: 100)   // unproposed → ProposedSize.orDefault (100)
         )
         let groups = rect.render(context: context, size: Size(width: 10, height: 10))
         XCTAssertEqual(groups.count, 1)

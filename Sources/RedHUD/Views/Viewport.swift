@@ -20,6 +20,12 @@ public struct Viewport: BuiltinHUDView {
         self.layers = content()
     }
 
+    // Fills its proposal. Never measured in practice (the HUD root, not a lazy
+    // row); provided for consistency.
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        proposed.orDefault()
+    }
+
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         resolveOverlaid(children: layers, proposed: proposed, context: context)
     }
@@ -34,6 +40,11 @@ public struct Layer: BuiltinHUDView {
 
     public init(@HUDViewBuilder content: () -> [AnyHUDView]) {
         self.content = content()
+    }
+
+    // Fills its proposal. Not measured in practice; provided for consistency.
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        proposed.orDefault()
     }
 
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {

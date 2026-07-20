@@ -10,6 +10,11 @@ public struct OpacityModifier<Content: HUDView>: BuiltinHUDView {
     var toValue: Double?
     public var content: Content
 
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        // Render-only: layout size is the content's, unaffected by opacity.
+        content._size(proposed: proposed, context: context)
+    }
+
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         var node = content._resolve(proposed: proposed, context: context)
         let applied = resolvedValue(context)
