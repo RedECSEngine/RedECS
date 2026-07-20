@@ -152,32 +152,18 @@ open class WebBrowserWindow<State: GameState & OperationCapableGameState, Action
 //        print("onKeyUp", key)
     }
     
+    // MARK: - Pointer
+    public var onPointerEvent: ((PointerEvent, Point) -> Void)?
+
     // MARK: - Mouse
-    
-    open func mouseDown(_ location: Point) {
-//        print("mouseDown", location)
-    }
-    
-    open func mouseMove(_ location: Point) {
-//        print("mouseMove", location)
-    }
-    
-    open func mouseUp(_ location: Point) {
-//        print("mouseMove", location)
-    }
-    
+
+    open func mouseDown(_ location: Point) { onPointerEvent?(.down, location) }
+    open func mouseMove(_ location: Point) { onPointerEvent?(.moved, location) }
+    open func mouseUp(_ location: Point) { onPointerEvent?(.up, location) }
+
     // MARK: - Touch
-    
-    open func touchDown(_ location: Point) {
-//        print("touchDown", location)
-    }
-    
-    open func touchMove(_ location: Point) {
-//        print("touchMove", location)
-    }
-    
-    open func touchUp(_ location: Point) {
-//        print("touchUp", location)
-    }
-    
+
+    open func touchDown(_ location: Point) { onPointerEvent?(.down, location) }
+    open func touchMove(_ location: Point) { onPointerEvent?(.moved, location) }
+    open func touchUp(_ location: Point) { onPointerEvent?(.up, location) }
 }

@@ -79,6 +79,19 @@ open class WebRenderer {
                 return a.zIndex < b.zIndex
             }
             for renderGroup in sortedWork {
+                // Scissor: clip this group to its rect, or disable clipping when
+                // unclipped. WebGL's scissor origin is bottom-left, so the
+                // top-left/y-down clip rect is y-flipped. Fully-clipped skipped.
+                if let clip = renderGroup.clipRect {
+                    if clip.size.width <= 0 || clip.size.height <= 0 { continue }
+                    let flippedY = viewportSize.height - (clip.minY + clip.size.height)
+                    _ = glContext.enable(glContext.SCISSOR_TEST)
+                    _ = glContext.scissor(
+                        Int(clip.minX), Int(flippedY),
+                        Int(clip.size.width), Int(clip.size.height))
+                } else {
+                    _ = glContext.disable(glContext.SCISSOR_TEST)
+                }
                 let groupProjection = renderGroup.projectionSpace == .screen
                     ? screenProjectionMatrix
                     : projectionMatrix

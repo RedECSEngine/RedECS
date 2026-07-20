@@ -228,6 +228,23 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
                 lastPipelineId = shaderId
             }
 
+            // Scissor: clip this group to its rect (screen/viewport pixels,
+            // top-left origin — matches the screen projection), or reset to the
+            // full viewport when unclipped. Fully-clipped groups are skipped.
+            if let clip = renderGroup.clipRect {
+                if clip.size.width <= 0 || clip.size.height <= 0 { continue }
+                let vw = viewportSize.width, vh = viewportSize.height
+                let x = max(0, min(clip.minX, vw))
+                let y = max(0, min(clip.minY, vh))
+                let w = max(0, min(clip.maxX, vw) - x)
+                let h = max(0, min(clip.maxY, vh) - y)
+                if w <= 0 || h <= 0 { continue }
+                renderEncoder.setScissorRect(MTLScissorRect(x: Int(x), y: Int(y), width: Int(w), height: Int(h)))
+            } else {
+                renderEncoder.setScissorRect(MTLScissorRect(
+                    x: 0, y: 0, width: Int(viewportSize.width), height: Int(viewportSize.height)))
+            }
+
             let color = renderGroup.color?.asVectorFloat4 ?? vector_float4(0, 0, 0, Float(renderGroup.opacity))
             var triangleVertices: [AAPLVertex] = []
             var textureVertices: [TextureInfo] = []

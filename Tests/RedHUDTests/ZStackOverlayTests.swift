@@ -54,7 +54,7 @@ final class ZStackOverlayTests: XCTestCase {
             Rectangle().frame(width: 50, height: 50)
             Button(up: "top") { Rectangle().frame(width: 50, height: 50) }
         }._resolve(proposed: ProposedSize(width: 50, height: 50), context: context)
-        XCTAssertEqual(node.hitTest(Point(x: 25, y: 25))?.hit.up as? String, "top")
+        XCTAssertEqual(node.hitTest(Point(x: 25, y: 25))?.hit?.up as? String, "top")
     }
 
     /// A ForEach inside a ZStack keys its layers by element id, just like in
@@ -111,7 +111,7 @@ final class ZStackOverlayTests: XCTestCase {
             }
             ._resolve(proposed: ProposedSize(width: 100, height: 100), context: context)
         // center is under the overlay; a corner is base-only
-        XCTAssertEqual(node.hitTest(Point(x: 50, y: 50))?.hit.up as? String, "over")
-        XCTAssertEqual(node.hitTest(Point(x: 5, y: 5))?.hit.up as? String, "base")
+        XCTAssertEqual(node.hitTest(Point(x: 50, y: 50))?.hit?.up as? String, "over")
+        XCTAssertEqual(node.hitTest(Point(x: 5, y: 5))?.hit?.up as? String, "base")
     }
 }

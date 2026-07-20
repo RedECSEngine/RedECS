@@ -23,6 +23,8 @@ public struct RenderGroup {
     public let opacity: Double
     public let projectionSpace: ProjectionSpace
     public let shader: ShaderEffect? // which fragment effect draws this group; nil = passthrough
+    /// Set by scrolling/clipping containers; the renderer applies it as a scissor. . `nil` draws unclipped.
+    public let clipRect: Rect?
 
     public init(
         triangles: [RenderTriangle],
@@ -31,7 +33,8 @@ public struct RenderGroup {
         zIndex: Int,
         opacity: Double = 1,
         projectionSpace: ProjectionSpace = .world,
-        shader: ShaderEffect? = nil
+        shader: ShaderEffect? = nil,
+        clipRect: Rect? = nil
     ) {
         self.triangles = triangles
         self.transformMatrix = transformMatrix
@@ -40,6 +43,7 @@ public struct RenderGroup {
         self.opacity = opacity
         self.projectionSpace = projectionSpace
         self.shader = shader
+        self.clipRect = clipRect
     }
 }
 
@@ -54,7 +58,11 @@ public extension RenderGroup {
             zIndex: zIndex,
             opacity: opacity,
             projectionSpace: projectionSpace,
+<<<<<<< HEAD
             shader: shader // reparenting must keep the effect, e.g. a nested hero sprite
+=======
+            clipRect: clipRect
+>>>>>>> 0b94630 (first round of scrollview implementation)
         )
     }
 
@@ -67,7 +75,11 @@ public extension RenderGroup {
             zIndex: zIndex,
             opacity: opacity,
             projectionSpace: projectionSpace,
+<<<<<<< HEAD
             shader: shader // preserve the effect across the copy
+=======
+            clipRect: clipRect
+>>>>>>> 0b94630 (first round of scrollview implementation)
         )
     }
 
@@ -81,7 +93,40 @@ public extension RenderGroup {
             zIndex: zIndex,
             opacity: opacity,
             projectionSpace: projectionSpace,
+<<<<<<< HEAD
             shader: shader // preserve the effect when re-slotting into HUD draw order
+=======
+            clipRect: clipRect
+        )
+    }
+
+    /// A copy carrying `clipRect` verbatim (used when translating a clip as a
+    /// subtree is reparented). Prefer `applyingClip` to establish a clip.
+    func withClipRect(_ clipRect: Rect?) -> RenderGroup {
+        RenderGroup(
+            triangles: triangles,
+            transformMatrix: transformMatrix,
+            fragmentType: fragmentType,
+            zIndex: zIndex,
+            opacity: opacity,
+            projectionSpace: projectionSpace,
+            clipRect: clipRect
+        )
+    }
+
+    /// A copy clipped to `rect` (in this group's post-projection space),
+    /// intersecting with any clip already present so nested clips compound.
+    func applyingClip(_ rect: Rect) -> RenderGroup {
+        let clipped = clipRect.map { intersection($0, rect) } ?? rect
+        return RenderGroup(
+            triangles: triangles,
+            transformMatrix: transformMatrix,
+            fragmentType: fragmentType,
+            zIndex: zIndex,
+            opacity: opacity,
+            projectionSpace: projectionSpace,
+            clipRect: clipped
+>>>>>>> 0b94630 (first round of scrollview implementation)
         )
     }
 
@@ -102,6 +147,16 @@ public extension RenderGroup {
             return color
         }
     }
+}
+
+/// Overlap of two rects (empty if they don't overlap). Local to clipping;
+/// kept here rather than in Geometry to avoid touching that upstream package.
+func intersection(_ a: Rect, _ b: Rect) -> Rect {
+    let minX = max(a.minX, b.minX)
+    let minY = max(a.minY, b.minY)
+    let maxX = min(a.maxX, b.maxX)
+    let maxY = min(a.maxY, b.maxY)
+    return Rect(x: minX, y: minY, width: max(0, maxX - minX), height: max(0, maxY - minY))
 }
 
 public struct RenderTriangle {

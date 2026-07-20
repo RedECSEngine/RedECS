@@ -53,8 +53,16 @@ public struct ForEach {
     /// Composite identity for one produced view: the element's id plus its
     /// position within that element's content. Stable under collection edits
     /// because it never encodes the element's index in the collection.
-    private struct ElementIdentity<ID: Hashable>: Hashable {
+    private struct ElementIdentity<ID: Hashable>: Hashable, ForEachElementIdentifiable {
         let id: ID
         let subIndex: Int
+        var forEachElementID: AnyHashable { AnyHashable(id) }
     }
+}
+
+/// Lets `scrollTo(id:)` recover a `ForEach` element's id from its composite
+/// identity token, so callers target the raw element id (not the internal
+/// per-view wrapper).
+protocol ForEachElementIdentifiable {
+    var forEachElementID: AnyHashable { get }
 }
