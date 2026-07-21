@@ -14,6 +14,32 @@ public struct TiledLayer: Codable, Equatable {
     public var y: Double
     
     public var objects: [TiledObject]?
+
+    public init(
+        id: Int,
+        name: String,
+        type: TiledLayerType?,
+        data: [Int]? = nil,
+        opacity: Double = 1,
+        visible: Bool = true,
+        width: Int? = nil,
+        height: Int? = nil,
+        x: Double = 0,
+        y: Double = 0,
+        objects: [TiledObject]? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.data = data
+        self.opacity = opacity
+        self.visible = visible
+        self.width = width
+        self.height = height
+        self.x = x
+        self.y = y
+        self.objects = objects
+    }
 }
 
 public extension TiledLayer {

@@ -1,6 +1,11 @@
 public struct TileSetReference: Codable, Equatable {
     public var firstgid: Int
     public var source: String
+
+    public init(firstgid: Int, source: String) {
+        self.firstgid = firstgid
+        self.source = source
+    }
 }
 
 public struct TiledMapJSON: Codable, Equatable {

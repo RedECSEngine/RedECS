@@ -48,6 +48,8 @@ let package = Package(
             from: "0.0.5"
         ),
 
+        .package(path: "../Randomization"),
+
         .package(
             url: "https://github.com/apple/swift-collections.git",
             from: "1.1.0"
@@ -70,6 +72,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Geometry", package: "Geometry"),
                 .product(name: "GeometryAlgorithms", package: "Geometry"),
+                .product(name: "Randomization", package: "Randomization"),
                 .product(name: "OrderedCollections", package: "swift-collections"),
                 "TiledInterpreter",
             ]

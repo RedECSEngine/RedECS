@@ -9,8 +9,9 @@ public struct TiledTilesetJSON: Codable, Equatable {
         case tileCount = "tilecount"
         case columns
         case tiles = "tiles"
+        case wangsets
     }
-    
+
     public var name: String
     public var image: String
     public var imageWidth: Int
@@ -20,11 +21,12 @@ public struct TiledTilesetJSON: Codable, Equatable {
     public var tileCount: Int
     public var columns: Int
     public var tiles: [Tile]
-    
+    public var wangsets: [TiledWangSet]?
+
     public var rows: Int {
         imageHeight / tileHeight
     }
-    
+
     public init(
         name: String,
         image: String,
@@ -34,7 +36,8 @@ public struct TiledTilesetJSON: Codable, Equatable {
         tileHeight: Int,
         tileCount: Int,
         columns: Int,
-        tiles: [Tile]
+        tiles: [Tile],
+        wangsets: [TiledWangSet]? = nil
     ) {
         self.name = name
         self.image = image
@@ -45,6 +48,7 @@ public struct TiledTilesetJSON: Codable, Equatable {
         self.tileCount = tileCount
         self.columns = columns
         self.tiles = tiles
+        self.wangsets = wangsets
     }
     
     public func makeTileInfoDictionary() -> [Int: Tile] {
