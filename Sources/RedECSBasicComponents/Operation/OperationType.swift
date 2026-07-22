@@ -377,13 +377,13 @@ public extension OperationType {
 
 
 public extension OperationType {
-    static func removeEntity() -> Self {
-        .removeEntity(.init())
+    static func removeEntity(removeEntityId: EntityId? = nil) -> Self {
+        .removeEntity(.init(removeEntityId: removeEntityId))
     }
     
-    func removeEntity() -> Self {
+    func removeEntity(removeEntityId: EntityId? = nil) -> Self {
         var component = self
-        let removeOp = RemoveEntityOperation<GameAction>()
+        let removeOp = RemoveEntityOperation<GameAction>(removeEntityId: removeEntityId)
         component.appendOperation(.removeEntity(removeOp))
         return component
     }

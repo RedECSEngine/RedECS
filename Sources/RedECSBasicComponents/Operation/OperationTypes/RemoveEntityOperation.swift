@@ -8,11 +8,15 @@ public struct RemoveEntityOperation<GameAction: Equatable & Codable>: Operation 
     public var currentTime: Double = 0
     public var isComplete: Bool = false
     
-    public init() { }
+    public var removeEntityId: EntityId?
+    
+    public init(removeEntityId: EntityId? = nil) {
+        self.removeEntityId = removeEntityId
+    }
     
     public mutating func run(id: EntityId, state: inout BasicOperationComponentContext, delta: Double) -> GameEffect<BasicOperationComponentContext, Action> {
         isComplete = true
-        return .system(.removeEntity(id))
+        return .system(.removeEntity(removeEntityId ?? id))
     }
     
     public mutating func reset() {
