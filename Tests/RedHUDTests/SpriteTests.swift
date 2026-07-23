@@ -102,6 +102,44 @@ final class SpriteTests: XCTestCase {
         XCTAssertEqual(frameRectX(at: -0.1), 16)  // negative time wraps too
     }
 
+    func testSelfClockedAnimationAdvancesWithFrameDelta() {
+        var context = makeContext()
+        let cache = HUDCache()
+        context.cache = cache
+        func frameRectX(afterDelta delta: Double) -> Double? {
+            context.delta = delta
+            cache.beginAnimationFrame()
+            defer { cache.endAnimationFrame() }
+            let groups = Sprite("hud-sprite", animation: "blink")
+                .render(context: context, size: Size(width: 16, height: 16))
+            return groups.first?.triangles
+                .compactMap { $0.textureTriangle }
+                .flatMap { [$0.a.x, $0.b.x, $0.c.x] }
+                .min()
+        }
+        XCTAssertEqual(frameRectX(afterDelta: 0.05), 0)   // 0.05s → frame-0
+        XCTAssertEqual(frameRectX(afterDelta: 0.05), 0)   // 0.10s → frame-0
+        XCTAssertEqual(frameRectX(afterDelta: 0.10), 16)  // 0.20s → frame-1
+        XCTAssertEqual(frameRectX(afterDelta: 0.15), 0)   // 0.35s wraps → frame-0
+    }
+
+    func testSelfClockedSpriteForgetsProgressWhenItLeavesTheTree() {
+        var context = makeContext()
+        let cache = HUDCache()
+        context.cache = cache
+        context.delta = 0.2
+        cache.beginAnimationFrame()
+        _ = Sprite("hud-sprite", animation: "blink")
+            .render(context: context, size: Size(width: 16, height: 16))
+        cache.endAnimationFrame()
+        XCTAssertEqual(cache.spriteClocks.count, 1)
+
+        // A frame the sprite sits out of prunes its playhead.
+        cache.beginAnimationFrame()
+        cache.endAnimationFrame()
+        XCTAssertTrue(cache.spriteClocks.isEmpty)
+    }
+
     func testUnknownAnimationOccupiesNoSpace() {
         let context = makeContext()
         XCTAssertEqual(

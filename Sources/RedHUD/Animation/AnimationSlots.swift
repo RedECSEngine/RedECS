@@ -30,6 +30,19 @@ extension HUDCache {
     /// nodes release their state (and `.appear` replays on rebirth).
     func endAnimationFrame() {
         animationSlots = animationSlots.filter { touchedAnimationKeys.contains($0.key) }
+        spriteClocks = spriteClocks.filter { touchedAnimationKeys.contains($0.key) }
+    }
+
+    /// Advances (or installs) a self-clocked `Sprite`'s playhead and returns
+    /// the time to sample its animation at, wrapped into one loop.
+    func stepSpriteClock(key: AnimationKey, loopDuration: Double, delta: Double) -> Double {
+        touchedAnimationKeys.insert(key)
+        var elapsed = (spriteClocks[key] ?? 0) + delta
+        if loopDuration > 0 {
+            elapsed = elapsed.truncatingRemainder(dividingBy: loopDuration)
+        }
+        spriteClocks[key] = elapsed
+        return elapsed
     }
 
     /// Advances (or installs) the slot for one animatable modifier and

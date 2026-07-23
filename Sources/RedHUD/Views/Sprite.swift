@@ -3,15 +3,16 @@ import GeometryAlgorithms
 import RedECS
 
 /// Draws a texture-map frame (or a whole texture) at its native size, or an
-/// animation frame chosen by a time the game derives from its state — the
-/// HUD is rebuilt every frame, so animation progress comes in from outside
-/// rather than being clocked here. Requires the texture's `TextureMap` to be
+/// animation frame — either on the HUD's own frame clock, or at a time the
+/// game derives from its state. Requires the texture's `TextureMap` to be
 /// loaded; without it (or with an unknown frame/animation) the sprite
 /// occupies no space, like a `Text` with no font.
 public struct Sprite: BuiltinHUDView {
     public enum Source: Equatable {
         case texture(TextureReference)
-        case animation(textureId: TextureId, name: String, time: Double)
+        /// A nil `time` self-clocks off the render cache; a non-nil one is
+        /// the game's own progress.
+        case animation(textureId: TextureId, name: String, time: Double?)
     }
 
     public var source: Source
@@ -25,8 +26,18 @@ public struct Sprite: BuiltinHUDView {
         self.scale = scale
     }
 
+    /// Plays the animation on the HUD's own frame clock, looping forever.
+    /// Progress lives in the render cache keyed by the sprite's position in
+    /// the view tree, so it survives the per-frame rebuild — and resets when
+    /// the sprite leaves the tree.
+    public init(_ textureId: TextureId, animation name: String, scale: Double = 1) {
+        self.source = .animation(textureId: textureId, name: name, time: nil)
+        self.scale = scale
+    }
+
     /// `time` is in seconds and wraps around the animation's total duration,
-    /// so a game clock or state-derived elapsed time loops the animation.
+    /// so state-derived elapsed time (an effect's age, a cooldown) drives the
+    /// playhead instead of the frame clock.
     public init(_ textureId: TextureId, animation name: String, time: Double, scale: Double = 1) {
         self.source = .animation(textureId: textureId, name: name, time: time)
         self.scale = scale
@@ -82,7 +93,7 @@ public struct Sprite: BuiltinHUDView {
         case .animation(let textureId, let name, let time):
             guard let animations = resourceManager.animationsForTexture(textureId),
                   let animation = animations[name],
-                  let frame = animation.frame(at: time) else {
+                  let frame = animation.frame(at: time ?? playhead(of: animation, context: context)) else {
                 return nil
             }
             reference = TextureReference(textureId: textureId, frameId: frame.name)
@@ -110,15 +121,35 @@ public struct Sprite: BuiltinHUDView {
             textureRect: Rect(x: 0, y: 0, width: textureMap.meta.size.w, height: textureMap.meta.size.h)
         )
     }
+
+    /// The self-clocked playhead for this sprite. Without a cache (a bare
+    /// context in tests, or measurement outside the reducer) it holds at the
+    /// animation's first frame.
+    private func playhead(
+        of animation: SpriteAnimationDictionary.Animation,
+        context: HUDRenderContext
+    ) -> Double {
+        guard let cache = context.cache else { return 0 }
+        return cache.stepSpriteClock(
+            key: AnimationKey(path: context.identityPath, kind: "sprite"),
+            loopDuration: animation.duration,
+            delta: context.delta
+        )
+    }
 }
 
 public extension SpriteAnimationDictionary.Animation {
-    /// The frame playing at `time` seconds since the animation started,
-    /// looping over the total duration. Frame durations are in milliseconds
+    /// Total play time in seconds. Frame durations are in milliseconds
     /// (matching `SpriteAnimation`).
+    var duration: Double {
+        frames.reduce(0) { $0 + $1.duration / 1000 }
+    }
+
+    /// The frame playing at `time` seconds since the animation started,
+    /// looping over the total duration.
     func frame(at time: Double) -> Frame? {
         guard !frames.isEmpty else { return nil }
-        let total = frames.reduce(0) { $0 + $1.duration / 1000 }
+        let total = duration
         guard total > 0 else { return frames[0] }
         var remaining = time.truncatingRemainder(dividingBy: total)
         if remaining < 0 { remaining += total }

@@ -20,6 +20,8 @@ final class HUDCache {
     /// Tween state for animatable modifiers, keyed by tree position; pruned
     /// each frame to the modifiers that actually resolved.
     var animationSlots: [AnimationKey: AnimationSlot] = [:]
+    /// Playheads for self-clocked `Sprite`s, keyed and pruned the same way.
+    var spriteClocks: [AnimationKey: Double] = [:]
     var touchedAnimationKeys: Set<AnimationKey> = []
 
     /// The button the pointer went down on; its `up` action fires only if
@@ -33,6 +35,7 @@ final class HUDCache {
         lastViewport = .zero
         lastRootOffset = .zero
         animationSlots.removeAll()
+        spriteClocks.removeAll()
         touchedAnimationKeys.removeAll()
         pressedIdentity = nil
         hoveredIdentity = nil

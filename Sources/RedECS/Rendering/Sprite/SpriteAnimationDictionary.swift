@@ -1,6 +1,7 @@
 public struct SpriteAnimationDictionary: Codable {
     public struct Animation: Codable, Equatable {
         public struct Frame: Codable, Equatable {
+            public static let defaultDurationMilliseconds: Double = 160
             public let name: String
             public let duration: Double
         }
@@ -30,7 +31,10 @@ public struct SpriteAnimationDictionary: Codable {
                 let startIndex = frameTag.from
                 let endIndex = frameTag.to
                 let frames = textureMap.frames[(startIndex...endIndex)].map { frame in
-                    Animation.Frame(name: frame.filename, duration: frame.duration ?? 0.16)
+                    Animation.Frame(
+                        name: frame.filename,
+                        duration: frame.duration ?? Animation.Frame.defaultDurationMilliseconds
+                    )
                 }
                 dict[frameTag.name] = Animation(name: frameTag.name, frames: frames)
             }

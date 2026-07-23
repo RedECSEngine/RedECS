@@ -72,8 +72,13 @@ what fraction of it will actually be used and what it links transitively.
   - Engine rendering: `Tests/RenderingTests` (Metal, via the `MTKView` strategy).
   - Full game state: `dungeon-cleaners/DungeonCleanersKit/Tests/GameSnapshotTests`
     boots the real game and snapshots tiles + player + objects in one frame.
-  - Re-record with `SNAPSHOT_TESTING_RECORD=all swift test` and review the
-    changed pngs in the diff.
+  - **Never bulk re-record.** `SNAPSHOT_TESTING_RECORD=all` (and deleting a
+    `__Snapshots__` dir wholesale) redefines whatever the code currently emits
+    as correct, so a regression in that run silently becomes the new baseline
+    and can never fail again. Run the tests, read each failure on its own, work
+    out what changed and why, confirm the change is intended, and only then
+    re-record that one reference (delete that specific png and re-run). Review
+    every diff image.
 - Launching an app is allowed only as a does-it-crash check (e.g. `pgrep` after a
   few seconds); assert nothing visual from a live run.
 
