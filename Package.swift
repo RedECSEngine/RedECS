@@ -88,15 +88,7 @@ let package = Package(
 
         .target(
             name: "RedECSAppleSupport",
-            dependencies: ["RedECSKit"],
-            resources: [
-                // .copy (not .process) so Xcode bundles the source verbatim
-                // instead of precompiling a default.metallib: the runtime
-                // source compile is then the single shader path everywhere,
-                // keeping snapshot pixels identical between Xcode and
-                // `swift test`.
-                .copy("Shaders.metal")
-            ]
+            dependencies: ["RedECSKit"]
         ),
         .target(
             name: "RedECSWebSupport",

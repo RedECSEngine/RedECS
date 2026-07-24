@@ -34,10 +34,14 @@ struct Uniforms {
 }
 
 public class MetalRenderer: NSObject, MTKViewDelegate {
+    static let fragmentParamsBufferIndex = 0 // fragment buffer slot for u_params
+
     var resourceManager: MetalResourceManager
     var device: MTLDevice
-    var pipelineState: MTLRenderPipelineState
-    
+    var shaderRegistry: ShaderRegistry // effects to build pipelines for
+    var pipelineStates: [ShaderId: MTLRenderPipelineState] // one pipeline per effect
+    var passthroughPipelineState: MTLRenderPipelineState // fallback for unknown ids
+
     // The command queue used to pass commands to the device.
     var commandQueue: MTLCommandQueue
     
@@ -60,61 +64,84 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
     public init?(
         device: MTLDevice,
         pixelFormat: MTLPixelFormat,
-        resourceManager: MetalResourceManager
+        resourceManager: MetalResourceManager,
+        shaderRegistry: ShaderRegistry = ShaderRegistry()
     ) {
         self.resourceManager = resourceManager
+        self.shaderRegistry = shaderRegistry
 
         self.device = device
 
-        guard let defaultLibrary = Self.makeShaderLibrary(device: device) else {
+        // Compile one library holding every effect's fragment function.
+        guard let library = Self.makeShaderLibrary(device: device, registry: shaderRegistry),
+              let vertexFunction = library.makeFunction(name: "vertexShader") else {
             return nil
         }
-        
-        let vertexFunction = defaultLibrary.makeFunction(name: "vertexShader")
-        let fragmentFunction = defaultLibrary.makeFunction(name: "fragmentShader")
-        
-        let pipelineDescriptor = MTLRenderPipelineDescriptor()
-        pipelineDescriptor.label = "2D Rendering Pipeline"
-        pipelineDescriptor.vertexFunction = vertexFunction
-        pipelineDescriptor.fragmentFunction = fragmentFunction
-        pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat
-        
-        pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
-        pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
-        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add
-        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-        pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
-        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
-        
-        do {
-            try self.pipelineState = device.makeRenderPipelineState(descriptor: pipelineDescriptor)
-        } catch {
+
+        // Build a pipeline pairing the shared vertex fn with one fragment fn.
+        func makePipeline(fragmentFunctionName: String) -> MTLRenderPipelineState? {
+            guard let fragmentFunction = library.makeFunction(name: fragmentFunctionName) else {
+                return nil
+            }
+            let pipelineDescriptor = MTLRenderPipelineDescriptor()
+            pipelineDescriptor.label = "2D Rendering Pipeline: \(fragmentFunctionName)"
+            pipelineDescriptor.vertexFunction = vertexFunction
+            pipelineDescriptor.fragmentFunction = fragmentFunction
+            pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat
+
+            // Standard premultiplied-style alpha blending (unchanged).
+            pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
+            pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
+            pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add
+            pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+            pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+            pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+            pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+
+            return try? device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+        }
+
+        // Passthrough is the fallback, so build it explicitly.
+        guard let passthrough = makePipeline(
+            fragmentFunctionName: ShaderRegistry.passthroughDefinition.metalFragmentFunction
+        ) else {
             return nil
         }
-        
+        self.passthroughPipelineState = passthrough
+
+        // One pipeline per registered effect, keyed by id for per-group lookup.
+        var states: [ShaderId: MTLRenderPipelineState] = [:]
+        for definition in shaderRegistry.ordered {
+            guard let state = makePipeline(fragmentFunctionName: definition.metalFragmentFunction) else {
+                return nil
+            }
+            states[definition.id] = state
+        }
+        self.pipelineStates = states
+
         guard let commandQueue = device.makeCommandQueue() else {
             return nil
         }
-        
+
         self.commandQueue = commandQueue
     }
 
-    /// Shaders.metal is bundled as a plain resource (`.copy` in
-    /// Package.swift) and compiled here at runtime, so Xcode and
+    /// The base source (`baseMetalSource`) and each registered shader's
+    /// `metalSource` are compiled together at runtime, so Xcode and
     /// `swift build`/`swift test` render identically — a precompiled
     /// default.metallib produced subtly different texture sampling than the
     /// runtime compiler, which broke snapshot references across the two
-    /// (see known-issues.md). The metallib path is kept as a preference in
-    /// case a future build produces one deliberately.
-    private static func makeShaderLibrary(device: MTLDevice) -> MTLLibrary? {
-        if let library = try? device.makeDefaultLibrary(bundle: .module) {
-            return library
-        }
-        guard let sourceURL = Bundle.module.url(forResource: "Shaders", withExtension: "metal"),
-              let source = try? String(contentsOf: sourceURL, encoding: .utf8) else {
-            return nil
-        }
+    /// (see known-issues.md). Compiling from an embedded string (rather than a
+    /// bundled `Shaders.metal`) also means no resource lookup that Xcode fails
+    /// to stage. Preset and game-defined fragment functions live in one library.
+    private static func makeShaderLibrary(device: MTLDevice, registry: ShaderRegistry) -> MTLLibrary? {
+        // Append each effect's MSL (empty for effects already in the base).
+        let appended = registry.ordered
+            .map(\.metalSource)
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n\n")
+        // Compile it all as one translation unit so appended fns see base types.
+        let source = baseMetalSource + "\n\n" + appended
         return try? device.makeLibrary(source: source, options: nil)
     }
     
@@ -182,9 +209,8 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
             zfar: 1.0
         ))
         
-        renderEncoder.setRenderPipelineState(pipelineState)
-        
         var lastBoundTexture: TextureId?
+        var lastPipelineId: ShaderId? // skip redundant pipeline switches
 
         // Screen-space groups draw after (above) all world groups, each
         // space z-sorted within itself.
@@ -195,6 +221,13 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
             return a.zIndex < b.zIndex
         }
         for renderGroup in sortedWork {
+            // Select this group's effect pipeline (falling back to passthrough).
+            let shaderId = renderGroup.shader?.programId ?? .passthrough
+            if lastPipelineId != shaderId {
+                renderEncoder.setRenderPipelineState(pipelineStates[shaderId] ?? passthroughPipelineState)
+                lastPipelineId = shaderId
+            }
+
             let color = renderGroup.color?.asVectorFloat4 ?? vector_float4(0, 0, 0, Float(renderGroup.opacity))
             var triangleVertices: [AAPLVertex] = []
             var textureVertices: [TextureInfo] = []
@@ -249,6 +282,18 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
                 lastBoundTexture = nil
             }
             
+            // Pack this effect's parameters and bind them as u_params.
+            if shaderRegistry[shaderId] != nil {
+                var params = renderGroup.shader?.encodeUniforms() ?? []
+                if !params.isEmpty { // passthrough encodes nothing and reads no buffer
+                    renderEncoder.setFragmentBytes(
+                        &params,
+                        length: MemoryLayout<Float>.stride * params.count,
+                        index: Self.fragmentParamsBufferIndex
+                    )
+                }
+            }
+
             renderEncoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.size, index: AAPLVertexInputIndex.uniforms.rawValue)
             
             let chunkAmount = 3

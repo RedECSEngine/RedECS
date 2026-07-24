@@ -1,10 +1,12 @@
-/*
-See LICENSE folder for this sample’s licensing information.
-
-Abstract:
-Metal shaders used for this sample
-*/
-
+// The base Metal source — vertex shader, passthrough fragment, and the shared
+// typedefs the effect shaders reference — embedded as a string so the shader
+// library compiles from source with no bundle-resource lookup. This is what
+// makes the shader path identical in Xcode and `swift test`: the effect shaders
+// in ShaderEffect.swift are appended to this, then the whole thing is compiled
+// at runtime. It used to be loaded from a `.copy`'d Shaders.metal, but Xcode
+// compiled that into a default.metallib instead of staging the loose file, so
+// the runtime lookup returned nil and MetalRenderer failed to initialize.
+let baseMetalSource = """
 #include <metal_stdlib>
 #include <simd/simd.h>
 
@@ -57,7 +59,7 @@ struct RasterizerData
     // and then passes the interpolated value to the fragment shader for each
     // fragment in the triangle.
     float4 color;
-    
+
     float2 texCoord;
 };
 
@@ -76,7 +78,7 @@ vertexShader(uint vertexID [[vertex_id]],
     vector_float2 texCoord = textureInfo[vertexID].texCoord;
     texCoord.y = textureInfo[vertexID].texSize.y - texCoord.y;
     texCoord = texCoord / textureInfo[vertexID].texSize;
-    
+
     out.texCoord = float2(texCoord.x, texCoord.y);
     out.color = vertices[vertexID].color;
 
@@ -89,7 +91,7 @@ fragment float4 fragmentShader(RasterizerData in [[stage_in]],
     if (colorMap.get_width() == 1 && colorMap.get_height() == 1) {
         return in.color;
     }
-    
+
     constexpr sampler colorSampler(mip_filter::nearest,
                                        mag_filter::nearest,
                                        min_filter::nearest);
@@ -100,3 +102,4 @@ fragment float4 fragmentShader(RasterizerData in [[stage_in]],
     }
     return float4(colorSample.x, colorSample.y, colorSample.z, in.color.w);
 }
+"""

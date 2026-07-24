@@ -23,6 +23,10 @@ public struct Text: BuiltinHUDView {
         // common.base; flip them into local y-down space (scaled to the
         // context's font size) so the line's top sits at the origin.
         let flip = Matrix3.flippingYUpToLocal(height: font.common.base, scale: scale)
+        // White glyphs stay on passthrough (unchanged); any other colour tints.
+        let shader: ShaderEffect? = context.fillColor == .white
+            ? nil
+            : .tint(context.fillColor)
         return HUDNode(
             frame: Rect(origin: .zero, size: size),
             groups: [
@@ -32,7 +36,8 @@ public struct Text: BuiltinHUDView {
                     fragmentType: .texture(font.pageTextureName),
                     zIndex: 0,
                     opacity: context.opacity,
-                    projectionSpace: context.projectionSpace
+                    projectionSpace: context.projectionSpace,
+                    shader: shader // makes foregroundColor actually paint the glyphs
                 )
             ]
         )

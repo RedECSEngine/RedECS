@@ -30,6 +30,7 @@ public struct SpriteComponent: GameComponent {
 
     public var fillColor: Color = .clear
     public var opacity: Double = 1
+    public var shader: ShaderEffect? = nil // fragment effect applied to this sprite's draws; nil = passthrough
     /// Where this sprite's content hangs on its transform's frame, from 0 to 1.
     /// The transform's position is where the anchor point of the content sits,
     /// and rotation/scale pivot around it. Content only — children of the
@@ -175,7 +176,8 @@ extension SpriteComponent: RenderableComponent {
                     triangles: triangles,
                     transformMatrix: matrix,
                     fragmentType: .color(fillColor),
-                    zIndex: transform.zIndex
+                    zIndex: transform.zIndex,
+                    shader: shader // carry the sprite's effect onto its group
                 )
             ]
         case let .label(font, text):
@@ -219,7 +221,8 @@ extension SpriteComponent {
                     ),
                     fragmentType: .texture(font.pageTextureName),
                     zIndex: transform.zIndex,
-                    opacity: opacity
+                    opacity: opacity,
+                    shader: shader // e.g. tinting a label
                 )
             ]
         } catch {
@@ -296,7 +299,8 @@ extension SpriteComponent {
                 transformMatrix: contentMatrix(transform: transform, containerSize: renderRect.size),
                 fragmentType: .texture(texture.textureId),
                 zIndex: transform.zIndex,
-                opacity: opacity
+                opacity: opacity,
+                shader: shader // e.g. the hero's palette remap
             )
         ]
     }

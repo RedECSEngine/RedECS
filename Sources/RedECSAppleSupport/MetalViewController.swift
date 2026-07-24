@@ -1,4 +1,5 @@
 import MetalKit
+import RedECS
 
 #if os(OSX)
 import Cocoa
@@ -22,7 +23,8 @@ open class MetalViewController: AppleViewController {
     public var renderer: MetalRenderer!
     public var resourceManager: MetalResourceManager!
     public var mtkView: MetalView!
-    
+    open var shaderRegistry = ShaderRegistry() // override to register game shaders before load
+
     open override func loadView() {
         self.view = MetalView(frame: .init(origin: .zero, size: .init(width: 480, height: 480)))
     }
@@ -46,7 +48,8 @@ open class MetalViewController: AppleViewController {
         guard let newRenderer = MetalRenderer(
             device: defaultDevice,
             pixelFormat: mtkView.colorPixelFormat,
-            resourceManager: resourceManager
+            resourceManager: resourceManager,
+            shaderRegistry: shaderRegistry
         ) else {
             print("Renderer cannot be initialized")
             return
