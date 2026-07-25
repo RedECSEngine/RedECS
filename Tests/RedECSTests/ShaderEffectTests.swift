@@ -18,21 +18,25 @@ final class ShaderEffectTests: XCTestCase {
             id: .tint,
             metalFragmentFunction: "customTint",
             metalSource: "",
-            webGLFragmentSource: "",
-            encodeUniforms: { _ in [42] }
+            webGLFragmentSource: ""
         )
         registry.register(custom)
         XCTAssertEqual(registry[.tint]?.metalFragmentFunction, "customTint")
-        XCTAssertEqual(registry[.tint]?.encodeUniforms(.init()), [42])
     }
 
-    func testPassthroughEncodesNoUniforms() {
-        XCTAssertEqual(ShaderRegistry.passthroughDefinition.encodeUniforms(.init()), [])
+    func testProgramIdMatchesEffect() {
+        XCTAssertEqual(ShaderEffect.tint(.white).programId, .tint)
+        XCTAssertEqual(ShaderEffect.paletteRemap([]).programId, .paletteRemap)
+        XCTAssertEqual(
+            ShaderEffect.custom("waves", params: [1, 2]).programId,
+            ShaderId(rawValue: "waves")
+        )
     }
 
     func testTintEncodesRGBA() {
-        let params = ShaderParameters(color: Color(red: 0.1, green: 0.2, blue: 0.3, alpha: 0.4))
-        let encoded = ShaderRegistry.tintDefinition.encodeUniforms(params)
+        let encoded = ShaderEffect.tint(
+            Color(red: 0.1, green: 0.2, blue: 0.3, alpha: 0.4)
+        ).encodeUniforms()
         XCTAssertEqual(encoded.count, 4)
         XCTAssertEqual(encoded[0], 0.1, accuracy: 1e-6)
         XCTAssertEqual(encoded[1], 0.2, accuracy: 1e-6)
@@ -41,7 +45,7 @@ final class ShaderEffectTests: XCTestCase {
     }
 
     func testPaletteRemapEncodesCountThenKeyPairs() {
-        let params = ShaderParameters(colorKeys: [
+        let encoded = ShaderEffect.paletteRemap([
             .init(
                 from: Color(red: 1, green: 0, blue: 0, alpha: 1),
                 to: Color(red: 0, green: 0, blue: 1, alpha: 1)
@@ -50,28 +54,33 @@ final class ShaderEffectTests: XCTestCase {
                 from: Color(red: 0, green: 1, blue: 0, alpha: 1),
                 to: Color(red: 1, green: 1, blue: 0, alpha: 1)
             )
-        ])
-        let encoded = ShaderRegistry.paletteRemapDefinition.encodeUniforms(params)
+        ]).encodeUniforms()
         XCTAssertEqual(encoded, [2, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0])
     }
 
     func testPaletteRemapClampsToMaxKeys() {
-        let key = ShaderParameters.ColorKey(from: .white, to: .black)
-        let params = ShaderParameters(colorKeys: Array(repeating: key, count: ShaderRegistry.paletteRemapMaxKeys + 5))
-        let encoded = ShaderRegistry.paletteRemapDefinition.encodeUniforms(params)
+        let key = ShaderEffect.ColorKey(from: .white, to: .black)
+        let encoded = ShaderEffect.paletteRemap(
+            Array(repeating: key, count: ShaderRegistry.paletteRemapMaxKeys + 5)
+        ).encodeUniforms()
         XCTAssertEqual(Int(encoded[0]), ShaderRegistry.paletteRemapMaxKeys)
         XCTAssertEqual(encoded.count, 1 + ShaderRegistry.paletteRemapMaxKeys * 6)
     }
 
-    func testRenderGroupDefaultsToPassthrough() {
+    func testPaletteRemapWebGLSourceMatchesMaxKeys() {
+        let source = ShaderRegistry.paletteRemapDefinition.webGLFragmentSource
+        XCTAssertTrue(source.contains("const int MAX_KEYS = \(ShaderRegistry.paletteRemapMaxKeys);"))
+        XCTAssertTrue(source.contains("uniform float u_params[\(1 + ShaderRegistry.paletteRemapMaxKeys * 6)];"))
+    }
+
+    func testRenderGroupDefaultsToNilShader() {
         let group = RenderGroup(
             triangles: [],
             transformMatrix: .identity,
             fragmentType: .color(.white),
             zIndex: 0
         )
-        XCTAssertEqual(group.shader, .none)
-        XCTAssertEqual(group.shader.id, .passthrough)
+        XCTAssertNil(group.shader)
     }
 
     func testCopyHelpersPreserveShader() {

@@ -115,7 +115,7 @@ public final class ShaderRegistry {
 
 public extension ShaderRegistry {
     // Upper bound on remap pairs; must match the GLSL loop/array size below.
-    static let paletteRemapMaxKeys = 9
+    static let paletteRemapMaxKeys = 16
 
     // Passthrough: the base fragmentShader already in the base source; no uniforms.
     static let passthroughDefinition = ShaderDefinition(
@@ -197,12 +197,12 @@ precision mediump float;
 
 uniform sampler2D u_image;
 uniform vec2 u_textureSize;
-uniform float u_params[64];
+uniform float u_params[97];
 
 varying vec4 v_color;
 varying vec2 v_texCoord;
 
-const int MAX_KEYS = 9;
+const int MAX_KEYS = 16;
 
 void main() {
     vec4 color = texture2D(u_image, v_texCoord);
