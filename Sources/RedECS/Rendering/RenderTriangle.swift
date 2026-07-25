@@ -22,6 +22,7 @@ public struct RenderGroup {
     public let zIndex: Int
     public let opacity: Double
     public let projectionSpace: ProjectionSpace
+    public let shader: ShaderEffect? // which fragment effect draws this group; nil = passthrough
 
     public init(
         triangles: [RenderTriangle],
@@ -29,7 +30,8 @@ public struct RenderGroup {
         fragmentType: FragmentType,
         zIndex: Int,
         opacity: Double = 1,
-        projectionSpace: ProjectionSpace = .world
+        projectionSpace: ProjectionSpace = .world,
+        shader: ShaderEffect? = nil
     ) {
         self.triangles = triangles
         self.transformMatrix = transformMatrix
@@ -37,6 +39,7 @@ public struct RenderGroup {
         self.zIndex = zIndex
         self.opacity = opacity
         self.projectionSpace = projectionSpace
+        self.shader = shader
     }
 }
 
@@ -50,7 +53,8 @@ public extension RenderGroup {
             fragmentType: fragmentType,
             zIndex: zIndex,
             opacity: opacity,
-            projectionSpace: projectionSpace
+            projectionSpace: projectionSpace,
+            shader: shader // reparenting must keep the effect, e.g. a nested hero sprite
         )
     }
 
@@ -62,7 +66,8 @@ public extension RenderGroup {
             fragmentType: fragmentType,
             zIndex: zIndex,
             opacity: opacity,
-            projectionSpace: projectionSpace
+            projectionSpace: projectionSpace,
+            shader: shader // preserve the effect across the copy
         )
     }
 
@@ -75,7 +80,8 @@ public extension RenderGroup {
             fragmentType: fragmentType,
             zIndex: zIndex,
             opacity: opacity,
-            projectionSpace: projectionSpace
+            projectionSpace: projectionSpace,
+            shader: shader // preserve the effect when re-slotting into HUD draw order
         )
     }
 
