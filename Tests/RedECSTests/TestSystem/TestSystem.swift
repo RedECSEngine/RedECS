@@ -31,7 +31,7 @@ struct TestGlobalState: GameState {
     }
 }
 
-enum TestGlobalAction: Equatable {
+enum TestGlobalAction: Equatable, Codable {
     case incrementCount
     case updateVelocity(entity: EntityId, velocity: Point)
     case removeEntity(entity: EntityId)

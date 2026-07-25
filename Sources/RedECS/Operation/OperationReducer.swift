@@ -1,4 +1,3 @@
-import RedECS
 
 public struct OperationComponentContext<GameAction: Equatable & Codable>: GameState, OperationCapableGameState {
     public var entities: EntityRepository = .init()

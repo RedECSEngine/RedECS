@@ -1,4 +1,3 @@
-import RedECS
 
 public struct WaitOperation: Operation {
     public var duration: Double

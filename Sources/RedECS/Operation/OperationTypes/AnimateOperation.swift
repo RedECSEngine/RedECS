@@ -1,4 +1,3 @@
-import RedECS
 
 public struct AnimateOperation: Operation {
     public struct FrameData: Equatable, Codable {

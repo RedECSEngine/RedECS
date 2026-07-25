@@ -44,7 +44,7 @@ import Geometry
 ///         if case .triggered(let action) = hudAction { return action }
 ///         return .hud(hudAction)  // unreachable: only .triggered is emitted
 ///     }
-public enum HUDAction<GameAction: Equatable>: Equatable {
+public enum HUDAction<GameAction: Equatable & Codable>: Equatable, Codable {
     case pointerDown(Point)
     case pointerUp(Point)
     case pointerMove(Point)

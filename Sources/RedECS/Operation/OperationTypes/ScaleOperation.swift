@@ -1,13 +1,12 @@
-import RedECS
 import Geometry
 
-public struct MoveOperation: Operation {
-    public typealias Action = Int
-    
+public struct ScaleOperation: Operation {
     public enum Strategy: Equatable, Codable {
         case by(Point)
         case to(Point)
     }
+    
+    public typealias Action = Int
     
     public var strategy: Strategy
     public var amount: Point = .zero
@@ -23,21 +22,27 @@ public struct MoveOperation: Operation {
     }
     
     public mutating func run(id: EntityId, state: inout BasicOperationComponentContext, delta: Double) -> GameEffect<BasicOperationComponentContext, Action> {
+        
         if currentTime == 0 {
             switch strategy {
-            case .by(let amount):
-                self.amount = amount
-            case .to(let location):
-                let currentPos = (state.transform[id]?.position ?? .zero)
-                self.amount = location.diffOf(currentPos)
+            case .by(let point):
+                self.amount = point
+            case .to(let point):
+                let scale = state.transform[id]?.scale ?? .zero
+                self.amount = point - scale
             }
         }
         
-        let percentage = delta / duration
-        let moveByIncrement = amount * percentage
-        state.transform[id]?.position += moveByIncrement
+        // Clamp this step to the time actually remaining so a sub-frame
+        // `duration` (delta > duration) can't drive `percentage` past 1 and
+        // overshoot the target. A `.to` operation then lands exactly on its
+        // target on the completing frame instead of flying past it.
+        let remaining = max(0, duration - currentTime)
+        let step = min(delta, remaining)
+        let percentage = duration > 0 ? step / duration : 1
+        let scaleIncrement = amount * percentage
+        state.transform[id]?.scale += scaleIncrement
         currentTime += delta
-        
         return .none
     }
     

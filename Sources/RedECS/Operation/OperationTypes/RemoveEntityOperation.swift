@@ -1,4 +1,3 @@
-import RedECS
 import Geometry
 
 public struct RemoveEntityOperation<GameAction: Equatable & Codable>: Operation {

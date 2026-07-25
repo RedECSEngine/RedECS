@@ -1,6 +1,9 @@
-public indirect enum GameEffect<State: GameState, LogicAction: Equatable> {
+public indirect enum GameEffect<State: GameState, LogicAction: Equatable & Codable> {
     case system(SystemAction<State>)
     case game(LogicAction)
+    case operation(EntityId, key: String?, OperationType<LogicAction>)
+    case removeOperation(EntityId, key: String)
+    case removeAllOperations(EntityId)
     case waitFor(PendingGameEffect<State, LogicAction>)
     case many([Self])
     case none
@@ -17,6 +20,12 @@ public indirect enum GameEffect<State: GameState, LogicAction: Equatable> {
             return .system(action.map(stateTransform))
         case .game(let action):
             return .game(actionTransform(action))
+        case .operation(let entityId, let key, let operationType):
+            return .operation(entityId, key: key, operationType.map(actionTransform))
+        case .removeOperation(let entityId, let key):
+            return .removeOperation(entityId, key: key)
+        case .removeAllOperations(let entityId):
+            return .removeAllOperations(entityId)
         case .many(let effects):
             return .many(effects.map { $0.map(stateTransform: stateTransform, actionTransform: actionTransform) })
         case .deferred(let promise):
@@ -28,6 +37,12 @@ public indirect enum GameEffect<State: GameState, LogicAction: Equatable> {
         case .none:
             return .none
         }
+    }
+}
+
+public extension GameEffect {
+    static func operation(_ entityId: EntityId, _ operation: OperationType<LogicAction>) -> Self {
+        .operation(entityId, key: nil, operation)
     }
 }
 

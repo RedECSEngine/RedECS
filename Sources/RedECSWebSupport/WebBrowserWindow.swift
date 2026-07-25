@@ -3,7 +3,7 @@ import RedECS
 import RedECSBasicComponents
 import Geometry
 
-open class WebBrowserWindow<State: GameState, Action: Equatable, Environment> {
+open class WebBrowserWindow<State: GameState & OperationCapableGameState, Action: Equatable & Codable, Environment> where State.GameAction == Action {
     
     public private(set) var resourceManager: WebResourceManager
     public private(set) var renderer: WebRenderer

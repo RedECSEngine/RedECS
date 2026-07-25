@@ -18,7 +18,7 @@ import RedECS
 /// `GameAction` is the game's own action type, fired by `Button`s (screen
 /// space only for now): forward pointer events in as `HUDAction` cases and map
 /// `.triggered` back out (see `HUDAction`). HUDs without buttons use `Never`.
-public struct HUDRenderingReducer<ContextState: RenderableGameState, GameAction: Equatable>: Reducer {
+public struct HUDRenderingReducer<ContextState: RenderableGameState, GameAction: Equatable & Codable>: Reducer {
     public typealias State = ContextState
     public typealias Action = HUDAction<GameAction>
     public typealias Environment = RenderingEnvironment

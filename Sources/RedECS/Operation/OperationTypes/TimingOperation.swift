@@ -1,4 +1,3 @@
-import RedECS
 import Geometry
 
 public struct TimingOperation<GameAction: Equatable & Codable>: Operation {

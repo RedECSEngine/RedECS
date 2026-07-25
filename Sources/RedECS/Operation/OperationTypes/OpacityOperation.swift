@@ -1,4 +1,3 @@
-import RedECS
 import Geometry
 
 public struct OpacityOperation: Operation {

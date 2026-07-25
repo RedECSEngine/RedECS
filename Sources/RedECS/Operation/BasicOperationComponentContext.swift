@@ -1,4 +1,3 @@
-import RedECS
 
 public struct BasicOperationComponentContext: GameState {
     public var entities: EntityRepository = .init()

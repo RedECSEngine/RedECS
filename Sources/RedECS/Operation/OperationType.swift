@@ -1,4 +1,3 @@
-import RedECS
 import Geometry
 
 public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & Equatable {

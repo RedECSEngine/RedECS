@@ -48,7 +48,7 @@ struct TestGameLogicReducer: Reducer {
 /// The "top-level actions directly" wiring from the HUDAction docs: buttons
 /// carry this enum itself, so the embedding case makes it recursive —
 /// hence `indirect`.
-indirect enum RenderingTestAction: Equatable {
+indirect enum RenderingTestAction: Equatable, Codable {
     case hud(HUDAction<Self>)
     /// What test buttons fire; arrives unwrapped via `toGlobalAction`.
     case buttonFired(String)

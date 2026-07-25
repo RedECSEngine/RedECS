@@ -1,4 +1,3 @@
-import RedECS
 
 public struct GroupOperation<GameAction: Equatable & Codable>: Operation {
     public var currentTime: Double = 0

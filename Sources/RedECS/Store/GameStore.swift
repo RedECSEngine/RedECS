@@ -1,4 +1,4 @@
-public final class GameStore<R: Reducer> {
+public final class GameStore<R: Reducer> where R.State: OperationCapableGameState, R.State.GameAction == R.Action {
     public private(set) var state: R.State
     public private(set) var environment: R.Environment
     private var reducer: R
@@ -48,6 +48,12 @@ public final class GameStore<R: Reducer> {
             sendAction(action)
         case .system(let action):
             sendSystemAction(action)
+        case .operation(let entityId, let key, let operationType):
+            applyOperation(entityId, key: key, operationType)
+        case .removeOperation(let entityId, let key):
+            removeOperation(entityId, key: key)
+        case .removeAllOperations(let entityId):
+            removeAllOperations(entityId)
         case .many(let effects):
             effects.forEach(handleEffect)
         case .deferred(let promise):
@@ -128,5 +134,25 @@ public final class GameStore<R: Reducer> {
     private func isComponentTypeRegistered(id: String) -> Bool {
         registeredComponentTypes[id] != nil
     }
+}
 
+extension GameStore {
+    func applyOperation(_ entityId: EntityId, key: String?, _ payload: OperationType<R.State.GameAction>) {
+        let operation = payload
+        var component = state.operation[entityId] ?? OperationComponent(entity: entityId)
+        if let key {
+            component.newOperation(name: key, operation)
+        } else {
+            component.newOperation(operation)
+        }
+        state.operation[entityId] = component
+    }
+
+    func removeOperation(_ entityId: EntityId, key: String) {
+        state.operation[entityId]?.removeOperation(name: key)
+    }
+
+    func removeAllOperations(_ entityId: EntityId) {
+        state.operation[entityId]?.removeAllOperations()
+    }
 }

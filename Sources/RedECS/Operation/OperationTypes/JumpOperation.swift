@@ -1,4 +1,3 @@
-import RedECS
 import Geometry
 
 /// A parabolic jump, ported from cocos2d's `CCActionJumpBy` / `CCActionJumpTo`.

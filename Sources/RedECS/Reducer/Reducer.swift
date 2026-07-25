@@ -1,6 +1,6 @@
 public protocol Reducer {
     associatedtype State: GameState
-    associatedtype Action: Equatable
+    associatedtype Action: Equatable & Codable
     associatedtype Environment
 
     func reduce(state: inout State, delta: Double, environment: Environment) -> GameEffect<State, Action>

@@ -1,4 +1,4 @@
-public struct PendingGameEffect<State: GameState, Action: Equatable> {
+public struct PendingGameEffect<State: GameState, Action: Equatable & Codable> {
     public var outstandingActions: [Action]
     public let effect: GameEffect<State, Action>
 
