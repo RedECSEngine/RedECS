@@ -58,11 +58,8 @@ public extension RenderGroup {
             zIndex: zIndex,
             opacity: opacity,
             projectionSpace: projectionSpace,
-<<<<<<< HEAD
-            shader: shader // reparenting must keep the effect, e.g. a nested hero sprite
-=======
+            shader: shader, // reparenting must keep the effect, e.g. a nested hero sprite
             clipRect: clipRect
->>>>>>> 0b94630 (first round of scrollview implementation)
         )
     }
 
@@ -75,11 +72,8 @@ public extension RenderGroup {
             zIndex: zIndex,
             opacity: opacity,
             projectionSpace: projectionSpace,
-<<<<<<< HEAD
-            shader: shader // preserve the effect across the copy
-=======
+            shader: shader, // preserve the effect across the copy
             clipRect: clipRect
->>>>>>> 0b94630 (first round of scrollview implementation)
         )
     }
 
@@ -93,9 +87,7 @@ public extension RenderGroup {
             zIndex: zIndex,
             opacity: opacity,
             projectionSpace: projectionSpace,
-<<<<<<< HEAD
-            shader: shader // preserve the effect when re-slotting into HUD draw order
-=======
+            shader: shader, // preserve the effect when re-slotting into HUD draw order
             clipRect: clipRect
         )
     }
@@ -126,7 +118,6 @@ public extension RenderGroup {
             opacity: opacity,
             projectionSpace: projectionSpace,
             clipRect: clipped
->>>>>>> 0b94630 (first round of scrollview implementation)
         )
     }
 
