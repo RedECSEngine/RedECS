@@ -2,6 +2,20 @@ import Geometry
 import GeometryAlgorithms
 import RedECS
 
+/// The scroll viewport a `ScrollView` publishes to its content so a lazy
+/// container can window: the current scroll `offset` and the visible `viewport`
+/// size, both in the content's own coordinate space (the lazy container is the
+/// scroll's content, so its origin is 0 and its visible band is
+/// `[offset, offset + viewport]` on the scroll axis).
+public struct ScrollWindow {
+    public var offset: Point
+    public var viewport: Size
+    public init(offset: Point, viewport: Size) {
+        self.offset = offset
+        self.viewport = viewport
+    }
+}
+
 /// Environment values flowing down the view tree during layout and rendering.
 /// Modifier views copy it before passing it to their content; render groups
 /// flow back up, so no state escapes a subtree.
@@ -31,6 +45,11 @@ public struct HUDRenderContext {
     var identityPath: [IdentityToken] = []
     /// Frame time from `reduce(delta:)`; advances animation slots.
     var delta: Double = 0
+    /// The scroll viewport the content is being resolved into, published by
+    /// `ScrollView` when resolving its child. A lazy container (`LazyVStack`)
+    /// reads it to realize only the rows intersecting the visible window; nil
+    /// outside a scroll (a lazy container then falls back to realizing all).
+    var scrollWindow: ScrollWindow?
 
     public var fonts: [String: BitmapFont] {
         resourceManager?.fonts ?? [:]

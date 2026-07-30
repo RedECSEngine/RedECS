@@ -40,8 +40,15 @@ public struct ScreenSpace: BuiltinHUDView {
         self.pins = content()
     }
 
+    // A screen-space root fills its proposal. Never measured in practice (it's
+    // the HUD root, not a lazy row); provided for consistency so `size` never
+    // falls back to a full resolve.
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        proposed.orDefault()
+    }
+
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
-        let size = proposed.orDefault()
+        let size = size(proposed: proposed, context: context)
         let placed = pins.enumerated().map { index, pin -> HUDNode in
             var child = pin.content.resolve(
                 proposed: ProposedSize(size),

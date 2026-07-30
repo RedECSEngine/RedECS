@@ -16,12 +16,19 @@ public struct HUDNode {
     public var children: [HUDNode]
     /// Interaction payloads volunteered for hit testing (set by `Button`).
     public var hit: ButtonHit?
+    /// Marks this node as a scroll region for drag capture (set by `ScrollView`).
+    public var scroll: ScrollRegion?
     /// Render-only local transform (e.g. `scaleEffect`): applied to this
     /// node's whole subtree at emit, in local space, without affecting
     /// layout frames or hit geometry.
     public var transform: Matrix3?
     /// Render-only opacity multiplier for the whole subtree.
     public var opacityFactor: Double?
+    /// Clips this node's whole subtree to a rect in the node's local space
+    /// (e.g. a `ScrollView` window). Applied at emit like `transform`, and
+    /// translated up into viewport space as the subtree is reparented; nested
+    /// clips intersect. Layout frames and hit geometry are unaffected.
+    public var clip: Rect?
     /// Structural identity of the view that produced this node (its
     /// resolve-time `identityPath`), stamped in `_resolve`. Hit testing
     /// reports it so input tracking keys the same identity as animation —
@@ -57,6 +64,9 @@ public extension HUDNode {
             flattened = flattened.map {
                 $0.withTransformMatrix(.multiply(transform, $0.transformMatrix))
             }
+        }
+        if let clip = clip {
+            flattened = flattened.map { $0.applyingClip(clip) }
         }
         if let opacityFactor = opacityFactor {
             flattened = flattened.map { $0.applyingOpacityFactor(opacityFactor) }

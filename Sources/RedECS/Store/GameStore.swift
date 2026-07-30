@@ -61,8 +61,16 @@ public final class GameStore<R: Reducer> where R.State: OperationCapableGameStat
                 self?.handleEffect(effect)
             }
         case .waitFor(let pendingEffect):
-            awaitingEffects.append(pendingEffect)
+            if pendingEffect.isComplete {
+                handleEffect(pendingEffect.effect)
+            } else {
+                awaitingEffects.append(pendingEffect)
+            }
         }
+    }
+
+    public func clearPendingEffects() {
+        awaitingEffects.removeAll()
     }
 
     public func sendSystemAction(_ action: SystemAction<R.State>) {
@@ -84,6 +92,8 @@ public final class GameStore<R: Reducer> where R.State: OperationCapableGameStat
         case .removeComponent(let entityId, let registeredComponentId):
 //            print("[♦️]: Removed Component", registeredComponentId, "for", entityId)
             registeredComponentTypes[registeredComponentId]?.onEntityDestroyed(entityId, &state)
+        case .cancelPendingEffects:
+            clearPendingEffects()
         }
     }
     
@@ -138,6 +148,7 @@ public final class GameStore<R: Reducer> where R.State: OperationCapableGameStat
 
 extension GameStore {
     func applyOperation(_ entityId: EntityId, key: String?, _ payload: OperationType<R.State.GameAction>) {
+        guard state.entities.entityIds.contains(entityId) else { return }
         let operation = payload
         var component = state.operation[entityId] ?? OperationComponent(entity: entityId)
         if let key {

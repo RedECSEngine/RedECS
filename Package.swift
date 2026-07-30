@@ -83,7 +83,7 @@ let package = Package(
         ),
         .target(
             name: "RedHUD",
-            dependencies: ["RedECS"]
+            dependencies: ["RedECS", "TiledInterpreter"]
         ),
 
         .target(

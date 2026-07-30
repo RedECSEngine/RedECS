@@ -68,6 +68,12 @@ public struct WorldSpace: BuiltinHUDView {
         self.entries = content()
     }
 
+    // Entries are absolutely placed, so the space itself has no extent. Never
+    // measured in practice (a world-HUD root, not a lazy row); for consistency.
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        .zero
+    }
+
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         let (worldContext, flip) = context.enteringWorldSpace()
         let placed = entries.enumerated().map { index, entry -> HUDNode in

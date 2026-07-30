@@ -20,35 +20,23 @@ public struct HStack: BuiltinHUDView {
         self.spacing = spacing
     }
 
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        stackSize(of: layoutChildren(proposed: proposed) { _, child, childProposal in
+            child.size(proposed: childProposal, context: context)
+        })
+    }
+
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         var placed: [HUDNode] = []
-        if let totalWidth = proposed.width {
-            var remaining = totalWidth - totalSpacing
-            var childrenLeft = children.count
-            for (index, child) in children.enumerated() {
-                let share = max(0, remaining) / Double(childrenLeft)
-                let node = child.resolve(
-                    proposed: ProposedSize(width: share, height: proposed.height),
-                    context: context.descending(into: child.identityToken(at: index))
-                )
-                remaining -= node.frame.size.width
-                childrenLeft -= 1
-                placed.append(node)
-            }
-        } else {
-            // No proposal along the major axis: every child gets its ideal.
-            placed = children.enumerated().map { index, child in
-                child.resolve(
-                    proposed: ProposedSize(width: nil, height: proposed.height),
-                    context: context.descending(into: child.identityToken(at: index))
-                )
-            }
+        let sizes = layoutChildren(proposed: proposed) { index, child, childProposal in
+            let node = child.resolve(
+                proposed: childProposal,
+                context: context.descending(into: child.identityToken(at: index))
+            )
+            placed.append(node)
+            return node.frame.size
         }
-
-        let size = Size(
-            width: placed.reduce(0) { $0 + $1.frame.size.width } + totalSpacing,
-            height: placed.reduce(0) { max($0, $1.frame.size.height) }
-        )
+        let size = stackSize(of: sizes)
         var x: Double = 0
         for i in placed.indices {
             placed[i].frame.origin = Point(
@@ -62,5 +50,39 @@ public struct HStack: BuiltinHUDView {
 
     private var totalSpacing: Double {
         spacing * Double(max(0, children.count - 1))
+    }
+    
+    /// Visits children left-to-right, offering each the divided (an equal share
+    /// of the remaining width) or ideal (unproposed) proposal, and collecting
+    /// the size it chooses via `visit`. Shared by `size` (visit = measure) and
+    /// `resolve` (visit = resolve + capture) so both lay out identically.
+    private func layoutChildren(
+        proposed: ProposedSize,
+        visit: (_ index: Int, _ child: AnyHUDView, _ childProposal: ProposedSize) -> Size
+    ) -> [Size] {
+        guard let totalWidth = proposed.width else {
+            return children.enumerated().map { index, child in
+                visit(index, child, ProposedSize(width: nil, height: proposed.height))
+            }
+        }
+        var remaining = totalWidth - totalSpacing
+        var childrenLeft = children.count
+        var sizes: [Size] = []
+        for (index, child) in children.enumerated() {
+            let share = max(0, remaining) / Double(childrenLeft)
+            let s = visit(index, child, ProposedSize(width: share, height: proposed.height))
+            remaining -= s.width
+            childrenLeft -= 1
+            sizes.append(s)
+        }
+        return sizes
+    }
+
+    /// The stack's size from its children's sizes: summed widths × tallest child.
+    private func stackSize(of childSizes: [Size]) -> Size {
+        Size(
+            width: childSizes.reduce(0) { $0 + $1.width } + totalSpacing,
+            height: childSizes.reduce(0) { max($0, $1.height) }
+        )
     }
 }

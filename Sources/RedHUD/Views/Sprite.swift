@@ -43,17 +43,25 @@ public struct Sprite: BuiltinHUDView {
         self.scale = scale
     }
 
+    /// The frame's native size scaled — the sprite's size, shared by `size`
+    /// (layout-only) and `resolve` (which triangulates a rect of this size).
+    private func renderSize(_ resolved: ResolvedFrame) -> Size {
+        Size(
+            width: resolved.textureRect.size.width * scale,
+            height: resolved.textureRect.size.height * scale
+        )
+    }
+
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        // Layout-only: the frame's native size × scale, skipping triangulation.
+        resolveFrame(context).map(renderSize) ?? .zero
+    }
+
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         guard let resolved = resolveFrame(context) else {
             return HUDNode(frame: Rect(origin: .zero, size: .zero))
         }
-        let renderRect = Rect(
-            origin: .zero,
-            size: Size(
-                width: resolved.textureRect.size.width * scale,
-                height: resolved.textureRect.size.height * scale
-            )
-        )
+        let renderRect = Rect(origin: .zero, size: renderSize(resolved))
         guard let renderTris = try? renderRect.triangulate(),
               let textureTris = try? resolved.textureRect.triangulate() else {
             return HUDNode(frame: renderRect)

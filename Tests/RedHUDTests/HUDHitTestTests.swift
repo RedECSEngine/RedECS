@@ -21,7 +21,7 @@ final class HUDHitTestTests: XCTestCase {
 
     func testPointInsideAndOutside() {
         let root = node(x: 0, y: 0, width: 100, height: 50, hit: ButtonHit(up: "tapped"))
-        XCTAssertEqual(root.hitTest(Point(x: 50, y: 25))?.hit.up as? String, "tapped")
+        XCTAssertEqual(root.hitTest(Point(x: 50, y: 25))?.hit?.up as? String, "tapped")
         XCTAssertNil(root.hitTest(Point(x: 150, y: 25)))
         XCTAssertNil(root.hitTest(Point(x: 50, y: -1)))
     }
@@ -39,7 +39,7 @@ final class HUDHitTestTests: XCTestCase {
         let container = node(x: 100, y: 100, width: 50, height: 50, children: [button])
         let root = node(x: 0, y: 0, width: 480, height: 320, children: [container])
 
-        XCTAssertEqual(root.hitTest(Point(x: 115, y: 115))?.hit.down as? String, "b")
+        XCTAssertEqual(root.hitTest(Point(x: 115, y: 115))?.hit?.down as? String, "b")
         XCTAssertNil(root.hitTest(Point(x: 105, y: 105)))   // inside container, off button
     }
 
@@ -49,17 +49,17 @@ final class HUDHitTestTests: XCTestCase {
         let root = node(x: 0, y: 0, width: 100, height: 100, children: [under, over])
 
         // overlap region: later child (painted on top) wins
-        XCTAssertEqual(root.hitTest(Point(x: 30, y: 30))?.hit.up as? String, "over")
+        XCTAssertEqual(root.hitTest(Point(x: 30, y: 30))?.hit?.up as? String, "over")
         // non-overlapping part of the first child still hits
-        XCTAssertEqual(root.hitTest(Point(x: 5, y: 5))?.hit.up as? String, "under")
+        XCTAssertEqual(root.hitTest(Point(x: 5, y: 5))?.hit?.up as? String, "under")
     }
 
     func testDeepestInteractiveNodeBeatsAncestor() {
         let inner = node(x: 5, y: 5, width: 10, height: 10, hit: ButtonHit(up: "inner"))
         let outer = node(x: 0, y: 0, width: 50, height: 50, hit: ButtonHit(up: "outer"), children: [inner])
 
-        XCTAssertEqual(outer.hitTest(Point(x: 8, y: 8))?.hit.up as? String, "inner")
-        XCTAssertEqual(outer.hitTest(Point(x: 30, y: 30))?.hit.up as? String, "outer")
+        XCTAssertEqual(outer.hitTest(Point(x: 8, y: 8))?.hit?.up as? String, "inner")
+        XCTAssertEqual(outer.hitTest(Point(x: 30, y: 30))?.hit?.up as? String, "outer")
     }
 
     func testChildOutsideParentBoundsIsUnreachable() {

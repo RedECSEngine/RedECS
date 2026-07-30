@@ -29,6 +29,10 @@ public struct HUDRenderingReducer<ContextState: RenderableGameState, GameAction:
     var baseZIndex: Int
     let cache = HUDCache()
 
+    /// Pointer travel (points) past which a press is treated as a scroll drag
+    /// and its button tap is suppressed on release.
+    static var dragThreshold: Double { 4 }
+
     public init(baseZIndex: Int = 1000, content: @escaping (ContextState) -> AnyHUDView?) {
         self.baseZIndex = baseZIndex
         self.content = content
@@ -52,8 +56,10 @@ public struct HUDRenderingReducer<ContextState: RenderableGameState, GameAction:
         context.cache = cache
         context.delta = delta
         cache.beginAnimationFrame()
+        cache.beginScrollFrame()
         let tree = root.resolve(proposed: ProposedSize(viewport), context: context)
         cache.endAnimationFrame()
+        cache.endScrollFrame()
         let offset = Alignment.center.offset(forChild: tree.frame.size, in: viewport)
         cache.lastTree = tree
         cache.lastViewport = viewport
@@ -83,25 +89,47 @@ public struct HUDRenderingReducer<ContextState: RenderableGameState, GameAction:
         case .pointerDown(let point):
             let result = hitResult(at: point)
             cache.pressedIdentity = result?.identity
-            return trigger(result?.hit.down)
-
-        case .pointerUp(let point):
-            let pressed = cache.pressedIdentity
-            cache.pressedIdentity = nil
-            guard let result = hitResult(at: point),
-                  result.identity == pressed else {
-                return .none
+            // Capture a drag to the enclosing scroll region, if any.
+            if let scroll = result?.scroll {
+                cache.activeScroll = (scroll.identity, point, 0)
             }
-            return trigger(result.hit.up)
+            return trigger(result?.hit?.down)
 
         case .pointerMove(let point):
+            // An active scroll drag beats hover: accumulate the delta into the
+            // region's offset (content follows the pointer) and seed velocity.
+            if var drag = cache.activeScroll {
+                let delta = point.diffOf(drag.lastPoint)
+                drag.moved += abs(delta.x) + abs(delta.y)
+                drag.lastPoint = point
+                cache.activeScroll = drag
+                var slot = cache.scrollSlots[drag.identity] ?? ScrollState()
+                let axisDelta = slot.axis == .horizontal ? delta.x : delta.y
+                let moved = (slot.offset(along: slot.axis) - axisDelta).clamped(to: slot.range)
+                slot.setOffset(moved, along: slot.axis)
+                slot.velocity = -axisDelta
+                cache.scrollSlots[drag.identity] = slot
+                return .none
+            }
             let result = hitResult(at: point)
             guard result?.identity != cache.hoveredIdentity else {
                 return .none
             }
             cache.hoveredIdentity = result?.identity
             // fires on enter only; leaving (or crossing to nothing) is silent
-            return trigger(result?.hit.hover)
+            return trigger(result?.hit?.hover)
+
+        case .pointerUp(let point):
+            // A drag past the threshold suppresses the button tap.
+            let wasDrag = (cache.activeScroll?.moved ?? 0) > Self.dragThreshold
+            cache.activeScroll = nil
+            let pressed = cache.pressedIdentity
+            cache.pressedIdentity = nil
+            guard !wasDrag, let result = hitResult(at: point),
+                  result.identity == pressed else {
+                return .none
+            }
+            return trigger(result.hit?.up)
 
         case .triggered:
             // outbound only — the game's pullback maps it away before it

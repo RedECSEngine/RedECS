@@ -66,7 +66,7 @@ public extension ResourceManager {
             self.animations[textureId] = dict
             return dict
         } catch {
-            print(error)
+            print(textureId, error)
             return nil
         }
     }

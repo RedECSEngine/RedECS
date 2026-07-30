@@ -15,7 +15,7 @@ public struct ProposedSize: Equatable {
         self.init(width: size.width, height: size.height)
     }
 
-    public func orDefault(_ fallback: Size = Size(width: 10, height: 10)) -> Size {
+    public func orDefault(_ fallback: Size = Size(width: 100, height: 100)) -> Size {
         Size(width: width ?? fallback.width, height: height ?? fallback.height)
     }
 }

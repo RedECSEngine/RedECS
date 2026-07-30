@@ -11,6 +11,11 @@ public struct Overlay<Content: HUDView, OverlayContent: HUDView>: BuiltinHUDView
     public var overlay: OverlayContent
     public var alignment: Alignment
 
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        // The result is the base's size; the overlay never enlarges it.
+        content._size(proposed: proposed, context: context)
+    }
+
     public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
         var base = content._resolve(proposed: proposed, context: context.descending(into: 0))
         let size = base.frame.size
