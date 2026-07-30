@@ -18,14 +18,13 @@ public struct PendingGameEffect<State: GameState, Action: Equatable & Codable> {
         self.effect = effect
     }
 
+    public var isComplete: Bool { outstandingActions.isEmpty }
+
     public mutating func evaluateCompleteness(_ action: Action) -> Bool {
+        guard !outstandingActions.isEmpty else { return true }
         guard let index = outstandingActions.firstIndex(where: { $0 == action }) else { return false }
         outstandingActions.remove(at: index)
-        if outstandingActions.isEmpty {
-            return true
-        } else {
-            return false
-        }
+        return outstandingActions.isEmpty
     }
 
     public func map<S: GameState, A>(

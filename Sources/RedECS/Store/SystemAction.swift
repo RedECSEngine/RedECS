@@ -10,6 +10,7 @@ public enum SystemAction<State: GameState> {
     /// from one entity to another at runtime.
     case addTag(EntityId, String)
     case removeTag(EntityId, String)
+    case cancelPendingEffects
 
     public func map<S: GameState>(
         _ stateTransform: WritableKeyPath<S, State>
@@ -29,6 +30,8 @@ public enum SystemAction<State: GameState> {
             return .addComponent(eId, registeredComponent.map(stateTransform))
         case .removeComponent(let e, let registeredComponentId):
             return .removeComponent(e, registeredComponentId)
+        case .cancelPendingEffects:
+            return .cancelPendingEffects
         }
     }
 
