@@ -10,6 +10,16 @@ public struct ShaderId: Hashable, Sendable, Codable, ExpressibleByStringLiteral 
     public static let passthrough = ShaderId(rawValue: "passthrough") // default: texture RGB as-is
     public static let tint = ShaderId(rawValue: "tint")               // multiply texel by a color
     public static let paletteRemap = ShaderId(rawValue: "paletteRemap") // swap specific source colors
+
+    public static let ripple = ShaderId(rawValue: "ripple")
+    public static let waves = ShaderId(rawValue: "waves")
+    public static let liquid = ShaderId(rawValue: "liquid")
+    public static let turnOff = ShaderId(rawValue: "turnOff")
+    public static let splitRows = ShaderId(rawValue: "splitRows")
+    public static let splitCols = ShaderId(rawValue: "splitCols")
+    public static let shaky = ShaderId(rawValue: "shaky")
+    public static let shakyTiles = ShaderId(rawValue: "shakyTiles")
+    public static let shuffle = ShaderId(rawValue: "shuffle")
 }
 
 // The per-sprite fragment effect a sprite/RenderGroup carries: which program
@@ -20,6 +30,16 @@ public enum ShaderEffect: Equatable, Codable, Sendable {
     case tint(Color)                       // multiply texel by a colour
     case paletteRemap([ColorKey])          // swap specific source colours
     case custom(ShaderId, params: [Float]) // game-registered program + raw u_params
+
+    case ripple(time: Double)
+    case waves(time: Double)
+    case liquid(time: Double)
+    case turnOff(time: Double)
+    case splitRows(time: Double)
+    case splitCols(time: Double)
+    case shaky(time: Double)
+    case shakyTiles(time: Double)
+    case shuffle(time: Double)
 
     // One source→destination colour substitution for paletteRemap.
     public struct ColorKey: Equatable, Codable, Sendable {
@@ -37,6 +57,15 @@ public enum ShaderEffect: Equatable, Codable, Sendable {
         case .tint:              return .tint
         case .paletteRemap:      return .paletteRemap
         case .custom(let id, _): return id
+        case .ripple:            return .ripple
+        case .waves:             return .waves
+        case .liquid:            return .liquid
+        case .turnOff:           return .turnOff
+        case .splitRows:         return .splitRows
+        case .splitCols:         return .splitCols
+        case .shaky:             return .shaky
+        case .shakyTiles:        return .shakyTiles
+        case .shuffle:           return .shuffle
         }
     }
 
@@ -58,6 +87,10 @@ public enum ShaderEffect: Equatable, Codable, Sendable {
             return out
         case .custom(_, let params):
             return params
+        case .ripple(let t), .waves(let t), .liquid(let t), .turnOff(let t),
+             .splitRows(let t), .splitCols(let t), .shaky(let t),
+             .shakyTiles(let t), .shuffle(let t):
+            return [Float(t)]
         }
     }
 }
@@ -110,7 +143,7 @@ public final class ShaderRegistry {
         passthroughDefinition,
         tintDefinition,
         paletteRemapDefinition
-    ]
+    ] + timeShaderDefinitions
 }
 
 public extension ShaderRegistry {

@@ -212,14 +212,7 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
         var lastBoundTexture: TextureId?
         var lastPipelineId: ShaderId? // skip redundant pipeline switches
 
-        // Screen-space groups draw after (above) all world groups, each
-        // space z-sorted within itself.
-        let sortedWork = queuedWork.sorted { a, b in
-            if a.projectionSpace != b.projectionSpace {
-                return a.projectionSpace == .world
-            }
-            return a.zIndex < b.zIndex
-        }
+        let sortedWork = queuedWork.sortedForDrawing()
         for renderGroup in sortedWork {
             // Select this group's effect pipeline (falling back to passthrough).
             let shaderId = renderGroup.shader?.programId ?? .passthrough

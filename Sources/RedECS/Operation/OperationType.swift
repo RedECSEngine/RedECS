@@ -15,6 +15,7 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
     case visibility(VisibilityOperation)
     case timing(TimingOperation<GameAction>)
     case removeEntity(RemoveEntityOperation<GameAction>)
+    case shaderEffect(ShaderEffectOperation)
     
     public var duration: Double {
         switch self {
@@ -46,6 +47,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return timing.duration
         case .removeEntity:
             return 0
+        case .shaderEffect(let shaderOp):
+            return shaderOp.duration
         }
     }
     
@@ -79,6 +82,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return timing.isComplete
         case .removeEntity(let remove):
             return remove.isComplete
+        case .shaderEffect(let shaderOp):
+            return shaderOp.isComplete
         }
     }
     
@@ -144,6 +149,10 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             let effect = remove.run(id: id, state: &state, delta: delta)
             self = .removeEntity(remove)
             return effect
+        case .shaderEffect(var shaderOp):
+            _ = shaderOp.run(id: id, state: &state, delta: delta)
+            self = .shaderEffect(shaderOp)
+            return .none
             
         }
     }
@@ -191,6 +200,9 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             self = .timing(timing)
         case .removeEntity(var remove):
             remove.reset()
+        case .shaderEffect(var shaderOp):
+            shaderOp.reset()
+            self = .shaderEffect(shaderOp)
         }
     }
     
@@ -384,6 +396,19 @@ public extension OperationType {
         var component = self
         let removeOp = RemoveEntityOperation<GameAction>(removeEntityId: removeEntityId)
         component.appendOperation(.removeEntity(removeOp))
+        return component
+    }
+}
+
+
+public extension OperationType {
+    static func shaderEffect(_ effect: ShaderEffect, animated: Bool = false, duration: Double = 1) -> Self {
+        .shaderEffect(ShaderEffectOperation(effect: effect, animated: animated, duration: duration))
+    }
+
+    func shaderEffect(_ effect: ShaderEffect, animated: Bool = false, duration: Double = 1) -> Self {
+        var component = self
+        component.appendOperation(.shaderEffect(ShaderEffectOperation(effect: effect, animated: animated, duration: duration)))
         return component
     }
 }

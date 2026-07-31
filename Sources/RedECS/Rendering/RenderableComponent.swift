@@ -34,13 +34,26 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
     public typealias Environment = RenderingEnvironment
     
     var renderableComponentTypes: [RenderableComponentType<State>]
-    
+    var rootDrawOrder: ((EntityId, State) -> Double)?
+
+    /// - Parameter rootDrawOrder: an optional sort key for the **top-level**
+    ///   entities, drawn in ascending order — lowest key first (furthest back),
+    ///   highest key last (on top). Subtrees are never reordered: a child draws
+    ///   with its parent, in the order it was added.
+    ///
+    ///   The engine deliberately has no opinion on what the key means. A
+    ///   top-down game wanting painter's-algorithm depth passes some function
+    ///   of the entity's y — which sign depends entirely on which way its
+    ///   world y points, so that decision stays with the game. Omit it and the
+    ///   walk keeps plain tree order.
     public init(
-        renderableComponentTypes: [RenderableComponentType<State>]
+        renderableComponentTypes: [RenderableComponentType<State>],
+        rootDrawOrder: ((EntityId, State) -> Double)? = nil
     ) {
         self.renderableComponentTypes = renderableComponentTypes
+        self.rootDrawOrder = rootDrawOrder
     }
-    
+
     public func reduce(
         state: inout State,
         delta: Double,
@@ -60,7 +73,8 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
                 worldMatrix: .identity,
                 state: state,
                 projectionMatrix: projectionMatrix,
-                environment: environment
+                environment: environment,
+                order: rootDrawOrder
             )
         }
         return .none
@@ -74,9 +88,10 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
         worldMatrix: Matrix3,
         state: State,
         projectionMatrix: Matrix3,
-        environment: RenderingEnvironment
+        environment: RenderingEnvironment,
+        order: ((EntityId, State) -> Double)? = nil
     ) {
-        for node in tree.children ?? [] {
+        for node in Self.ordered(tree.children ?? [], by: order, in: state) {
             let transform = state.transform[node.id]
             if transform?.isHidden == true {
                 continue
@@ -109,5 +124,22 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
                 environment: environment
             )
         }
+    }
+
+    /// Stable: entities with an equal key keep the order they were added in,
+    /// so a tie can't shimmer between frames.
+    private static func ordered(
+        _ nodes: [EntityTree],
+        by order: ((EntityId, State) -> Double)?,
+        in state: State
+    ) -> [EntityTree] {
+        guard let order else { return nodes }
+        return nodes
+            .enumerated()
+            .sorted { a, b in
+                let ka = order(a.element.id, state), kb = order(b.element.id, state)
+                return ka == kb ? a.offset < b.offset : ka < kb
+            }
+            .map(\.element)
     }
 }

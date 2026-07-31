@@ -47,6 +47,22 @@ public struct RenderGroup {
     }
 }
 
+public extension Array where Element == RenderGroup {
+    func sortedForDrawing() -> [RenderGroup] {
+        enumerated()
+            .sorted { a, b in
+                if a.element.projectionSpace != b.element.projectionSpace {
+                    return a.element.projectionSpace == .world
+                }
+                if a.element.zIndex != b.element.zIndex {
+                    return a.element.zIndex < b.element.zIndex
+                }
+                return a.offset < b.offset
+            }
+            .map(\.element)
+    }
+}
+
 public extension RenderGroup {
     /// A copy of this group with a different model matrix; used to reparent
     /// a group into an ancestor's coordinate frame.

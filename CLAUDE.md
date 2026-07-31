@@ -16,6 +16,20 @@ is expected fallout for them to resolve. Make the change here, flag the downstre
 breakage, and explicitly ask for permission (or wait until you are prompted)
 before touching another repo.
 
+## Never write comments unless explicitly told to
+
+Do not add comments to code in this repo — not explanatory comments, not doc
+comments, not `MARK:` banners, not section headers, not "why" notes, not TODOs.
+This applies to new files and to code you touch in existing ones. Write the code
+so it reads without them: name things properly and keep functions small.
+
+The only exception is an explicit instruction to comment a specific thing, in
+that request. A general instruction to "explain" or "document" something means
+put it in your reply, not in the source. If something genuinely can't be
+understood without prose, say so in your reply and let the developer decide.
+
+Do not remove comments the developer wrote unless asked.
+
 ## API ergonomics come first
 
 RedECS is shared across many kinds of projects, so its public surface must be

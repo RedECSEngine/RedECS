@@ -11,11 +11,17 @@ open class WebBrowserWindow<State: GameState & OperationCapableGameState, Action
     
     public private(set) var lastTime: Double?
     
+    open class var shaderRegistry: ShaderRegistry { ShaderRegistry() }
+
     public required init(size: Size) {
         self.resourceManager = WebResourceManager(resourcePath: "Resources")
-        self.renderer = WebRenderer(size: size, resourceLoader: resourceManager)
+        self.renderer = WebRenderer(
+            size: size,
+            resourceLoader: resourceManager,
+            shaderRegistry: Self.shaderRegistry
+        )
     }
-    
+
     deinit {
         print("⚠️ WebBrowserWindow deinit")
     }

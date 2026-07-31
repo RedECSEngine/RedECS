@@ -70,14 +70,7 @@ open class WebRenderer {
     public func draw() {
         do {
             clearCanvas()
-            // Screen-space groups draw after (above) all world groups, each
-            // space z-sorted within itself.
-            let sortedWork = queuedWork.sorted { a, b in
-                if a.projectionSpace != b.projectionSpace {
-                    return a.projectionSpace == .world
-                }
-                return a.zIndex < b.zIndex
-            }
+            let sortedWork = queuedWork.sortedForDrawing()
             for renderGroup in sortedWork {
                 // Scissor: clip this group to its rect, or disable clipping when
                 // unclipped. WebGL's scissor origin is bottom-left, so the
