@@ -307,7 +307,7 @@ repo where the symptom is felt. Added from a full-engine audit, 2026-07-15.
   Cause: `if (alpha == 0) ... else alpha = group opacity` discards partial alpha.
 
 - **One draw call per triangle + `waitUntilCompleted` per frame**
-  Where: `MetalRenderer.swift:234-246,257`
+  Where: `MetalRenderer.swift:316-327,339`
   Symptom: draw-call count equals triangle count (chunked `setVertexBytes` of 3
   vertices) and the CPU blocks until the GPU finishes each frame — no
   pipelining; performance ceiling is very low.
@@ -319,5 +319,103 @@ repo where the symptom is felt. Added from a full-engine audit, 2026-07-15.
   Symptom: a transient load failure permanently loses the texture.
   Cause: `.failedToLoad` state satisfies the `!= nil` short-circuit guard forever.
 
+### Performance
+
+Allocation and copy costs on the per-frame path. None of these are measured — there
+is no benchmark target — so treat the ordering as untested. Added 2026-07-31.
+
+- **`Matrix3` is heap-backed, so every transform costs 4+ allocations**
+  Where: `Geometry` 0.0.5, `Sources/GeometryAlgorithms/Matrix3/Matrix3.swift:5`;
+  felt at `Sources/RedECS/Rendering/Transform/TransformComponent.swift:35-41` and
+  `Sources/RedECS/Rendering/RenderableComponent.swift:91,96,103`
+  Symptom: allocation churn scaling with entity count × tree depth, on every frame.
+  Cause: `Matrix3` stores `values: [Double]` and every operation returns a new matrix
+  built from an array literal. `TransformComponent.matrix()` chains `.identity →
+  translatedBy → rotatedBy → scaledBy` = 4 arrays per call, and the render walk calls
+  it once per node plus two `.multiply`s per node per renderable type. Fix is 9 stored
+  `Double`s in the Geometry package (needs a coordinated release).
+
+- **The render walk copies whole game state per node, per renderable type**
+  Where: `Sources/RedECS/Rendering/RenderableComponent.swift:18,26-28,87`
+  Symptom: per-frame cost scales with (tree nodes × registered renderable types) even
+  for entities that have none of those components.
+  Cause: `RenderableComponentType.getRenderComponent` is `(EntityId, State) -> …`,
+  taking `State` **by value**, so each probe copies the state struct (retaining every
+  component dictionary) and boxes any match into a `RenderableComponent` existential.
+  No query or archetype index exists to skip non-matching nodes.
+
+- **`OperationReducer` materializes two whole component stores per operation**
+  Where: `Sources/RedECS/Operation/OperationReducer.swift:41,43`; bridges at
+  `Sources/RedECS/Operation/OperationComponent.swift:13-27,29-41`
+  Symptom: the most expensive line on the frame path; cost is
+  (entities with operations × operations each) × size of `transform` + `sprite`.
+  Cause: `basicOperationComponentState` is a *computed* property whose getter rebuilds
+  a context from the component dictionaries and whose setter writes them all back.
+  Passing `&state.basicOperationComponentState` inside the nested loop forces a full
+  get-modify-set each iteration, and the returned `GameEffect` stores the same key
+  path (`:43`) so the copy is replayed when the effect is applied. `operationContext`
+  (`:13-27`) has the same shape.
+
+- **`HUDNode.flattenedGroups()` re-maps the accumulated group array per tree level**
+  Where: `Sources/RedHUD/HUDNode.swift:59-75`
+  Symptom: HUD render cost grows super-linearly with nesting depth; deep stacks with
+  transform/clip/opacity modifiers are worst.
+  Cause: the recursion builds `groups + children.flatMap { … .map { reparented } }`,
+  then applies up to three further full-array `.map` passes (transform, clip, opacity)
+  at *every* level, so a group near the leaves is copied once per ancestor.
+
+- **The HUD view tree is rebuilt and re-resolved from scratch every frame**
+  Where: `Sources/RedHUD/HUDRenderingReducer.swift:48,60,68-78`
+  Symptom: steady-state allocation for a HUD that hasn't changed.
+  Cause: inherent to the immediate-mode design — `content(state)` allocates the view
+  tree, `resolve` allocates the `HUDNode` tree, `flattenedGroups()` allocates the
+  group array, and `.map` allocates it again to apply z-index. There is no
+  change-detection or retained-tree fast path when state and viewport are unchanged.
+
+- **Per-frame cache pruning allocates fresh dictionaries**
+  Where: `Sources/RedHUD/Animation/AnimationSlots.swift:32-33`,
+  `Sources/RedHUD/HUDCache.swift:57`
+  Symptom: three dictionary allocations per frame regardless of whether anything
+  changed.
+  Cause: `endAnimationFrame`/`endScrollFrame` prune with `filter`, which builds a new
+  dictionary. In-place `removeAll(where:)`-style pruning would avoid it. Related: the
+  slot keys are `[IdentityToken]` arrays (`AnimationKey.path`, `scrollSlots`), so each
+  lookup hashes an array.
+
+- **The per-frame reducer tree is entirely dynamically dispatched**
+  Where: `Sources/RedECS/Reducer/Reducers/AnyReducer.swift:3-5`
+  Symptom: no inlining across reducer composition on the frame path.
+  Cause: `AnyReducer` stores its three `reduce` entry points as closures, so every
+  node in a composed tree is an opaque call.
+
+- **`GameState.modify` is dead code, and the slowest available mutation pattern**
+  Where: `Sources/RedECS/GameState.swift:5-33`
+  Symptom: none today — it has no call sites anywhere in `Sources/` or `Tests/`.
+  Cause: unconditional copy-out/copy-back of the whole component, versus `Dictionary`'s
+  in-place `state.X[id]?.field = …`. It also `assertionFailure`s on a missing
+  component. Either delete it or reimplement it in terms of the in-place subscript
+  before anything starts calling it.
+
+- **`EntityId` is `String`, so every component lookup hashes a string**
+  Where: `Sources/RedECS/Entity/GameEntity.swift:3`
+  Symptom: string hashing on every component dictionary access, many times per entity
+  per frame; every component also carries a heap-allocated `String` payload.
+  Cause: `typealias EntityId = String`. An integer handle would likely be the largest
+  structural win available, but it is a breaking change for downstream games and
+  interacts with the `Codable` save format and with `newEntityId()` above.
+
 ## Resolved
+
+- **Effect groups allocated an array even when empty or all-`.none`** (2026-07-31)
+  Where: `Sources/RedECS/Store/GameEffect.swift`
+  Symptom: every `Zip` node allocated one array per frame regardless of whether any
+  sub-reducer produced an effect, and eight accumulator sites returned `.many([])`
+  on a typical frame. Each such node also cost a fresh array in `map` on every
+  pullback layer it crossed.
+  Cause: `.many` was a raw enum case that stored whatever it was given.
+  Fix: the case is now `.zip`, and `many(_:)` became a family of normalising
+  factories (array plus 2–6 fixed arity) that collapse an all-`.none` group to
+  `.none`, return a lone survivor bare, flatten nesting, and unwrap an already
+  satisfied `waitFor`. Existing `.many(…)` call sites were source-compatible and
+  picked the behaviour up unchanged.
 

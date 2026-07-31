@@ -54,7 +54,7 @@ public final class GameStore<R: Reducer> where R.State: OperationCapableGameStat
             removeOperation(entityId, key: key)
         case .removeAllOperations(let entityId):
             removeAllOperations(entityId)
-        case .many(let effects):
+        case .zip(let effects):
             effects.forEach(handleEffect)
         case .deferred(let promise):
             promise.onDone { [weak self] effect in
@@ -115,10 +115,8 @@ public final class GameStore<R: Reducer> where R.State: OperationCapableGameStat
             }
             state.entities.removeEntity(id)
             return .many(
-                [
-                    preRemoveEffects ,
-                    reducer.reduce(state: &state, entityEvent: .didRemove(id), environment: environment)
-                ]
+                preRemoveEffects,
+                reducer.reduce(state: &state, entityEvent: .didRemove(id), environment: environment)
             )
         }
         return .many(effects)
