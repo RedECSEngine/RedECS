@@ -175,17 +175,31 @@ public extension TiledMapJSON {
         }
     }
 
-    func tileSetReference(forGid gid: TiledGID) -> TiledTilesetReference? {
+    func tileSetIndex(forGid gid: TiledGID) -> Int? {
         guard !gid.isEmpty else { return nil }
-        var match: TiledTilesetReference?
-        for reference in tileSets {
+        var match: Int?
+        for (index, reference) in tileSets.enumerated() {
             if reference.firstGid <= gid.id {
-                match = reference
+                match = index
             } else {
                 break
             }
         }
         return match
+    }
+
+    func tileSetReference(forGid gid: TiledGID) -> TiledTilesetReference? {
+        tileSetIndex(forGid: gid).map { tileSets[$0] }
+    }
+
+    var maximumTileSize: (width: Int, height: Int) {
+        tileSets.reduce((width: tileWidth, height: tileHeight)) { largest, reference in
+            guard let tileSet = reference.tileSet else { return largest }
+            return (
+                width: max(largest.width, tileSet.tileWidth),
+                height: max(largest.height, tileSet.tileHeight)
+            )
+        }
     }
 
     func tileSet(forGid gid: TiledGID) -> TiledTilesetJSON? {

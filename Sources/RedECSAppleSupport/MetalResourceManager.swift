@@ -142,28 +142,35 @@ public final class MetalResourceManager: ResourceManager {
     }
     
     public func loadTiledMap(_ name: String) -> Future<TiledMapJSON, Swift.Error> {
-        return loadJSONFile(
-            name,
-            decodedAs: TiledMapJSON.self
-        )
-        .flatMap { mapInfo in
-            let tileSetSources = Set(mapInfo.tileSets.map { $0.source })
-            let tileSetFutures: [Future<Void, Swift.Error>] = tileSetSources
-                .map { filename -> Future<Void, Swift.Error>  in
-                    self.loadJSONFile(filename, decodedAs: TiledTilesetJSON.self)
-                        .flatMap { tileSet -> Future<MTLTexture, Swift.Error> in
-                            self.tileSets[filename] = tileSet
-                            let imageName = tileSet.image.split(separator: ".").dropLast().joined(separator: ".")
-                            return self.loadImageFile(name: String(imageName))
+        return loadJSONFile(name, decodedAs: TiledMapJSON.self)
+            .flatMap { map -> Future<TiledMapJSON, Swift.Error> in
+                let loads = Set(map.unresolvedTileSetSources).map { source -> Future<Void, Swift.Error> in
+                    self.loadJSONFile(source, decodedAs: TiledTilesetJSON.self)
+                        .readValue { result in
+                            if case let .success(tileSet) = result {
+                                self.tileSets[source] = tileSet
+                            }
                         }
                         .toVoid()
                 }
-            return .zip(tileSetFutures)
-                .flatMap { tileSets in
-                    self.tileMaps[name] = mapInfo
-                    return .just(mapInfo)
+                return Future<Void, Swift.Error>.zip(loads).flatMap { _ -> Future<TiledMapJSON, Swift.Error> in
+                    do {
+                        return .just(try map.resolvingTileSets(from: self.tileSets))
+                    } catch {
+                        return .fail(error)
+                    }
                 }
-        }
+            }
+            .flatMap { map -> Future<TiledMapJSON, Swift.Error> in
+                let textureIds = Set(map.tileSets.compactMap { $0.tileSet?.textureId })
+                return Future<Void, Swift.Error>.zip(textureIds.map { self.loadImageFile(name: $0).toVoid() })
+                    .map { _ in map }
+            }
+            .readValue { result in
+                if case let .success(map) = result {
+                    self.tileMaps[name] = map
+                }
+            }
     }
     
     public func loadImageFile(

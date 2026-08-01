@@ -31,6 +31,8 @@ public struct TiledTilesetJSON: Codable, Equatable, Sendable {
 
     private let tilesById: [Int: TiledTile]
 
+    public let hasAnimatedTiles: Bool
+
     public init(
         name: String,
         image: String? = nil,
@@ -60,6 +62,7 @@ public struct TiledTilesetJSON: Codable, Equatable, Sendable {
         self.wangsets = wangsets
         self.properties = properties
         self.tilesById = tiles.reduce(into: [:]) { $0[$1.id] = $1 }
+        self.hasAnimatedTiles = tiles.contains { $0.isAnimated }
     }
 
     public init(from decoder: Decoder) throws {
@@ -107,9 +110,13 @@ public extension TiledTilesetJSON {
 
     var isImageCollection: Bool { image == nil }
 
-    var textureId: String? {
+    var imageFileName: String? {
         guard let image else { return nil }
-        let fileName = image.split(separator: "/").last.map(String.init) ?? image
+        return image.split(separator: "/").last.map(String.init) ?? image
+    }
+
+    var textureId: String? {
+        guard let fileName = imageFileName else { return nil }
         let components = fileName.split(separator: ".")
         guard components.count > 1 else { return fileName }
         return components.dropLast().joined(separator: ".")
