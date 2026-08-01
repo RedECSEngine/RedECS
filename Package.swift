@@ -135,6 +135,9 @@ let package = Package(
                 "TestMap.png",
                 "dungeon.tsj",
                 "tiles_dungeon.png",
+                "grouped-map.tmj",
+                "Village_Tileset.tsj",
+                "AltRooves_Tileset.tsj",
             ]
         ),
     ]
