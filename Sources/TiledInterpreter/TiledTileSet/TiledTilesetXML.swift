@@ -1,4 +1,4 @@
-public struct TiledTilesetXML: Codable, Equatable {
+public struct TiledTilesetXML: Codable, Equatable, Sendable {
     enum CodingKeys: String, CodingKey {
         case name
         case image
@@ -6,27 +6,24 @@ public struct TiledTilesetXML: Codable, Equatable {
         case tileHeight = "tileheight"
         case tileCount = "tilecount"
         case columns
+        case margin
+        case spacing
         case tiles = "tile"
     }
-    
+
     public var name: String
     public var tileWidth: Int
     public var tileHeight: Int
     public var tileCount: Int
     public var columns: Int
+    public var margin: Int?
+    public var spacing: Int?
     public var image: Image
-    public var tiles: [Tile]?
-    
-    public func makeTileInfoDictionary() -> [Int: Tile] {
-        tiles.map {
-            // we add 1 to the id to compensate for the difference between tile data ids (where 0 == nothing) and the tile id (where 0 is the first tile)
-            $0.reduce(into: [Int: Tile]()) { $0[$1.id + 1] = $1 }
-        } ?? [:]
-    }
+    public var tiles: [TiledTile]?
 }
 
 public extension TiledTilesetXML {
-    struct Image: Codable, Equatable {
+    struct Image: Codable, Equatable, Sendable {
         public var source: String
         public var width: Int
         public var height: Int
@@ -35,7 +32,7 @@ public extension TiledTilesetXML {
 
 public extension TiledTilesetXML {
     func toJSONFormat() -> TiledTilesetJSON {
-        return TiledTilesetJSON(
+        TiledTilesetJSON(
             name: name,
             image: image.source,
             imageWidth: image.width,
@@ -44,6 +41,8 @@ public extension TiledTilesetXML {
             tileHeight: tileHeight,
             tileCount: tileCount,
             columns: columns,
+            margin: margin ?? 0,
+            spacing: spacing ?? 0,
             tiles: tiles ?? []
         )
     }

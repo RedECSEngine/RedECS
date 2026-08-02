@@ -1,9 +1,12 @@
 # Known Issues — RedECS
 
 Durable record of diagnosed issues (where / symptom / cause). Issues live in the
-repo where the symptom is felt. Added from a full-engine audit, 2026-07-15.
+repo where the symptom is felt. Added from a full-engine audit, 2026-07-15. When
+an issue is fixed, delete its entry outright — this file only ever holds what is
+still open, no resolved-issue history or fixing commit hashes; git history is the
+record of what changed and when.
 
-## Active
+## Open
 
 ### Core ECS / Store
 
@@ -69,22 +72,12 @@ repo where the symptom is felt. Added from a full-engine audit, 2026-07-15.
 
 ### Rendering (cross-platform)
 
-- **Tile atlas math breaks every last-column tile**
-  Where: `Sources/RedECS/Rendering/Sprite/SpriteComponent.swift:382-383`
-  Symptom: tiles from the last column of a tileset render the wrong texel region
-  (`tileSetCol == -1`, row one too high).
-  Cause: `(tileIndex) % columns - 1` instead of `(tileIndex - 1) % columns` (GIDs
-  are 1-based); crashes with division-by-zero when a tileset declares
-  `columns: 0` (legal Tiled output for image-collection tilesets).
-
-- **Tilemap culling ignores the entity's own transform**
-  Where: `Sources/RedECS/Rendering/Sprite/SpriteComponent.swift:373-375`
-  Symptom: a tilemap entity positioned away from the origin has visible tiles
-  culled and off-screen tiles submitted.
-  Cause: per-tile cull test projects tile-local centers with `cameraMatrix` only,
-  omitting the `contentMatrix` (entity transform + anchor) used for drawing.
-  Related: sprite culling tests only the transform origin with a fixed 1.05 NDC
-  threshold (`:276-279`), so large sprites pop out while partially visible.
+- **Sprite culling tests only the transform origin**
+  Where: `Sources/RedECS/Rendering/Sprite/SpriteComponent.swift:241-244`
+  Symptom: a large `.texture` sprite pops out of view while still partially
+  on screen.
+  Cause: the cull compares the transform's projected origin against a fixed
+  1.05 NDC threshold rather than the sprite's projected bounds.
 
 - **Animation frame-duration units are inconsistent (ms vs s)**
   Where: `Sources/RedECS/Rendering/Sprite/SpriteComponent.swift:15` (`/ 1000`,
@@ -111,11 +104,10 @@ repo where the symptom is felt. Added from a full-engine audit, 2026-07-15.
   (`SpriteComponent.swift:224-231`); character map keys on the nonstandard
   `letter=` attribute (`BitmapFont.swift:55-57`).
 
-- **Opacity dropped for shape and tilemap render groups**
-  Where: `Sources/RedECS/Rendering/Sprite/SpriteComponent.swift:173-180, 427-432`
-  Symptom: `sprite.opacity` has no effect on shapes/tilemaps; Tiled layer
-  `opacity`/`visible` are parsed but ignored.
-  Cause: `RenderGroup` built without the `opacity:` argument in those two paths.
+- **Opacity dropped for shape render groups**
+  Where: `Sources/RedECS/Rendering/Sprite/SpriteComponent.swift:174-182`
+  Symptom: `sprite.opacity` has no effect on `.shape` sprites.
+  Cause: `RenderGroup` built without the `opacity:` argument in that path.
 
 - **Atlas `rotated`/`trimmed` frames render wrong**
   Where: `Sources/RedECS/Rendering/Sprite/SpriteComponent.swift:287-292`
@@ -129,56 +121,6 @@ repo where the symptom is felt. Added from a full-engine audit, 2026-07-15.
   (empty `frames` array).
   Symptom: crash on malformed atlas JSON or empty animation.
   Cause: no validation of decoded indices/ranges.
-
-### TiledInterpreter
-
-- **`totalRows` bound to `width` (typo) in `tileDataAt`**
-  Where: `Sources/TiledInterpreter/TiledMap/TiledLayer.swift:22`
-  Symptom: any non-square map: taller-than-wide traps on negative index;
-  wider-than-tall renders vertically garbled. Engine always calls with
-  `flipY: true` (`SpriteComponent.swift:378`).
-  Cause: `let totalRows = width` should be `height` (sibling
-  `flipYDataIterator` gets it right).
-
-- **Layer data indexed without bounds checks**
-  Where: `Sources/TiledInterpreter/TiledMap/TiledLayer.swift:29,48`
-  Symptom: a map whose `data` array is shorter than width×height (or the typo
-  above) traps at first render — remote crash for downloaded maps on web.
-  Cause: `data[flatIndex]` with no validation of index, column, row, or
-  data.count; no dimension sanity checks anywhere post-decode (negative or huge
-  width/height also trap or DoS).
-
-- **Tile GID flip flags never masked**
-  Where: module-wide (no `0x1FFFFFFF` masking anywhere; `TiledLayer.data: [Int]`)
-  Symptom: any tile flipped in the Tiled editor renders garbage; on wasm32 a
-  flipped tile's GID (≥ 0x80000000) doesn't fit `Int` → whole map fails to load.
-  Cause: Tiled stores flip flags in the top 3 bits of the GID; nothing strips them.
-
-- **`firstgid` ignored; only the first tileset is ever used**
-  Where: `Sources/TiledInterpreter/TiledMap/TiledMapJSON.swift:2` (decoded, never
-  read), `SpriteComponent.swift:351` (`tileSets.first`),
-  `TiledTilesetJSON.swift:52` (hardcodes `id + 1`)
-  Symptom: multi-tileset maps render wrong tiles everywhere.
-  Cause: GIDs are never rebased by tileset firstgid; layer→tileset resolution
-  not implemented.
-
-- **Common Tiled exports fail to decode at all**
-  Where: `TiledLayerType.swift:1-4` (unknown layer types), `TiledMapJSON.swift:2-3`
-  (embedded tilesets lack `source`), `TiledTilesetJSON.swift:22` (`tiles`
-  required but omitted when no tile metadata), `Tile.swift:3` (`class` required),
-  no base64/compressed layer support, no infinite-map `chunks` support.
-  Symptom: adding an image layer, embedding a tileset, or using default export
-  options makes the whole map (or tileset) fail to load; infinite maps load and
-  render empty.
-  Cause: decode-strict optionality choices that don't match Tiled's
-  omit-defaults JSON output.
-
-- **Division by zero from tileset fields**
-  Where: `TiledTilesetJSON.swift:25` (`imageHeight / tileHeight`),
-  `SpriteComponent.swift:382-383` (`% columns`)
-  Symptom: crash on `tileheight: 0` or `columns: 0` (the latter is legal Tiled
-  output for image-collection tilesets).
-  Cause: no range validation after decode.
 
 ### Gameplay components (RedECSBasicComponents)
 
@@ -403,19 +345,3 @@ is no benchmark target — so treat the ordering as untested. Added 2026-07-31.
   Cause: `typealias EntityId = String`. An integer handle would likely be the largest
   structural win available, but it is a breaking change for downstream games and
   interacts with the `Codable` save format and with `newEntityId()` above.
-
-## Resolved
-
-- **Effect groups allocated an array even when empty or all-`.none`** (2026-07-31)
-  Where: `Sources/RedECS/Store/GameEffect.swift`
-  Symptom: every `Zip` node allocated one array per frame regardless of whether any
-  sub-reducer produced an effect, and eight accumulator sites returned `.many([])`
-  on a typical frame. Each such node also cost a fresh array in `map` on every
-  pullback layer it crossed.
-  Cause: `.many` was a raw enum case that stored whatever it was given.
-  Fix: the case is now `.zip`, and `many(_:)` became a family of normalising
-  factories (array plus 2–6 fixed arity) that collapse an all-`.none` group to
-  `.none`, return a lone survivor bare, flatten nesting, and unwrap an already
-  satisfied `waitFor`. Existing `.many(…)` call sites were source-compatible and
-  picked the behaviour up unchanged.
-

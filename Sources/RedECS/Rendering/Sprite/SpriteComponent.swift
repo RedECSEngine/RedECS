@@ -30,6 +30,7 @@ public struct SpriteComponent: GameComponent {
 
     public var fillColor: Color = .clear
     public var opacity: Double = 1
+    public var tileAnimationTime: Double = 0
     public var shader: ShaderEffect? = nil // fragment effect applied to this sprite's draws; nil = passthrough
     /// Where this sprite's content hangs on its transform's frame, from 0 to 1.
     /// The transform's position is where the anchor point of the content sits,
@@ -91,6 +92,10 @@ public struct SpriteComponent: GameComponent {
     }
     
     public mutating func applyDelta(_ delta: Double) -> CompletedAnimationId? {
+        if case .tileMap? = type {
+            tileAnimationTime += delta * 1000
+            return nil
+        }
         guard var runningAnimation = animation else {
             return nil
         }
@@ -192,8 +197,7 @@ extension SpriteComponent: RenderableComponent {
            return tileMapRenderGroups(
                tileMap: map,
                cameraMatrix: cameraMatrix,
-               transform: transform,
-               resourceManager: resourceManager
+               transform: transform
            )
         }
     }
@@ -303,107 +307,5 @@ extension SpriteComponent {
                 shader: shader // e.g. the hero's palette remap
             )
         ]
-    }
-}
-
-extension SpriteComponent {
-    func tileMapRenderGroups(
-        tileMap: TiledMapJSON,
-        cameraMatrix: Matrix3,
-        transform: TransformComponent,
-        resourceManager: ResourceManager
-    ) -> [RenderGroup] {
-        let tileWidth = tileMap.tileWidth,
-            tileHeight = tileMap.tileHeight,
-            layerCols = tileMap.width,
-            layerRows = tileMap.height,
-            tileSize = Size(width: Double(tileWidth), height: Double(tileHeight))
-        
-        var renderGroups = [RenderGroup]()
-        tileMap.tileLayers.enumerated().forEach { (i, layer) in
-            guard let tileSetName = tileMap.tileSets.first?.source,
-                  let tileSet = resourceManager.tileSets[tileSetName] else {
-                return
-            }
-            
-            let matrix = contentMatrix(transform: transform, containerSize: Size(
-                width: tileMap.totalWidth,
-                height: tileMap.totalHeight
-            ))
-            
-            var renderTriangles: [RenderTriangle] = []
-            
-            for r in 0..<layerRows {
-                for c in 0..<layerCols {
-                    let rectForTile = Rect(
-                        center: .init(
-                            x: Double(c * tileWidth + tileWidth / 2),
-                            y: Double(r * tileHeight + tileHeight / 2)
-                        ),
-                        size: tileSize
-                    )
-                    
-                    let projectedPosition = rectForTile.center.multiplyingMatrix(cameraMatrix)
-                    if abs(projectedPosition.x) > 1.125 || abs(projectedPosition.y) > 1.125 {
-                        continue
-                    }
-                    
-                    guard let tileIndex = layer.tileDataAt(column: c, row: r, flipY: true) else { continue }
-                    
-                    guard tileIndex != 0 else { continue } // empty
-                    
-                    let tileSetCol = (tileIndex) % tileSet.columns - 1
-                    let tileSetRow = ((tileIndex) / tileSet.columns)
-                    
-                    let textureRect = Rect(
-                        center: .init(
-                            x: Double(tileSetCol * tileWidth + tileWidth / 2),
-                            y: Double(tileSet.imageHeight) - Double(tileSetRow * tileHeight + tileHeight / 2)
-                        ),
-                        size: tileSize
-                    )
-                    
-                    let topRenderTri = RenderTriangle(
-                        triangle: Triangle(
-                            a: Point(x: rectForTile.minX, y: rectForTile.maxY),
-                            b: Point(x: rectForTile.maxX, y: rectForTile.minY),
-                            c: Point(x: rectForTile.maxX, y: rectForTile.maxY)
-                        ),
-                        textureTriangle: Triangle(
-                            a: Point(x: textureRect.minX, y: textureRect.maxY),
-                            b: Point(x: textureRect.maxX, y: textureRect.minY),
-                            c: Point(x: textureRect.maxX, y: textureRect.maxY)
-                        )
-                    )
-                    let bottomRenderTri = RenderTriangle(
-                        triangle: Triangle(
-                            a: Point(x: rectForTile.minX, y: rectForTile.minY),
-                            b: Point(x: rectForTile.maxX, y: rectForTile.minY),
-                            c: Point(x: rectForTile.minX, y: rectForTile.maxY)
-                        ),
-                        textureTriangle: Triangle(
-                            a: Point(x: textureRect.minX, y: textureRect.minY),
-                            b: Point(x: textureRect.maxX, y: textureRect.minY),
-                            c: Point(x: textureRect.minX, y: textureRect.maxY)
-                        )
-                    )
-                    
-                    renderTriangles.append(contentsOf: [topRenderTri, bottomRenderTri])
-                }
-            }
-            
-            guard !renderTriangles.isEmpty else {
-                return
-            }
-            
-            let textureId = tileSet.image.split(separator: ".").dropLast().joined(separator: ".")
-            renderGroups.append(RenderGroup(
-                triangles: renderTriangles,
-                transformMatrix: matrix,
-                fragmentType: .texture(textureId),
-                zIndex: transform.zIndex
-            ))
-        }
-        return renderGroups
     }
 }
