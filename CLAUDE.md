@@ -103,9 +103,11 @@ diagnosed issues — an issue lives with the repo where its *symptom* is felt,
 even when the cause is in a dependency (note the cross-repo location in the
 entry). Game issues live in `../dungeon-cleaners/known-issues.md`. Maintain
 these continuously: when an issue is diagnosed, add an entry (where / symptom
-/ cause); when one is fixed, move it to the Resolved section with the fixing
-commit; when instructions in a session add to or resolve an issue, update the
-file in the same change.
+/ cause); when one is fixed, **delete its entry outright** — never keep a
+resolved section and never record fixing commits. The file only ever holds
+what is still open; git history is the record of what changed and when. When
+instructions in a session add to or resolve an issue, update the file in the
+same change.
 
 ## Git workflow
 

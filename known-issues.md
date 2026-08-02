@@ -1,9 +1,12 @@
 # Known Issues — RedECS
 
 Durable record of diagnosed issues (where / symptom / cause). Issues live in the
-repo where the symptom is felt. Added from a full-engine audit, 2026-07-15.
+repo where the symptom is felt. Added from a full-engine audit, 2026-07-15. When
+an issue is fixed, delete its entry outright — this file only ever holds what is
+still open, no resolved-issue history or fixing commit hashes; git history is the
+record of what changed and when.
 
-## Active
+## Open
 
 ### Core ECS / Store
 
@@ -342,55 +345,3 @@ is no benchmark target — so treat the ordering as untested. Added 2026-07-31.
   Cause: `typealias EntityId = String`. An integer handle would likely be the largest
   structural win available, but it is a breaking change for downstream games and
   interacts with the `Codable` save format and with `newEntityId()` above.
-
-## Resolved
-
-- **Tiled maps only loaded a narrow slice of what Tiled actually exports** (2026-08-01)
-  Where: `Sources/TiledInterpreter/`, `Sources/RedECS/Rendering/Sprite/`,
-  both resource managers, `Sources/RedHUD/Views/TileMap.swift`
-  Symptom: a map with group layers, more than one tileset, an embedded tileset,
-  a tileset carrying no per-tile metadata, base64 layer data, or any non-square
-  shape either failed to decode outright or rendered wrong. Flipped tiles drew
-  garbage and made the whole map unloadable on wasm32 (GID ≥ 0x80000000 does not
-  fit a 32-bit `Int`). `tileDataAt` bound `totalRows` to `width`, trapping on
-  negative indices for taller-than-wide maps, and indexed `data` unchecked. Only
-  `tileSets.first` was ever consulted and `firstgid` was decoded but never read,
-  so every tile of a second tileset sampled the first one. The atlas lookup
-  `(gid % columns) - 1` mis-sampled every tile whose GID was an exact multiple of
-  the tileset's column count, and divided by zero on `columns: 0`. Layer
-  `visible`/`opacity` were parsed and ignored, and the per-tile cull omitted the
-  entity's own transform.
-  Fix: `TiledGID` masks the flip flags out of the raw value; layers decode from
-  the array form and uncompressed base64, with compressed data and infinite-map
-  chunks throwing a named `TiledError` rather than silently rendering empty;
-  group and image layers decode, and `tileLayers`/`objectLayers` flatten
-  recursively, folding ancestor visibility, opacity and offsets into the
-  children. Tileset references carry a source or an embedded tileset, and the
-  map resolves a GID to its tileset and local id. Tilesets decode with optional
-  `image`/`tiles` plus `margin`/`spacing`, and tiles carry animation, collision
-  object groups and properties. Quad building moved to a shared
-  `TileMapGeometry` used by both the sprite path and RedHUD's `TileMap` view;
-  culling now inverts the composed content-and-camera matrix once per layer.
-  Commits: 69c1c38, e377285.
-
-- **`RedECSTests` and `RenderingTests` did not compile** (2026-08-01)
-  Where: `Tests/RedECSTests/TestSystem/TestSystem.swift`,
-  `Tests/RenderingTests/Utilities/RenderingTestSystem.swift`
-  Symptom: `swift test` failed to build the whole package; the two test states
-  predated `GameStore`'s `OperationCapableGameState` requirement.
-  Fix: both conform, declaring `GameAction` and the `operation`/`sprite`
-  component stores.
-
-- **Effect groups allocated an array even when empty or all-`.none`** (2026-07-31)
-  Where: `Sources/RedECS/Store/GameEffect.swift`
-  Symptom: every `Zip` node allocated one array per frame regardless of whether any
-  sub-reducer produced an effect, and eight accumulator sites returned `.many([])`
-  on a typical frame. Each such node also cost a fresh array in `map` on every
-  pullback layer it crossed.
-  Cause: `.many` was a raw enum case that stored whatever it was given.
-  Fix: the case is now `.zip`, and `many(_:)` became a family of normalising
-  factories (array plus 2–6 fixed arity) that collapse an all-`.none` group to
-  `.none`, return a lone survivor bare, flatten nesting, and unwrap an already
-  satisfied `waitFor`. Existing `.many(…)` call sites were source-compatible and
-  picked the behaviour up unchanged.
-

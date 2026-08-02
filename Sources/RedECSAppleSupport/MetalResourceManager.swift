@@ -143,8 +143,8 @@ public final class MetalResourceManager: ResourceManager {
     
     public func loadTiledMap(_ name: String) -> Future<TiledMapJSON, Swift.Error> {
         return loadJSONFile(name, decodedAs: TiledMapJSON.self)
-            .flatMap { map -> Future<TiledMapJSON, Swift.Error> in
-                let loads = Set(map.unresolvedTileSetSources).map { source -> Future<Void, Swift.Error> in
+            .flatMap { tileMap -> Future<TiledMapJSON, Swift.Error> in
+                let loads = Set(tileMap.unresolvedTileSetSources).map { source -> Future<Void, Swift.Error> in
                     self.loadJSONFile(source, decodedAs: TiledTilesetJSON.self)
                         .readValue { result in
                             if case let .success(tileSet) = result {
@@ -155,20 +155,20 @@ public final class MetalResourceManager: ResourceManager {
                 }
                 return Future<Void, Swift.Error>.zip(loads).flatMap { _ -> Future<TiledMapJSON, Swift.Error> in
                     do {
-                        return .just(try map.resolvingTileSets(from: self.tileSets))
+                        return .just(try tileMap.resolvingTileSets(from: self.tileSets))
                     } catch {
                         return .fail(error)
                     }
                 }
             }
-            .flatMap { map -> Future<TiledMapJSON, Swift.Error> in
-                let textureIds = Set(map.tileSets.compactMap { $0.tileSet?.textureId })
+            .flatMap { tileMap -> Future<TiledMapJSON, Swift.Error> in
+                let textureIds = Set(tileMap.tileSets.compactMap { $0.tileSet?.textureId })
                 return Future<Void, Swift.Error>.zip(textureIds.map { self.loadImageFile(name: $0).toVoid() })
-                    .map { _ in map }
+                    .map { _ in tileMap }
             }
             .readValue { result in
-                if case let .success(map) = result {
-                    self.tileMaps[name] = map
+                if case let .success(tileMap) = result {
+                    self.tileMaps[name] = tileMap
                 }
             }
     }
