@@ -92,6 +92,12 @@ public final class GameStore<R: Reducer> where R.State: OperationCapableGameStat
         case .removeComponent(let entityId, let registeredComponentId):
 //            print("[♦️]: Removed Component", registeredComponentId, "for", entityId)
             registeredComponentTypes[registeredComponentId]?.onEntityDestroyed(entityId, &state)
+        case .playSound(let sound):
+            guard let soundEnvironment = environment as? SoundEnvironment else {
+                assertionFailure("playSound(\(sound.rawValue)) dispatched without a SoundEnvironment")
+                return
+            }
+            soundEnvironment.soundEngine.play(sound)
         case .cancelPendingEffects:
             clearPendingEffects()
         }

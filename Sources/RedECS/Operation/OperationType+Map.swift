@@ -16,6 +16,7 @@ public extension OperationType {
         case .call(let op): return .call(op.map(transform))
         case .timing(let op): return .timing(op.map(transform))
         case .removeEntity(let op): return .removeEntity(op.map(transform))
+        case .playSound(let op): return .playSound(op.map(transform))
         }
     }
 }
@@ -81,6 +82,16 @@ public extension TimingOperation {
 public extension RemoveEntityOperation {
     func map<NewAction: Equatable & Codable>(_ transform: (GameAction) -> NewAction) -> RemoveEntityOperation<NewAction> {
         var mapped = RemoveEntityOperation<NewAction>(removeEntityId: removeEntityId)
+        mapped.duration = duration
+        mapped.currentTime = currentTime
+        mapped.isComplete = isComplete
+        return mapped
+    }
+}
+
+public extension PlaySoundOperation {
+    func map<NewAction: Equatable & Codable>(_ transform: (GameAction) -> NewAction) -> PlaySoundOperation<NewAction> {
+        var mapped = PlaySoundOperation<NewAction>(sound: sound)
         mapped.duration = duration
         mapped.currentTime = currentTime
         mapped.isComplete = isComplete

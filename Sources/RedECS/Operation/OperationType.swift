@@ -16,6 +16,7 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
     case timing(TimingOperation<GameAction>)
     case removeEntity(RemoveEntityOperation<GameAction>)
     case shaderEffect(ShaderEffectOperation)
+    case playSound(PlaySoundOperation<GameAction>)
     
     public var duration: Double {
         switch self {
@@ -49,6 +50,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return 0
         case .shaderEffect(let shaderOp):
             return shaderOp.duration
+        case .playSound:
+            return 0
         }
     }
     
@@ -84,6 +87,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return remove.isComplete
         case .shaderEffect(let shaderOp):
             return shaderOp.isComplete
+        case .playSound(let playSound):
+            return playSound.isComplete
         }
     }
     
@@ -153,7 +158,10 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             _ = shaderOp.run(id: id, state: &state, delta: delta)
             self = .shaderEffect(shaderOp)
             return .none
-            
+        case .playSound(var playSound):
+            let effect = playSound.run(id: id, state: &state, delta: delta)
+            self = .playSound(playSound)
+            return effect
         }
     }
     
@@ -203,6 +211,9 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         case .shaderEffect(var shaderOp):
             shaderOp.reset()
             self = .shaderEffect(shaderOp)
+        case .playSound(var playSound):
+            playSound.reset()
+            self = .playSound(playSound)
         }
     }
     
@@ -409,6 +420,18 @@ public extension OperationType {
     func shaderEffect(_ effect: ShaderEffect, animated: Bool = false, duration: Double = 1) -> Self {
         var component = self
         component.appendOperation(.shaderEffect(ShaderEffectOperation(effect: effect, animated: animated, duration: duration)))
+        return component
+    }
+}
+
+public extension OperationType {
+    static func playSound(_ sound: SoundId) -> Self {
+        .playSound(PlaySoundOperation(sound: sound))
+    }
+
+    func playSound(_ sound: SoundId) -> Self {
+        var component = self
+        component.appendOperation(.playSound(PlaySoundOperation(sound: sound)))
         return component
     }
 }
