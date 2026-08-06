@@ -23,6 +23,7 @@ public class MetalView: MTKView {
 open class MetalViewController: AppleViewController {
     public var renderer: MetalRenderer!
     public var resourceManager: MetalResourceManager!
+    public var soundEngine: AppleSoundEngine!
     public var mtkView: MetalView!
     open var shaderRegistry = ShaderRegistry() // override to register game shaders before load
 
@@ -100,6 +101,7 @@ open class MetalViewController: AppleViewController {
 
         self.resourceManager = resourceManager
         self.renderer = newRenderer
+        self.soundEngine = AppleSoundEngine()
         
         renderer.mtkView(mtkView, drawableSizeWillChange: mtkView.drawableSize)
 
