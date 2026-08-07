@@ -104,6 +104,12 @@ public final class GameStore<R: Reducer> where R.State: OperationCapableGameStat
                 return
             }
             soundEnvironment.soundEngine.stop(sound)
+        case .stopAllSounds:
+            guard let soundEnvironment = environment as? SoundEnvironment else {
+                assertionFailure("stopAllSounds dispatched without a SoundEnvironment")
+                return
+            }
+            soundEnvironment.soundEngine.stopAllSounds()
         case .cancelPendingEffects:
             clearPendingEffects()
         }
