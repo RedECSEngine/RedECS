@@ -261,17 +261,6 @@ record of what changed and when.
   Symptom: a transient load failure permanently loses the texture.
   Cause: `.failedToLoad` state satisfies the `!= nil` short-circuit guard forever.
 
-### Sound
-
-- **`AppleSoundEngine` plays loop-flagged segments once**
-  Where: `Sources/RedECSAppleSupport/AppleSoundEngine.swift` (`play(_:)`)
-  Symptom: a `SoundSpriteMap` segment whose howler array carries a third `true`
-  element (loop flag) decodes and round-trips correctly but plays exactly once.
-  Cause: looping needs completion-handler rescheduling on `AVAudioPlayerNode`
-  (cross-thread state under Swift 6 strict concurrency) that the first cut
-  leaves out; the dungeon-cleaners exporter never emits the flag, so no
-  generated sprite is affected — only a hand-authored map would be.
-
 ### Performance
 
 Allocation and copy costs on the per-frame path. None of these are measured — there

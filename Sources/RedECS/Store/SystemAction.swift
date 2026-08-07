@@ -11,6 +11,7 @@ public enum SystemAction<State: GameState> {
     case addTag(EntityId, String)
     case removeTag(EntityId, String)
     case playSound(SoundId)
+    case stopSound(SoundId)
     case cancelPendingEffects
 
     public func map<S: GameState>(
@@ -33,6 +34,8 @@ public enum SystemAction<State: GameState> {
             return .removeComponent(e, registeredComponentId)
         case .playSound(let sound):
             return .playSound(sound)
+        case .stopSound(let sound):
+            return .stopSound(sound)
         case .cancelPendingEffects:
             return .cancelPendingEffects
         }

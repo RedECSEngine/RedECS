@@ -5,12 +5,12 @@ import RedECS
 #if os(OSX)
 import Cocoa
 
-public typealias AppleViewController = NSViewController
+public typealias PlatformViewController = NSViewController
 public typealias AppleColor = NSColor
 #else
 import UIKit
 
-public typealias AppleViewController = UIViewController
+public typealias PlatformViewController = UIViewController
 public typealias AppleColor = UIColor
 #endif
 
@@ -20,7 +20,7 @@ public class MetalView: MTKView {
 #endif
 }
 
-open class MetalViewController: AppleViewController {
+open class AppleViewController: PlatformViewController {
     public var renderer: MetalRenderer!
     public var resourceManager: MetalResourceManager!
     public var soundEngine: AppleSoundEngine!

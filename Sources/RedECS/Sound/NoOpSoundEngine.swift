@@ -7,7 +7,9 @@ public final class NoOpSoundEngine: SoundEngine {
         .just(())
     }
 
-    public func play(_ sound: SoundId) {}
+    public func play(_ sound: SoundId, loop: Bool?) {}
+
+    public func stop(_ sound: SoundId) {}
 
     public func stopAllSounds() {}
 }

@@ -25,6 +25,7 @@ public final class AppleSoundEngine: SoundEngine {
     private var nextPlayerIndex = 0
     private var loadedSprites: Set<String> = []
     private var sounds: [SoundId: LoadedSound] = [:]
+    private var activePlayers: [SoundId: AVAudioPlayerNode] = [:]
 
     public init(resourceBundle: Bundle = .main, playerCount: Int = 8) {
         self.resourceBundle = resourceBundle
@@ -62,7 +63,7 @@ public final class AppleSoundEngine: SoundEngine {
         }
     }
 
-    public func play(_ sound: SoundId) {
+    public func play(_ sound: SoundId, loop: Bool?) {
         guard let loaded = sounds[sound] else {
             assertionFailure("unknown sound '\(sound.rawValue)'")
             return
@@ -80,18 +81,35 @@ public final class AppleSoundEngine: SoundEngine {
         if player.outputFormat(forBus: 0) != loaded.file.processingFormat {
             engine.connect(player, to: engine.mainMixerNode, format: loaded.file.processingFormat)
         }
-        player.scheduleSegment(
-            loaded.file,
-            startingFrame: startFrame,
-            frameCount: frameCount,
-            at: nil,
-            completionHandler: nil
-        )
+        if loop ?? loaded.segment.loops {
+            guard let buffer = loopBuffer(for: loaded, startFrame: startFrame, frameCount: frameCount) else {
+                assertionFailure("could not read sound '\(sound.rawValue)' into a loop buffer")
+                return
+            }
+            player.scheduleBuffer(buffer, at: nil, options: .loops, completionHandler: nil)
+        } else {
+            player.scheduleSegment(
+                loaded.file,
+                startingFrame: startFrame,
+                frameCount: frameCount,
+                at: nil,
+                completionHandler: nil
+            )
+        }
+        activePlayers = activePlayers.filter { $0.value !== player }
+        activePlayers[sound] = player
         player.play()
+    }
+
+    public func stop(_ sound: SoundId) {
+        guard let player = activePlayers[sound] else { return }
+        player.stop()
+        activePlayers[sound] = nil
     }
 
     public func stopAllSounds() {
         players.forEach { $0.stop() }
+        activePlayers.removeAll()
     }
 
     private func loadMap(named name: String) throws -> SoundSpriteMap {
@@ -113,6 +131,20 @@ public final class AppleSoundEngine: SoundEngine {
             throw AppleSoundEngineError.fileNotFound("\(source) in \(resourceBundle.description)")
         }
         return url
+    }
+
+    private func loopBuffer(for loaded: LoadedSound, startFrame: AVAudioFramePosition, frameCount: AVAudioFrameCount) -> AVAudioPCMBuffer? {
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: loaded.file.processingFormat, frameCapacity: frameCount) else {
+            return nil
+        }
+        do {
+            loaded.file.framePosition = startFrame
+            try loaded.file.read(into: buffer, frameCount: frameCount)
+            return buffer
+        } catch {
+            print("error reading loop buffer:", error)
+            return nil
+        }
     }
 
     private func startEngineIfNeeded() {
