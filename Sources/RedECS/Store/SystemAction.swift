@@ -10,6 +10,9 @@ public enum SystemAction<State: GameState> {
     /// from one entity to another at runtime.
     case addTag(EntityId, String)
     case removeTag(EntityId, String)
+    case playSound(SoundId)
+    case stopSound(SoundId)
+    case stopAllSounds
     case cancelPendingEffects
 
     public func map<S: GameState>(
@@ -30,6 +33,12 @@ public enum SystemAction<State: GameState> {
             return .addComponent(eId, registeredComponent.map(stateTransform))
         case .removeComponent(let e, let registeredComponentId):
             return .removeComponent(e, registeredComponentId)
+        case .playSound(let sound):
+            return .playSound(sound)
+        case .stopSound(let sound):
+            return .stopSound(sound)
+        case .stopAllSounds:
+            return .stopAllSounds
         case .cancelPendingEffects:
             return .cancelPendingEffects
         }

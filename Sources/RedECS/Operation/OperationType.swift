@@ -16,6 +16,7 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
     case timing(TimingOperation<GameAction>)
     case removeEntity(RemoveEntityOperation<GameAction>)
     case shaderEffect(ShaderEffectOperation)
+    case sound(SoundOperation<GameAction>)
     
     public var duration: Double {
         switch self {
@@ -49,6 +50,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return 0
         case .shaderEffect(let shaderOp):
             return shaderOp.duration
+        case .sound:
+            return 0
         }
     }
     
@@ -84,6 +87,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return remove.isComplete
         case .shaderEffect(let shaderOp):
             return shaderOp.isComplete
+        case .sound(let sound):
+            return sound.isComplete
         }
     }
     
@@ -153,7 +158,10 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             _ = shaderOp.run(id: id, state: &state, delta: delta)
             self = .shaderEffect(shaderOp)
             return .none
-            
+        case .sound(var sound):
+            let effect = sound.run(id: id, state: &state, delta: delta)
+            self = .sound(sound)
+            return effect
         }
     }
     
@@ -203,6 +211,9 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         case .shaderEffect(var shaderOp):
             shaderOp.reset()
             self = .shaderEffect(shaderOp)
+        case .sound(var sound):
+            sound.reset()
+            self = .sound(sound)
         }
     }
     
@@ -410,5 +421,41 @@ public extension OperationType {
         var component = self
         component.appendOperation(.shaderEffect(ShaderEffectOperation(effect: effect, animated: animated, duration: duration)))
         return component
+    }
+}
+
+public extension OperationType {
+    static func sound(_ strategy: SoundOperation<GameAction>.Strategy) -> Self {
+        .sound(SoundOperation(strategy: strategy))
+    }
+
+    func sound(_ strategy: SoundOperation<GameAction>.Strategy) -> Self {
+        var component = self
+        component.appendOperation(.sound(SoundOperation(strategy: strategy)))
+        return component
+    }
+
+    static func playSound(_ sound: SoundId) -> Self {
+        .sound(.play(sound))
+    }
+
+    func playSound(_ sound: SoundId) -> Self {
+        self.sound(.play(sound))
+    }
+
+    static func stopSound(_ sound: SoundId) -> Self {
+        .sound(.stop(sound))
+    }
+
+    func stopSound(_ sound: SoundId) -> Self {
+        self.sound(.stop(sound))
+    }
+
+    static func stopAllSounds() -> Self {
+        .sound(.stopAll)
+    }
+
+    func stopAllSounds() -> Self {
+        self.sound(.stopAll)
     }
 }
