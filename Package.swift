@@ -48,7 +48,10 @@ let package = Package(
             from: "0.0.5"
         ),
 
-        .package(path: "../Randomization"),
+        .package(
+            url: "https://github.com/RedECSEngine/Randomization.git",
+            exact: "0.0.1"
+        ),
 
         .package(
             url: "https://github.com/apple/swift-collections.git",
