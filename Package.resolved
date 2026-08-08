@@ -1,5 +1,5 @@
 {
-  "originHash" : "3ba7a6101a7d5adc357d12d6ad13760078b490fa5bf6c50bd84656366f13f48e",
+  "originHash" : "dfc6214b0d00777e47d1f81878c8c511a87b403abde520c485a38d2b8acb582c",
   "pins" : [
     {
       "identity" : "geometry",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "22905075f8b61834810babe5fb9a2f613f22f398",
         "version" : "0.56.1"
+      }
+    },
+    {
+      "identity" : "randomization",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RedECSEngine/Randomization.git",
+      "state" : {
+        "revision" : "73b2bba60187e8c983458db889657234d610e17a",
+        "version" : "0.0.1"
       }
     },
     {

@@ -1,8 +1,3 @@
-
-// TODO: Implement these:
-// Follow Path
-// speed increase/decrease
-
 public protocol Operation: Codable & Equatable {
     associatedtype Action: Equatable & Codable
     

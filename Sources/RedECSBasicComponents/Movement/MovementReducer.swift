@@ -34,7 +34,7 @@ public struct MovementReducer: Reducer {
             movement.velocity = .zero
             
             let avgVelocity = movement.recentVelocityHistory.reduce(Point.zero, +) / Double(movement.recentVelocityHistory.count)
-            point += (avgVelocity * movement.travelSpeed * movement.speedMultiplier)
+            point += (avgVelocity * movement.travelSpeed)
             
             state.transform[id]?.position = point
             state.movement[id] = movement

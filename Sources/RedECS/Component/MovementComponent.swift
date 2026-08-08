@@ -1,11 +1,9 @@
-import RedECS
 import Geometry
 
 public struct MovementComponent: GameComponent {
     public let entity: EntityId
     public var velocity: Point
     public var travelSpeed: Double
-    public var speedMultiplier: Double
     public var recentVelocityHistory: [Point] = []
 
     public init(entity: EntityId) {
@@ -15,12 +13,10 @@ public struct MovementComponent: GameComponent {
     public init(
         entity: EntityId,
         velocity: Point,
-        travelSpeed: Double,
-        speedMultiplier: Double = 1
+        travelSpeed: Double
     ) {
         self.entity = entity
         self.velocity = velocity
         self.travelSpeed = travelSpeed
-        self.speedMultiplier = speedMultiplier
     }
 }

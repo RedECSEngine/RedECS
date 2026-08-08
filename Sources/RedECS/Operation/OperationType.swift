@@ -3,6 +3,8 @@ import Geometry
 public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & Equatable {
     case move(MoveOperation)
     case jump(JumpOperation)
+    case followPath(FollowPathOperation)
+    case speed(SpeedOperation<GameAction>)
     case rotate(RotateOperation)
     case scale(ScaleOperation)
     case wait(WaitOperation)
@@ -24,6 +26,10 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return moveOperation.duration
         case .jump(let jumpOperation):
             return jumpOperation.duration
+        case .followPath(let followPathOperation):
+            return followPathOperation.duration
+        case .speed(let speedOperation):
+            return speedOperation.duration
         case .rotate(let rotateOperation):
             return rotateOperation.duration
         case .scale(let scaleOperation):
@@ -61,6 +67,10 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return moveOperation.isComplete
         case .jump(let jumpOperation):
             return jumpOperation.isComplete
+        case .followPath(let followPathOperation):
+            return followPathOperation.isComplete
+        case .speed(let speedOperation):
+            return speedOperation.isComplete
         case .rotate(let rotateOperation):
             return rotateOperation.isComplete
         case .scale(let scaleOperation):
@@ -122,6 +132,14 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             _ = jump.run(id: id, state: &state, delta: delta)
             self = .jump(jump)
             return .none
+        case .followPath(var followPath):
+            _ = followPath.run(id: id, state: &state, delta: delta)
+            self = .followPath(followPath)
+            return .none
+        case .speed(var speed):
+            let effect = speed.run(id: id, state: &state, delta: delta)
+            self = .speed(speed)
+            return effect
         case .sequence(var sequence):
             let effect = sequence.run(id: id, state: &state, delta: delta)
             self = .sequence(sequence)
@@ -185,6 +203,12 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         case .jump(var jump):
             jump.reset()
             self = .jump(jump)
+        case .followPath(var followPath):
+            followPath.reset()
+            self = .followPath(followPath)
+        case .speed(var speed):
+            speed.reset()
+            self = .speed(speed)
         case .sequence(var sequence):
             sequence.reset()
             self = .sequence(sequence)
@@ -287,6 +311,33 @@ public extension OperationType {
         let jumpOp = JumpOperation(strategy: strategy, height: height, jumps: jumps, duration: duration)
         component.appendOperation(.jump(jumpOp))
         return component
+    }
+}
+
+public extension OperationType {
+    static func followPath(
+        _ path: [Point],
+        speed: Double = 1,
+        proximityVariance: Double = 1
+    ) -> Self {
+        .followPath(FollowPathOperation(path: path, speed: speed, proximityVariance: proximityVariance))
+    }
+
+    func followPath(
+        _ path: [Point],
+        speed: Double = 1,
+        proximityVariance: Double = 1
+    ) -> Self {
+        var component = self
+        let followPathOp = FollowPathOperation(path: path, speed: speed, proximityVariance: proximityVariance)
+        component.appendOperation(.followPath(followPathOp))
+        return component
+    }
+}
+
+public extension OperationType {
+    func speed(_ multiplier: Double) -> Self {
+        .speed(SpeedOperation(multiplier: multiplier, operation: self))
     }
 }
 
