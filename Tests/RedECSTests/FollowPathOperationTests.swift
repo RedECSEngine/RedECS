@@ -144,3 +144,37 @@ final class SpeedOperationTests: XCTestCase {
         XCTAssertEqual(op.duration, 0.5)
     }
 }
+
+final class PendingCallActionsTests: XCTestCase {
+
+    private let id: EntityId = "walker"
+
+    func testUnrunSequenceReportsItsCallbacks() {
+        let op: OperationType<String> = OperationType
+            .followPath([.init(x: 10, y: 0)])
+            .call("arrived")
+        XCTAssertEqual(op.pendingCallActions, ["arrived"])
+    }
+
+    func testFiredCallbacksAreNotReported() {
+        var state = BasicOperationComponentContext(
+            entities: .init(),
+            transform: [id: TransformComponent(entity: id, position: .zero)],
+            sprite: [:],
+            movement: [id: MovementComponent(entity: id, velocity: .zero, travelSpeed: 600)]
+        )
+        var op: OperationType<String> = OperationType
+            .followPath([.init(x: 1, y: 0)])
+            .call("arrived")
+        for _ in 0..<10 where !op.isComplete {
+            _ = op.run(id: id, state: &state, delta: 1.0 / 60.0)
+        }
+        XCTAssertTrue(op.isComplete)
+        XCTAssertEqual(op.pendingCallActions, [])
+    }
+
+    func testLeafOperationsReportNothing() {
+        let op: OperationType<String> = .move(.by(.init(x: 1, y: 0)), duration: 1)
+        XCTAssertEqual(op.pendingCallActions, [])
+    }
+}
