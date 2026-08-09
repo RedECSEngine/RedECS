@@ -3,6 +3,8 @@ public extension OperationType {
         switch self {
         case .move(let op): return .move(op)
         case .jump(let op): return .jump(op)
+        case .followPath(let op): return .followPath(op)
+        case .speed(let op): return .speed(op.map(transform))
         case .rotate(let op): return .rotate(op)
         case .scale(let op): return .scale(op)
         case .wait(let op): return .wait(op)
@@ -18,6 +20,14 @@ public extension OperationType {
         case .removeEntity(let op): return .removeEntity(op.map(transform))
         case .sound(let op): return .sound(op.map(transform))
         }
+    }
+}
+
+public extension SpeedOperation {
+    func map<NewAction: Equatable & Codable>(_ transform: (GameAction) -> NewAction) -> SpeedOperation<NewAction> {
+        var mapped = SpeedOperation<NewAction>(multiplier: multiplier, operation: operation.map(transform))
+        mapped.currentTime = currentTime
+        return mapped
     }
 }
 
