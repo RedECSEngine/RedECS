@@ -14,7 +14,6 @@ struct RenderingTestState: RenderableGameState, OperationCapableGameState {
     var sprite: [EntityId: SpriteComponent] = [:]
     var camera: [EntityId: CameraComponent] = [:]
     var operation: [EntityId: OperationComponent<RenderingTestAction>] = [:]
-    var movement: [EntityId: MovementComponent] = [:]
 
     /// Button fires observed by TestGameLogicReducer, proving triggered
     /// actions round-trip out of the HUD and into game logic.

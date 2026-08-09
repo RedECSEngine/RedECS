@@ -317,19 +317,19 @@ public extension OperationType {
 public extension OperationType {
     static func followPath(
         _ path: [Point],
-        speed: Double = 1,
+        travelSpeed: Double,
         proximityVariance: Double = 1
     ) -> Self {
-        .followPath(FollowPathOperation(path: path, speed: speed, proximityVariance: proximityVariance))
+        .followPath(FollowPathOperation(path: path, travelSpeed: travelSpeed, proximityVariance: proximityVariance))
     }
 
     func followPath(
         _ path: [Point],
-        speed: Double = 1,
+        travelSpeed: Double,
         proximityVariance: Double = 1
     ) -> Self {
         var component = self
-        let followPathOp = FollowPathOperation(path: path, speed: speed, proximityVariance: proximityVariance)
+        let followPathOp = FollowPathOperation(path: path, travelSpeed: travelSpeed, proximityVariance: proximityVariance)
         component.appendOperation(.followPath(followPathOp))
         return component
     }

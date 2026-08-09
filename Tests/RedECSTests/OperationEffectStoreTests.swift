@@ -58,7 +58,6 @@ private struct OpTestState: GameState, OperationCapableGameState {
     var operation: [EntityId: OperationComponent<OpTestUmbrellaAction>] = [:]
     var transform: [EntityId: TransformComponent] = [:]
     var sprite: [EntityId: SpriteComponent] = [:]
-    var movement: [EntityId: MovementComponent] = [:]
     var flashCount: [EntityId: Int] = [:]
 
     var flashContext: FlashContext {

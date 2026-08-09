@@ -4,22 +4,21 @@ public struct FollowPathOperation: Operation {
     public typealias Action = Int
 
     public var path: [Point]
-    public var remaining: [Point]
-    public var speed: Double
+    public var currentIndex: Int = 0
+    public var travelSpeed: Double
     public var proximityVariance: Double
     public var currentTime: Double = 0
 
     public var duration: Double { Self.InfiniteDuration }
-    public var isComplete: Bool { remaining.isEmpty }
+    public var isComplete: Bool { currentIndex >= path.count }
 
     public init(
         path: [Point],
-        speed: Double = 1,
+        travelSpeed: Double,
         proximityVariance: Double = 1
     ) {
         self.path = path
-        self.remaining = path
-        self.speed = speed
+        self.travelSpeed = travelSpeed
         self.proximityVariance = proximityVariance
     }
 
@@ -28,35 +27,30 @@ public struct FollowPathOperation: Operation {
         state: inout BasicOperationComponentContext,
         delta: Double
     ) -> GameEffect<BasicOperationComponentContext, Action> {
-        guard let target = remaining.first else { return .none }
-        guard let position = state.transform[id]?.position,
-              let movement = state.movement[id] else {
-            remaining = []
+        guard currentIndex < path.count else { return .none }
+        guard let position = state.transform[id]?.position else {
+            currentIndex = path.count
             return .none
         }
 
         currentTime += delta
 
-        let stepSize = movement.travelSpeed * speed * delta
-        if position.distanceFrom(target) <= max(proximityVariance, stepSize) {
+        let target = path[currentIndex]
+        let distance = position.distanceFrom(target)
+        let step = travelSpeed * delta
+        if distance <= max(proximityVariance, step) {
             state.transform[id]?.position = target
-            state.movement[id]?.velocity = .zero
-            remaining.removeFirst()
+            currentIndex += 1
             return .none
         }
 
-        let diffPos = position.diffOf(target)
-        let maxDirectionalDistance = max(abs(diffPos.x), abs(diffPos.y))
-        var velocity: Point = .zero
-        velocity.x -= diffPos.x != 0 ? max(min(diffPos.x / maxDirectionalDistance, 1), -1) : 0
-        velocity.y -= diffPos.y != 0 ? max(min(diffPos.y / maxDirectionalDistance, 1), -1) : 0
-        state.movement[id]?.velocity = velocity * speed
-
+        let direction = target.diffOf(position) / distance
+        state.transform[id]?.position = position + direction * step
         return .none
     }
 
     public mutating func reset() {
         currentTime = 0
-        remaining = path
+        currentIndex = 0
     }
 }
