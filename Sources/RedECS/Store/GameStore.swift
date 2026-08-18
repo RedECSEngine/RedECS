@@ -183,3 +183,21 @@ extension GameStore {
         state.operation[entityId]?.removeAllOperations()
     }
 }
+
+public extension GameStore {
+    /// Builds a store from a single `GameRegistration`, which already carries the
+    /// component teardown handlers the designated initialiser wants.
+    convenience init(
+        state: R.State,
+        environment: R.Environment,
+        reducer: R,
+        registration: GameRegistration<R.State, R.Action>
+    ) {
+        self.init(
+            state: state,
+            environment: environment,
+            reducer: reducer,
+            registeredComponentTypes: registration.components
+        )
+    }
+}

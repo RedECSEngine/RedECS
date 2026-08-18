@@ -1,5 +1,6 @@
-public struct SpeedOperation<GameAction: Equatable & Codable>: Operation {
-    public typealias Action = GameAction
+public struct SpeedOperation<GameAction: Equatable & Codable>: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.speed" }
+
 
     public var multiplier: Double
     public var operation: OperationType<GameAction>
@@ -18,12 +19,13 @@ public struct SpeedOperation<GameAction: Equatable & Codable>: Operation {
         self.operation = operation
     }
 
-    public mutating func run(
+    public mutating func run<S: OperationCapableGameState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
-        delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Action> {
-        let effect = operation.run(id: id, state: &state, delta: delta * multiplier)
+        state: inout S,
+        delta: Double,
+        registration: GameRegistration<S, GameAction>
+    ) -> GameEffect<S, GameAction> where S.GameAction == GameAction {
+        let effect = operation.run(id: id, state: &state, delta: delta * multiplier, registration: registration)
         currentTime += delta
         return effect
     }

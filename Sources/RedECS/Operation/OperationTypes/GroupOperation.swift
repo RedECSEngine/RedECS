@@ -1,5 +1,7 @@
 
-public struct GroupOperation<GameAction: Equatable & Codable>: Operation {
+public struct GroupOperation<GameAction: Equatable & Codable>: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.group" }
+
     public var currentTime: Double = 0
     public var operations: [OperationType<GameAction>]
     
@@ -17,18 +19,19 @@ public struct GroupOperation<GameAction: Equatable & Codable>: Operation {
         self.operations = operations
     }
         
-    public mutating func run(
+    public mutating func run<S: OperationCapableGameState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
-        delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, GameAction> {
+        state: inout S,
+        delta: Double,
+        registration: GameRegistration<S, GameAction>
+    ) -> GameEffect<S, GameAction> where S.GameAction == GameAction {
         guard !operations.isEmpty, currentOperationCompletionCount < operations.count else { return .none }
         
-        var effects: [GameEffect<BasicOperationComponentContext, GameAction>] = []
+        var effects: [GameEffect<S, GameAction>] = []
         
         for i in 0..<operations.count {
             guard !operations[i].isComplete else { continue }
-            let effect = operations[i].run(id: id, state: &state, delta: delta)
+            let effect = operations[i].run(id: id, state: &state, delta: delta, registration: registration)
             effects.append(effect)
             
             if operations[i].isComplete {

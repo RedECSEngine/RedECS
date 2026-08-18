@@ -71,7 +71,13 @@ private struct OpTestState: GameState, OperationCapableGameState {
 
 final class OperationEffectStoreTests: XCTestCase {
     private func makeStore() -> GameStore<AnyReducer<OpTestState, OpTestUmbrellaAction, Void>> {
-        GameStore(
+        // One registration describes the components and everything they declare
+        // about operations; the store and the operation reducer both read from it.
+        let registration = GameRegistration<OpTestState, OpTestUmbrellaAction>()
+            .component(\.operation)
+            .component(\.transform)
+            .component(\.sprite)
+        return GameStore(
             state: OpTestState(),
             environment: (),
             reducer: zip(
@@ -81,14 +87,9 @@ final class OperationEffectStoreTests: XCTestCase {
                         toLocalAction: FlashAction.fromUmbrella,
                         toGlobalAction: OpTestUmbrellaAction.fromFlash
                     ),
-                OperationReducer<OpTestUmbrellaAction>()
-                    .pullback(toLocalState: \.operationContext)
+                OperationReducer<OpTestState>(registration: registration)
             ).eraseToAnyReducer(),
-            registeredComponentTypes: [
-                .init(keyPath: \.operation),
-                .init(keyPath: \.transform),
-                .init(keyPath: \.sprite)
-            ]
+            registeredComponentTypes: registration.components
         )
     }
 

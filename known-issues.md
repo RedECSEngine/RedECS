@@ -122,6 +122,17 @@ record of what changed and when.
   Symptom: crash on malformed atlas JSON or empty animation.
   Cause: no validation of decoded indices/ranges.
 
+- **`AnyOperation.reboxed()` re-tags a custom operation without mapping stored actions**
+  Where: `Sources/RedECS/Operation/AnyOperation.swift` (`reboxed()`), used by
+  `Sources/RedECS/Operation/OperationType+Map.swift` for the `.custom` case.
+  Symptom: a custom operation that holds a game action as a *stored property* and is
+  emitted from a pulled-back reducer keeps its local action value after the effect is
+  mapped to the umbrella action type, so the stored value has the wrong type at use.
+  Cause: `OperationPayload` has no `Action` associated type, so `map` cannot reach
+  inside the erased payload to transform stored actions; the box is re-tagged and the
+  payload carried across unchanged. Sound only while custom operations emit actions
+  from `run` (via `ComponentEffect.game`) rather than storing them.
+
 ### Gameplay components (RedECSBasicComponents)
 
 - **`RepeatOperation.times(n)` completion math is wrong; can trap**

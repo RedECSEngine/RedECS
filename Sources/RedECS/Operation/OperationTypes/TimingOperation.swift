@@ -1,7 +1,8 @@
 import Geometry
 
-public struct TimingOperation<GameAction: Equatable & Codable>: Operation {
-    public typealias Action = GameAction
+public struct TimingOperation<GameAction: Equatable & Codable>: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.timing" }
+
     
     public enum Strategy: Equatable, Codable {
         case easeIn
@@ -24,11 +25,16 @@ public struct TimingOperation<GameAction: Equatable & Codable>: Operation {
         self.duration = operation.duration
     }
     
-    public mutating func run(id: EntityId, state: inout BasicOperationComponentContext, delta: Double) -> GameEffect<BasicOperationComponentContext, Action> {
+    public mutating func run<S: OperationCapableGameState>(
+        id: EntityId,
+        state: inout S,
+        delta: Double,
+        registration: GameRegistration<S, GameAction>
+    ) -> GameEffect<S, GameAction> where S.GameAction == GameAction {
         
         let adjustedPercent = strategy.timing(currentTime / duration + delta / duration)
         let deltaPercent = adjustedPercent - previousPercentage
-        let effect = operation.run(id: id, state: &state, delta: deltaPercent * duration)
+        let effect = operation.run(id: id, state: &state, delta: deltaPercent * duration, registration: registration)
         previousPercentage = adjustedPercent
         
         currentTime += delta
