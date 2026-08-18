@@ -18,11 +18,6 @@ public struct OperationComponentContext<GameAction: Equatable & Codable>: GameSt
     }
 }
 
-/// Runs the operations attached to every entity, once per tick.
-///
-/// Generic over the game's root state so that `.custom` operations can reach the
-/// game's own components. Engine operations still see only the transform/sprite
-/// context, via `basicOperationComponentState`.
 public struct OperationReducer<State: OperationCapableGameState>: Reducer {
     public typealias Action = State.GameAction
     public typealias Environment = Void
@@ -47,9 +42,6 @@ public struct OperationReducer<State: OperationCapableGameState>: Reducer {
         environment: Void
     ) -> GameEffect<State, Action> {
         var effects: [GameEffect<State, Action>] = []
-        // Each operation is read and written back through `state` rather than
-        // through a captured copy: `run` takes the whole state, so an operation
-        // is free to add or remove operations while this loop is running.
         for id in Array(state.operation.keys) {
             guard let component = state.operation[id] else { continue }
             for key in Array(component.operations.keys) {

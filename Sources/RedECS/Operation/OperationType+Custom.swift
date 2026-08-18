@@ -1,6 +1,3 @@
-// Builders for the open half of the system. These read exactly like the built-in
-// ones, so a custom operation or a lerp chains with everything else.
-
 public extension OperationType {
     static func custom<O: OperationPayload>(_ payload: O) -> Self {
         .custom(AnyOperation<GameAction>(payload))
@@ -14,7 +11,6 @@ public extension OperationType {
 }
 
 public extension OperationType {
-    /// Interpolate a registered value to an absolute target.
     static func lerp<Value: Lerpable>(
         _ key: LerpKey<Value>,
         to value: Value,
@@ -24,7 +20,6 @@ public extension OperationType {
         .custom(LerpOperation(key: key, amount: .to(value), duration: duration, timing: timing))
     }
 
-    /// Interpolate a registered value by an amount relative to wherever it starts.
     static func lerp<Value: Lerpable>(
         _ key: LerpKey<Value>,
         by value: Value,
@@ -34,7 +29,6 @@ public extension OperationType {
         .custom(LerpOperation(key: key, amount: .by(value), duration: duration, timing: timing))
     }
 
-    /// Assign a registered value immediately.
     static func set<Value: Lerpable>(_ key: LerpKey<Value>, to value: Value) -> Self {
         .custom(LerpOperation(key: key, amount: .to(value), duration: 0))
     }

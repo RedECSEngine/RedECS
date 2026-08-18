@@ -1,8 +1,5 @@
 import Geometry
 
-// The engine declares operation support for its own components the same way a game
-// does — there is no special case for transform and sprite.
-
 public extension LerpKey where Value == Point {
     static var position: Self { .init("TransformComponent.position") }
     static var scale: Self { .init("TransformComponent.scale") }
@@ -34,7 +31,5 @@ extension SpriteComponent: OperationSupportingComponent {
     public static func bindOperationSupport<B: ComponentBinder>(_ binder: inout B) where B.Component == Self {
         binder.value(.opacity, \.opacity)
         binder.value(.fillColor, \.fillColor)
-        // `anchorPoint` is deliberately not exposed: it is clamped by
-        // `setAnchorPoint(_:)`, and a keypath write would bypass that.
     }
 }

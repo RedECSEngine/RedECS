@@ -122,16 +122,22 @@ record of what changed and when.
   Symptom: crash on malformed atlas JSON or empty animation.
   Cause: no validation of decoded indices/ranges.
 
-- **`AnyOperation.reboxed()` re-tags a custom operation without mapping stored actions**
-  Where: `Sources/RedECS/Operation/AnyOperation.swift` (`reboxed()`), used by
+- **A custom operation that stores an action fires the wrong one from a sub-reducer**
+  Where: `Sources/RedECS/Operation/AnyOperation.swift` (`reboxed()`), reached from
   `Sources/RedECS/Operation/OperationType+Map.swift` for the `.custom` case.
-  Symptom: a custom operation that holds a game action as a *stored property* and is
-  emitted from a pulled-back reducer keeps its local action value after the effect is
-  mapped to the umbrella action type, so the stored value has the wrong type at use.
-  Cause: `OperationPayload` has no `Action` associated type, so `map` cannot reach
-  inside the erased payload to transform stored actions; the box is re-tagged and the
-  payload carried across unchanged. Sound only while custom operations emit actions
-  from `run` (via `ComponentEffect.game`) rather than storing them.
+  Symptom: you write a custom operation that holds an action to fire later — say
+  `RespawnOperation(after: 3, then: .playerRespawned)`. It works when the reducer
+  that creates it sits at the top level. Wire that same reducer in through a
+  `pullback` and the operation still runs and still fires, but it fires the
+  sub-reducer's own action rather than the umbrella action the store is listening
+  for, so nothing downstream ever handles it. No crash and no warning — the action
+  simply goes nowhere.
+  Cause: when an effect crosses a pullback the engine rewrites the actions inside it.
+  It cannot do that for a custom operation, because the operation is stored
+  type-erased and there is no way to reach the action buried inside it. The box gets
+  its label rewritten and the contents are handed across untouched. Safe only while
+  custom operations fire actions by returning `ComponentEffect.game` from `run`
+  rather than storing them as properties.
 
 ### Gameplay components (RedECSBasicComponents)
 

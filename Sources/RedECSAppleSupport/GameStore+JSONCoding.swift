@@ -18,11 +18,6 @@ public extension GameStore {
         )
     }
 
-    /// Restores a saved state, including any operations that were mid-flight.
-    ///
-    /// The registration is what makes decoding possible: operations added by game
-    /// code are erased in the save file down to a type tag, and only the
-    /// registration knows which concrete type each tag names.
     convenience init(
         data: Data,
         environment: R.Environment,
@@ -44,7 +39,6 @@ public extension GameStore {
 }
 
 public extension JSONDecoder {
-    /// A decoder that can resolve the operations a registration provides.
     static func forOperations<Root: GameState, Action: Equatable & Codable>(
         _ registration: GameRegistration<Root, Action>
     ) -> JSONDecoder {

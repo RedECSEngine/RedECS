@@ -2,11 +2,6 @@ import XCTest
 import Geometry
 @testable import RedECS
 
-// MARK: - Fixture
-//
-// A game component that declares its own operation support. This is the whole of
-// what a game writes: the values it exposes, and the operations scoped to it.
-
 struct TestHealthComponent: GameComponent {
     let entity: EntityId
     var value: Double = 100
@@ -26,7 +21,6 @@ extension LerpKey where Value == Double {
     static var testShield: Self { .init("TestHealthComponent.shield") }
 }
 
-/// Action-agnostic: it emits a system-level effect rather than storing a game action.
 struct DrainOperation<Action: Equatable & Codable>: ComponentOperation {
     typealias Component = TestHealthComponent
 
@@ -59,7 +53,6 @@ extension TestHealthComponent: OperationSupportingComponent {
     }
 }
 
-/// A component with no declared support — should get teardown and nothing else.
 struct TestPlainComponent: GameComponent {
     let entity: EntityId
     init(entity: EntityId) { self.entity = entity }
@@ -101,8 +94,6 @@ private func makeState() -> OpenTestState {
     return state
 }
 
-// MARK: - Registration
-
 final class ComponentRegistrationTests: XCTestCase {
 
     func testOptedInComponentRegistersItsValuesOperationAndTeardown() {
@@ -112,7 +103,6 @@ final class ComponentRegistrationTests: XCTestCase {
         XCTAssertTrue(registration.registeredOperationTypeIds.contains("engine.lerp.TestHealthComponent.shield"))
         XCTAssertTrue(registration.registeredOperationTypeIds.contains("test.drain"))
 
-        // Everything runnable is also decodable.
         XCTAssertTrue(
             registration.registeredOperationTypeIds
                 .isSubset(of: registration.decoderTable.registeredTypeIds)
@@ -127,14 +117,10 @@ final class ComponentRegistrationTests: XCTestCase {
 
     func testPlainComponentRegistersTeardownOnly() {
         let registration = makeRegistration()
-        // Present for teardown...
         XCTAssertTrue(registration.components.contains(.init(keyPath: \OpenTestState.plain)))
-        // ...but contributes no operations.
         XCTAssertFalse(registration.registeredOperationTypeIds.contains { $0.contains("TestPlainComponent") })
     }
 }
-
-// MARK: - Lerp
 
 final class LerpOperationTests: XCTestCase {
 
@@ -154,7 +140,6 @@ final class LerpOperationTests: XCTestCase {
         var state = makeState()
         var operation = OperationType<OpenTestAction>.lerp(.testHealth, to: 100, duration: 1)
 
-        // Deltas that do not divide the duration evenly — the drift case.
         run(&operation, state: &state, ticks: 10, delta: 0.3)
 
         XCTAssertEqual(state.health[entity]?.value, 100)
@@ -191,7 +176,7 @@ final class LerpOperationTests: XCTestCase {
         let registration = makeRegistration()
 
         _ = operation.run(id: entity, state: &state, delta: 0.45, registration: registration)
-        XCTAssertEqual(state.transform[entity]?.zIndex, 5)   // 4.5 rounds to 5, not 4
+        XCTAssertEqual(state.transform[entity]?.zIndex, 5)
 
         run(&operation, state: &state, ticks: 10, delta: 0.5)
         XCTAssertEqual(state.transform[entity]?.zIndex, 10)
@@ -239,8 +224,6 @@ final class LerpOperationTests: XCTestCase {
         XCTAssertEqual(operation.currentTime, 0)
     }
 }
-
-// MARK: - Component-scoped operations
 
 final class ComponentOperationTests: XCTestCase {
 
@@ -299,8 +282,6 @@ final class ComponentOperationTests: XCTestCase {
     }
 }
 
-// MARK: - Codable
-
 final class OpenOperationCodableTests: XCTestCase {
 
     private func decoder(_ registration: GameRegistration<OpenTestState, OpenTestAction>) -> JSONDecoder {
@@ -335,11 +316,9 @@ final class OpenOperationCodableTests: XCTestCase {
         var interrupted = makeState()
         var saved = OperationType<OpenTestAction>.lerp(.testHealth, to: 100, duration: 1, timing: .easeInOut)
 
-        // Both advance halfway.
         _ = reference.run(id: entity, state: &uninterrupted, delta: 0.5, registration: registration)
         _ = saved.run(id: entity, state: &interrupted, delta: 0.5, registration: registration)
 
-        // One of them is saved and restored in the middle of the curve.
         let data = try JSONEncoder().encode(saved)
         var restored = try decoder(registration).decode(OperationType<OpenTestAction>.self, from: data)
         XCTAssertEqual(restored, saved)
@@ -379,7 +358,6 @@ final class OpenOperationCodableTests: XCTestCase {
         )
         let data = try JSONEncoder().encode(operation)
 
-        // A registration that never saw the health component cannot provide the drain.
         let partial = GameRegistration<OpenTestState, OpenTestAction>().component(\.transform)
         let decoder = JSONDecoder()
         decoder.userInfo[.operationDecoding] = partial.decoderTable
@@ -391,7 +369,6 @@ final class OpenOperationCodableTests: XCTestCase {
         }
     }
 
-    /// `Codable` wraps a thrown error from a nested container in a `DecodingError`.
     private func unwrap(_ error: Error) -> Error {
         if case DecodingError.valueNotFound(_, let context) = error, let underlying = context.underlyingError {
             return underlying
@@ -402,8 +379,6 @@ final class OpenOperationCodableTests: XCTestCase {
         return error
     }
 }
-
-// MARK: - Whole-state save and restore
 
 import RedECSAppleSupport
 
@@ -447,7 +422,6 @@ final class OpenOperationStoreTests: XCTestCase {
         store.sendDelta(1)
         XCTAssertEqual(store.state.health[entity]?.value, 90)
 
-        // Save mid-operation, restore, and carry on.
         let data = try store.saveState()
         let restored = try GameStore(
             data: data,

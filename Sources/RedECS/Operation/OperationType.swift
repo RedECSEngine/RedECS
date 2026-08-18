@@ -19,7 +19,6 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
     case removeEntity(RemoveEntityOperation<GameAction>)
     case shaderEffect(ShaderEffectOperation)
     case sound(SoundOperation<GameAction>)
-    /// An operation supplied by game code. See `GameRegistration`.
     case custom(AnyOperation<GameAction>)
     
     public var duration: Double {

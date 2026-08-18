@@ -6,8 +6,6 @@ final class FollowPathOperationTests: XCTestCase {
 
     private let id: EntityId = "walker"
 
-    /// `OperationType.run` now takes the game's root state, so these tests use the
-    /// engine's own `OperationCapableGameState` rather than the bare context.
     private func makeState<A: Equatable & Codable>(startAt position: Point) -> OperationComponentContext<A> {
         OperationComponentContext(
             entities: .init(),

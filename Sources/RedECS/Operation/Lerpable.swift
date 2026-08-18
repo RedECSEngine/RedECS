@@ -1,11 +1,7 @@
 import Geometry
 
-/// A value an operation can interpolate.
 public protocol Lerpable: Codable, Equatable {
-    /// `t` is the eased progress in 0...1. Must return exactly `b` at `t == 1`,
-    /// so a lerp lands on its target rather than drifting near it.
     static func lerp(_ a: Self, _ b: Self, _ t: Double) -> Self
-    /// Used by `.by(_:)` to resolve a relative target against the captured start.
     static func offset(_ a: Self, by b: Self) -> Self
 }
 
@@ -15,8 +11,6 @@ extension Double: Lerpable {
 }
 
 extension Int: Lerpable {
-    /// Rounds to nearest, so the value moves in whole steps and still arrives
-    /// exactly on `b` at `t == 1`.
     public static func lerp(_ a: Int, _ b: Int, _ t: Double) -> Int {
         Int((Double(a) + (Double(b) - Double(a)) * t).rounded())
     }

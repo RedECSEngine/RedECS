@@ -1,7 +1,3 @@
-/// Names one animatable value. Declared beside the component that owns it, and
-/// bound to a concrete keypath by that component's `bindOperationSupport`.
-///
-/// Open by construction: anyone can add a key in an extension, engine or game.
 public struct LerpKey<Value: Lerpable>: Codable, Equatable, Hashable, Sendable {
     public let id: String
 
@@ -18,16 +14,9 @@ public struct LerpKey<Value: Lerpable>: Codable, Equatable, Hashable, Sendable {
         try container.encode(id)
     }
 
-    /// The operation type id of the lerp bound to this key.
     var operationTypeId: OperationTypeId { "engine.lerp.\(id)" }
 }
 
-/// Interpolates one registered value over time.
-///
-/// One Swift type backs every animated value in the game; the `key` is what tells
-/// them apart, both in the registry and in a save file. The payload holds no
-/// accessor — reading and writing happens through the closures the component's
-/// registration installed, which is where the state knowledge lives.
 public struct LerpOperation<Value: Lerpable>: OperationPayload {
     public static var operationTypeId: OperationTypeId { "engine.lerp" }
     public var operationTypeId: OperationTypeId { key.operationTypeId }
@@ -41,8 +30,6 @@ public struct LerpOperation<Value: Lerpable>: OperationPayload {
     public var amount: Amount
     public var duration: Double
     public var timing: TimingFunction
-    /// Captured on the first tick. Codable, so a state saved mid-lerp resumes on
-    /// exactly the same curve rather than restarting from wherever it now sits.
     public var start: Value?
     public var currentTime: Double
 
@@ -69,7 +56,6 @@ public struct LerpOperation<Value: Lerpable>: OperationPayload {
         start = nil
     }
 
-    /// Advances one tick against whatever state the accessors were built for.
     mutating func step<S>(
         entity: EntityId,
         delta: Double,
@@ -81,7 +67,6 @@ public struct LerpOperation<Value: Lerpable>: OperationPayload {
             start = get(entity, state)
         }
         guard let start else {
-            // Nothing to animate — the component is absent. Finish rather than spin.
             currentTime = duration
             return
         }

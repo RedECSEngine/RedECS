@@ -1,9 +1,3 @@
-/// An operation scoped to a single component.
-///
-/// This is the ordinary way to add a game operation. The component is handed
-/// straight in, so there is no state type to name, no capability protocol to
-/// declare, no cast and no state copy. Register it from the component's own
-/// `bindOperationSupport`.
 public protocol ComponentOperation: OperationPayload {
     associatedtype Component: GameComponent
     associatedtype Action: Equatable & Codable
@@ -15,10 +9,6 @@ public protocol ComponentOperation: OperationPayload {
     ) -> ComponentEffect<Action>
 }
 
-/// The effects a component-scoped operation may raise.
-///
-/// State-free by construction — the registration widens these into
-/// `GameEffect<Root, Action>` once it knows the game's state type.
 public indirect enum ComponentEffect<Action: Equatable & Codable> {
     case none
     case game(Action)

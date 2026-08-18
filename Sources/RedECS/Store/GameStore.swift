@@ -185,8 +185,6 @@ extension GameStore {
 }
 
 public extension GameStore {
-    /// Builds a store from a single `GameRegistration`, which already carries the
-    /// component teardown handlers the designated initialiser wants.
     convenience init(
         state: R.State,
         environment: R.Environment,
