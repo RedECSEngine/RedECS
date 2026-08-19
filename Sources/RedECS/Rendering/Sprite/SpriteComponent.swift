@@ -309,3 +309,22 @@ extension SpriteComponent {
         ]
     }
 }
+
+public protocol SpriteProviding: GameState {
+    var sprite: [EntityId: SpriteComponent] { get set }
+}
+
+public extension LerpKey where Value == Double {
+    static var opacity: Self { .init("SpriteComponent.opacity") }
+}
+
+public extension LerpKey where Value == Color {
+    static var fillColor: Self { .init("SpriteComponent.fillColor") }
+}
+
+extension SpriteComponent: OperationSupportingComponent {
+    public static func bindOperationSupport<B: ComponentBinder>(_ binder: inout B) where B.Component == Self {
+        binder.value(.opacity, \.opacity)
+        binder.value(.fillColor, \.fillColor)
+    }
+}

@@ -21,7 +21,7 @@ extension LerpKey where Value == Double {
     static var testShield: Self { .init("TestHealthComponent.shield") }
 }
 
-struct DrainOperation<Action: Equatable & Codable>: ComponentOperation {
+struct DrainOperation: ComponentOperation {
     typealias Component = TestHealthComponent
 
     static var operationTypeId: OperationTypeId { "test.drain" }
@@ -36,7 +36,7 @@ struct DrainOperation<Action: Equatable & Codable>: ComponentOperation {
         id: EntityId,
         component: inout TestHealthComponent,
         delta: Double
-    ) -> ComponentEffect<Action> {
+    ) -> ComponentEffect {
         component.value = max(0, component.value - rate * delta)
         currentTime += delta
         return component.value <= 0 ? .removeEntity(id) : .none
@@ -49,7 +49,7 @@ extension TestHealthComponent: OperationSupportingComponent {
     static func bindOperationSupport<B: ComponentBinder>(_ binder: inout B) where B.Component == Self {
         binder.value(.testHealth, \.value)
         binder.value(.testShield, \.shield)
-        binder.operation(DrainOperation<B.Action>.self)
+        binder.operation(DrainOperation.self)
     }
 }
 
@@ -231,7 +231,7 @@ final class ComponentOperationTests: XCTestCase {
         var state = makeState()
         state.health[entity]?.value = 100
         var operation = OperationType<OpenTestAction>.custom(
-            DrainOperation<OpenTestAction>(rate: 10, duration: 5)
+            DrainOperation(rate: 10, duration: 5)
         )
         let registration = makeRegistration()
 
@@ -243,7 +243,7 @@ final class ComponentOperationTests: XCTestCase {
         XCTAssertEqual(state.health[entity]?.value, 80)
 
         guard case .custom(let box) = operation,
-              let drain = box.payload as? DrainOperation<OpenTestAction> else {
+              let drain = box.payload as? DrainOperation else {
             return XCTFail("expected a custom DrainOperation, got \(operation)")
         }
         XCTAssertEqual(drain.currentTime, 2)
@@ -253,7 +253,7 @@ final class ComponentOperationTests: XCTestCase {
         var state = makeState()
         state.health[entity]?.value = 5
         var operation = OperationType<OpenTestAction>.custom(
-            DrainOperation<OpenTestAction>(rate: 10, duration: 5)
+            DrainOperation(rate: 10, duration: 5)
         )
         let registration = makeRegistration()
 
@@ -261,7 +261,7 @@ final class ComponentOperationTests: XCTestCase {
 
         guard case .system(let systemAction) = effect,
               case .removeEntity(let removed) = systemAction else {
-            return XCTFail("expected a widened .system(.removeEntity), got \(effect)")
+            return XCTFail("expected .system(.removeEntity), got \(effect)")
         }
         XCTAssertEqual(removed, entity)
     }
@@ -271,7 +271,7 @@ final class ComponentOperationTests: XCTestCase {
         state.health[entity]?.value = 100
         var operation = OperationType<OpenTestAction>
             .wait(duration: 1)
-            .custom(DrainOperation<OpenTestAction>(rate: 10, duration: 1))
+            .custom(DrainOperation(rate: 10, duration: 1))
         let registration = makeRegistration()
 
         _ = operation.run(id: entity, state: &state, delta: 1, registration: registration)
@@ -297,7 +297,7 @@ final class OpenOperationCodableTests: XCTestCase {
 
         var operation = OperationType<OpenTestAction>
             .wait(duration: 1)
-            .custom(DrainOperation<OpenTestAction>(rate: 10, duration: 5))
+            .custom(DrainOperation(rate: 10, duration: 5))
         _ = operation.run(id: entity, state: &state, delta: 1, registration: registration)
         _ = operation.run(id: entity, state: &state, delta: 1, registration: registration)
 
@@ -341,7 +341,7 @@ final class OpenOperationCodableTests: XCTestCase {
 
     func testDecodingWithoutARegistrationThrows() throws {
         let operation = OperationType<OpenTestAction>.custom(
-            DrainOperation<OpenTestAction>(rate: 10, duration: 5)
+            DrainOperation(rate: 10, duration: 5)
         )
         let data = try JSONEncoder().encode(operation)
 
@@ -354,7 +354,7 @@ final class OpenOperationCodableTests: XCTestCase {
 
     func testDecodingAnUnregisteredOperationThrows() throws {
         let operation = OperationType<OpenTestAction>.custom(
-            DrainOperation<OpenTestAction>(rate: 10, duration: 5)
+            DrainOperation(rate: 10, duration: 5)
         )
         let data = try JSONEncoder().encode(operation)
 
@@ -409,7 +409,7 @@ final class OpenOperationStoreTests: XCTestCase {
         state.health[entity]?.value = 100
         state.operation[entity] = OperationComponent(
             entity: entity,
-            operation: .custom(DrainOperation<OpenTestAction>(rate: 10, duration: 5))
+            operation: .custom(DrainOperation(rate: 10, duration: 5))
         )
 
         let store = GameStore(

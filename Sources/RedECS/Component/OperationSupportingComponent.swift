@@ -1,6 +1,5 @@
 public protocol ComponentBinder {
     associatedtype Component: GameComponent
-    associatedtype Action: Equatable & Codable
 
     mutating func value<Value: Lerpable>(
         _ key: LerpKey<Value>,
@@ -8,7 +7,7 @@ public protocol ComponentBinder {
     )
 
     mutating func operation<O: ComponentOperation>(_ type: O.Type)
-    where O.Component == Component, O.Action == Action
+    where O.Component == Component
 }
 
 public protocol OperationSupportingComponent: GameComponent {

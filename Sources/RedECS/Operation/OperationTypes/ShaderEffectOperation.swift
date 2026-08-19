@@ -1,5 +1,6 @@
-public struct ShaderEffectOperation: Operation {
-    public typealias Action = Int
+public struct ShaderEffectOperation: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.shaderEffect" }
+
 
     public var effect: ShaderEffect
     public var animated: Bool
@@ -19,17 +20,17 @@ public struct ShaderEffectOperation: Operation {
         animated && effect.timeBasedCase != nil
     }
 
-    public mutating func run(
+    public mutating func run<S: SpriteProviding>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout S,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Action> {
-        guard !isComplete else { return .none }
+    ) {
+        guard !isComplete else { return }
 
         guard let timeCase = isTimeBased ? effect.timeBasedCase : nil else {
             isComplete = true
             state.sprite[id]?.shader = effect
-            return .none
+            return
         }
 
         currentTime += delta
@@ -40,7 +41,6 @@ public struct ShaderEffectOperation: Operation {
             state.sprite[id]?.shader = nil
             isComplete = true
         }
-        return .none
     }
 
     public mutating func reset() {

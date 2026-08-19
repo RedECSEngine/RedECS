@@ -19,7 +19,7 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
     case removeEntity(RemoveEntityOperation<GameAction>)
     case shaderEffect(ShaderEffectOperation)
     case sound(SoundOperation<GameAction>)
-    case custom(AnyOperation<GameAction>)
+    case custom(AnyOperation)
     
     public var duration: Double {
         switch self {
@@ -115,57 +115,57 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
     ) -> GameEffect<S, GameAction> where S.GameAction == GameAction {
         switch self {
         case .wait(var wait):
-            _ = wait.run(id: id, state: &state.basicOperationComponentState, delta: delta)
+            wait.run(delta: delta)
             self = .wait(wait)
             return .none
         case .rotate(var rotate):
-            _ = rotate.run(id: id, state: &state.basicOperationComponentState, delta: delta)
+            rotate.run(id: id, state: &state, delta: delta)
             self = .rotate(rotate)
             return .none
         case .scale(var scale):
-            _ = scale.run(id: id, state: &state.basicOperationComponentState, delta: delta)
+            scale.run(id: id, state: &state, delta: delta)
             self = .scale(scale)
             return .none
         case .move(var move):
-            _ = move.run(id: id, state: &state.basicOperationComponentState, delta: delta)
+            move.run(id: id, state: &state, delta: delta)
             self = .move(move)
             return .none
         case .jump(var jump):
-            _ = jump.run(id: id, state: &state.basicOperationComponentState, delta: delta)
+            jump.run(id: id, state: &state, delta: delta)
             self = .jump(jump)
             return .none
         case .followPath(var followPath):
-            _ = followPath.run(id: id, state: &state.basicOperationComponentState, delta: delta)
+            followPath.run(id: id, state: &state, delta: delta)
             self = .followPath(followPath)
             return .none
+        case .visibility(var visibility):
+            visibility.run(id: id, state: &state, delta: delta)
+            self = .visibility(visibility)
+            return .none
         case .animate(var anim):
-            _ = anim.run(id: id, state: &state.basicOperationComponentState, delta: delta)
+            anim.run(id: id, state: &state, delta: delta)
             self = .animate(anim)
             return .none
         case .opacity(var opacity):
-            _ = opacity.run(id: id, state: &state.basicOperationComponentState, delta: delta)
+            opacity.run(id: id, state: &state, delta: delta)
             self = .opacity(opacity)
             return .none
-        case .visibility(var visibility):
-            _ = visibility.run(id: id, state: &state.basicOperationComponentState, delta: delta)
-            self = .visibility(visibility)
-            return .none
         case .shaderEffect(var shaderOp):
-            _ = shaderOp.run(id: id, state: &state.basicOperationComponentState, delta: delta)
+            shaderOp.run(id: id, state: &state, delta: delta)
             self = .shaderEffect(shaderOp)
             return .none
         case .call(var call):
-            let effect = call.run(id: id, state: &state.basicOperationComponentState, delta: delta)
+            let effect = call.run(id: id) as GameEffect<S, GameAction>
             self = .call(call)
-            return effect.map(stateTransform: \.basicOperationComponentState, actionTransform: { $0 })
-        case .removeEntity(var remove):
-            let effect = remove.run(id: id, state: &state.basicOperationComponentState, delta: delta)
-            self = .removeEntity(remove)
-            return effect.map(stateTransform: \.basicOperationComponentState, actionTransform: { $0 })
+            return effect
         case .sound(var sound):
-            let effect = sound.run(id: id, state: &state.basicOperationComponentState, delta: delta)
+            let effect = sound.run(id: id) as GameEffect<S, GameAction>
             self = .sound(sound)
-            return effect.map(stateTransform: \.basicOperationComponentState, actionTransform: { $0 })
+            return effect
+        case .removeEntity(var remove):
+            let effect = remove.run(id: id) as GameEffect<S, GameAction>
+            self = .removeEntity(remove)
+            return effect
         case .repeat(var rp):
             let effect = rp.run(id: id, state: &state, delta: delta, registration: registration)
             self = .repeat(rp)

@@ -1,5 +1,7 @@
 
-public struct AnimateOperation: Operation {
+public struct AnimateOperation: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.animate" }
+
     public struct FrameData: Equatable, Codable {
         public var texture: TextureReference
         public var duration: Double
@@ -25,27 +27,27 @@ public struct AnimateOperation: Operation {
         self.frames = frames
     }
         
-    public mutating func run(
+    public mutating func run<S: SpriteProviding>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout S,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Int> {
+    ) {
         guard !isComplete, !frames.isEmpty else {
             isComplete = true
-            return .none
+            return
         }
         
         if currentTime == 0 {
             state.sprite[id]?.setTexture(frames[0].texture)
             currentTime += delta
-            return .none // first frame doesnt need frame delta applied on first tick
+            return // first frame doesnt need frame delta applied on first tick
         }
         
         currentTime += delta
         currentFrameTime += delta
         
         guard currentFrameTime > frames[currentFrameIndex].duration else {
-            return .none
+            return
         }
         
         currentFrameTime = 0
@@ -53,12 +55,10 @@ public struct AnimateOperation: Operation {
         let isPastFinalFrame = (currentFrameIndex >= frames.count)
         if isPastFinalFrame {
             isComplete = true
-            return .none
+            return
         }
          
         state.sprite[id]?.setTexture(frames[currentFrameIndex].texture)
-        
-        return .none
     }
     
     public mutating func reset() {

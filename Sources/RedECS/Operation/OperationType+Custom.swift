@@ -1,11 +1,11 @@
 public extension OperationType {
     static func custom<O: OperationPayload>(_ payload: O) -> Self {
-        .custom(AnyOperation<GameAction>(payload))
+        .custom(AnyOperation(payload))
     }
 
     func custom<O: OperationPayload>(_ payload: O) -> Self {
         var component = self
-        component.appendOperation(.custom(AnyOperation<GameAction>(payload)))
+        component.appendOperation(.custom(AnyOperation(payload)))
         return component
     }
 }

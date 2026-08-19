@@ -122,23 +122,6 @@ record of what changed and when.
   Symptom: crash on malformed atlas JSON or empty animation.
   Cause: no validation of decoded indices/ranges.
 
-- **A custom operation that stores an action fires the wrong one from a sub-reducer**
-  Where: `Sources/RedECS/Operation/AnyOperation.swift` (`reboxed()`), reached from
-  `Sources/RedECS/Operation/OperationType+Map.swift` for the `.custom` case.
-  Symptom: you write a custom operation that holds an action to fire later — say
-  `RespawnOperation(after: 3, then: .playerRespawned)`. It works when the reducer
-  that creates it sits at the top level. Wire that same reducer in through a
-  `pullback` and the operation still runs and still fires, but it fires the
-  sub-reducer's own action rather than the umbrella action the store is listening
-  for, so nothing downstream ever handles it. No crash and no warning — the action
-  simply goes nowhere.
-  Cause: when an effect crosses a pullback the engine rewrites the actions inside it.
-  It cannot do that for a custom operation, because the operation is stored
-  type-erased and there is no way to reach the action buried inside it. The box gets
-  its label rewritten and the contents are handed across untouched. Safe only while
-  custom operations fire actions by returning `ComponentEffect.game` from `run`
-  rather than storing them as properties.
-
 ### Gameplay components (RedECSBasicComponents)
 
 - **`RepeatOperation.times(n)` completion math is wrong; can trap**

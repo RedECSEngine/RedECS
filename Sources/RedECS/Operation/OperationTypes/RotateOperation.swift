@@ -1,7 +1,8 @@
 import Geometry
 
-public struct RotateOperation: Operation {
-    public typealias Action = Int
+public struct RotateOperation: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.rotate" }
+
     
     public enum Strategy: Equatable, Codable {
         case by(Double) // degrees
@@ -25,11 +26,11 @@ public struct RotateOperation: Operation {
         self.currentTime = currentTime
     }
     
-    public mutating func run(
+    public mutating func run<S: TransformProviding>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout S,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Action> {
+    ) {
         if currentTime == 0 {
             switch strategy {
             case .by(let amount):
@@ -48,7 +49,6 @@ public struct RotateOperation: Operation {
         let rotateByIncrement = amount * percentage
         state.transform[id]?.rotate += rotateByIncrement
         currentTime += delta
-        return .none
     }
     
     public mutating func reset() {

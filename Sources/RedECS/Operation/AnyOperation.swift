@@ -1,4 +1,4 @@
-public struct AnyOperation<Action: Equatable & Codable>: Equatable {
+public struct AnyOperation: Equatable {
     public let typeId: OperationTypeId
     public internal(set) var payload: any OperationPayload
 
@@ -39,16 +39,5 @@ extension AnyOperation: Codable {
         }
         self.typeId = typeId
         self.payload = try decode(container.superDecoder(forKey: .payload))
-    }
-}
-
-public extension AnyOperation {
-    func reboxed<NewAction: Equatable & Codable>() -> AnyOperation<NewAction> {
-        AnyOperation<NewAction>(typeId: typeId, payload: payload)
-    }
-
-    internal init(typeId: OperationTypeId, payload: any OperationPayload) {
-        self.typeId = typeId
-        self.payload = payload
     }
 }

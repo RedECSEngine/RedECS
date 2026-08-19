@@ -1,7 +1,8 @@
 import Geometry
 
-public struct MoveOperation: Operation {
-    public typealias Action = Int
+public struct MoveOperation: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.move" }
+
     
     public enum Strategy: Equatable, Codable {
         case by(Point)
@@ -21,7 +22,11 @@ public struct MoveOperation: Operation {
         self.currentTime = currentTime
     }
     
-    public mutating func run(id: EntityId, state: inout BasicOperationComponentContext, delta: Double) -> GameEffect<BasicOperationComponentContext, Action> {
+    public mutating func run<S: TransformProviding>(
+        id: EntityId,
+        state: inout S,
+        delta: Double
+    ) {
         if currentTime == 0 {
             switch strategy {
             case .by(let amount):
@@ -36,8 +41,6 @@ public struct MoveOperation: Operation {
         let moveByIncrement = amount * percentage
         state.transform[id]?.position += moveByIncrement
         currentTime += delta
-        
-        return .none
     }
     
     public mutating func reset() {

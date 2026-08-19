@@ -1,4 +1,4 @@
-public final class GameStore<R: Reducer> where R.State: OperationCapableGameState, R.State.GameAction == R.Action {
+public final class GameStore<R: Reducer> where R.State: OperationStoringGameState, R.State.GameAction == R.Action {
     public private(set) var state: R.State
     public private(set) var environment: R.Environment
     private var reducer: R

@@ -15,16 +15,8 @@ final class FollowPathOperationTests: XCTestCase {
         )
     }
 
-    private func makeContext(startAt position: Point) -> BasicOperationComponentContext {
-        BasicOperationComponentContext(
-            entities: .init(),
-            transform: [id: TransformComponent(entity: id, position: position)],
-            sprite: [:]
-        )
-    }
-
     func testStepsTowardTheFirstWaypointAtTravelSpeed() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         var op = FollowPathOperation(path: [Point(x: 100, y: 0)], travelSpeed: 60)
 
         _ = op.run(id: id, state: &state, delta: 0.5)
@@ -35,7 +27,7 @@ final class FollowPathOperationTests: XCTestCase {
     }
 
     func testConsumesWaypointsAndCompletes() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         var op = FollowPathOperation(path: [Point(x: 10, y: 0), Point(x: 10, y: 10)], travelSpeed: 60)
 
         for _ in 0..<60 where !op.isComplete {
@@ -47,7 +39,7 @@ final class FollowPathOperationTests: XCTestCase {
     }
 
     func testOvershootSnapsToTheWaypointInsteadOfOrbiting() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         var op = FollowPathOperation(path: [Point(x: 20, y: 0)], travelSpeed: 600)
 
         for _ in 0..<10 where !op.isComplete {
@@ -59,7 +51,7 @@ final class FollowPathOperationTests: XCTestCase {
     }
 
     func testDiagonalTravelMovesAtUniformSpeed() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         var op = FollowPathOperation(path: [Point(x: 30, y: 40)], travelSpeed: 50)
 
         _ = op.run(id: id, state: &state, delta: 0.5)
@@ -69,7 +61,7 @@ final class FollowPathOperationTests: XCTestCase {
     }
 
     func testMissingTransformCompletesImmediately() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         state.transform = [:]
         var op = FollowPathOperation(path: [Point(x: 100, y: 0)], travelSpeed: 60)
 
@@ -79,7 +71,7 @@ final class FollowPathOperationTests: XCTestCase {
     }
 
     func testResetRewindsToTheFirstWaypoint() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         var op = FollowPathOperation(path: [Point(x: 1, y: 0)], travelSpeed: 60)
         for _ in 0..<10 where !op.isComplete {
             _ = op.run(id: id, state: &state, delta: 1.0 / 60.0)
@@ -124,13 +116,17 @@ final class SpeedOperationTests: XCTestCase {
 
     private let id: EntityId = "runner"
 
-    func testScalesTheDeltaFedToTheWrappedOperation() {
-        var state = OperationComponentContext<Int>(
+    private func makeState(startAt position: Point) -> OperationComponentContext<Int> {
+        OperationComponentContext(
             entities: .init(),
             operation: [:],
-            transform: [id: TransformComponent(entity: id, position: .zero)],
+            transform: [id: TransformComponent(entity: id, position: position)],
             sprite: [:]
         )
+    }
+
+    func testScalesTheDeltaFedToTheWrappedOperation() {
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         var op: OperationType<Int> = OperationType
             .move(.by(Point(x: 100, y: 0)), duration: 1)
             .speed(2)

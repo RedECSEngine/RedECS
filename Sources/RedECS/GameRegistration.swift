@@ -2,7 +2,7 @@ public struct GameRegistration<Root: GameState, GameAction: Equatable & Codable>
     public private(set) var components: Set<RegisteredComponentType<Root>> = []
     public private(set) var decoderTable = OperationDecoderTable()
 
-    typealias Runner = (inout AnyOperation<GameAction>, EntityId, inout Root, Double) -> GameEffect<Root, GameAction>
+    typealias Runner = (inout AnyOperation, EntityId, inout Root, Double) -> GameEffect<Root, GameAction>
     var runners: [OperationTypeId: Runner] = [:]
 
     public init() {}
@@ -25,26 +25,8 @@ public struct GameRegistration<Root: GameState, GameAction: Equatable & Codable>
         return binder.registration
     }
 
-    public func operation<O: OperationPayload>(
-        _ type: O.Type,
-        run: @escaping (inout O, EntityId, inout Root, Double) -> GameEffect<Root, GameAction>
-    ) -> Self {
-        var copy = self
-        copy.decoderTable.insert(O.self, for: O.operationTypeId)
-        copy.runners[O.operationTypeId] = { box, id, state, delta in
-            guard var operation = box.payload as? O else {
-                assertionFailure("Operation '\(box.typeId)' registered for \(O.self) but boxed \(Swift.type(of: box.payload))")
-                return .none
-            }
-            let effect = run(&operation, id, &state, delta)
-            box.payload = operation
-            return effect
-        }
-        return copy
-    }
-
     public func run(
-        _ operation: inout AnyOperation<GameAction>,
+        _ operation: inout AnyOperation,
         id: EntityId,
         state: inout Root,
         delta: Double
@@ -84,7 +66,6 @@ public struct GameRegistration<Root: GameState, GameAction: Equatable & Codable>
 
     struct Binder<C: GameComponent>: ComponentBinder {
         typealias Component = C
-        typealias Action = GameAction
 
         let componentPath: WritableKeyPath<Root, [EntityId: C]>
         var registration: GameRegistration
@@ -104,7 +85,7 @@ public struct GameRegistration<Root: GameState, GameAction: Equatable & Codable>
         }
 
         mutating func operation<O: ComponentOperation>(_ type: O.Type)
-        where O.Component == C, O.Action == GameAction {
+        where O.Component == C {
             let componentPath = self.componentPath
             registration.decoderTable.insert(O.self, for: O.operationTypeId)
             registration.runners[O.operationTypeId] = { box, id, state, delta in
@@ -118,7 +99,7 @@ public struct GameRegistration<Root: GameState, GameAction: Equatable & Codable>
                 let effect = operation.run(id: id, component: &component, delta: delta)
                 state[keyPath: componentPath][id] = component
                 box.payload = operation
-                return effect.widened()
+                return effect.toGameEffect()
             }
         }
     }

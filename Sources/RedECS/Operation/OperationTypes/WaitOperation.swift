@@ -1,5 +1,7 @@
 
-public struct WaitOperation: Operation {
+public struct WaitOperation: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.wait" }
+
     public var duration: Double
     public var currentTime: Double = 0
     
@@ -9,13 +11,8 @@ public struct WaitOperation: Operation {
         self.duration = duration
     }
     
-    public mutating func run(
-        id: EntityId,
-        state: inout BasicOperationComponentContext,
-        delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Int> {
+    public mutating func run(delta: Double) {
         currentTime += delta
-        return .none
     }
     
     public mutating func reset() {

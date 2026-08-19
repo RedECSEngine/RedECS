@@ -1,17 +1,15 @@
 public protocol ComponentOperation: OperationPayload {
     associatedtype Component: GameComponent
-    associatedtype Action: Equatable & Codable
 
     mutating func run(
         id: EntityId,
         component: inout Component,
         delta: Double
-    ) -> ComponentEffect<Action>
+    ) -> ComponentEffect
 }
 
-public indirect enum ComponentEffect<Action: Equatable & Codable> {
+public indirect enum ComponentEffect: Equatable {
     case none
-    case game(Action)
     case removeEntity(EntityId)
     case removeComponent(EntityId, RegisteredComponentId)
     case addTag(EntityId, String)
@@ -21,12 +19,10 @@ public indirect enum ComponentEffect<Action: Equatable & Codable> {
     case stopAllSounds
     case many([Self])
 
-    public func widened<S: GameState>() -> GameEffect<S, Action> {
+    public func toGameEffect<S: GameState, Action: Equatable & Codable>() -> GameEffect<S, Action> {
         switch self {
         case .none:
             return .none
-        case .game(let action):
-            return .game(action)
         case .removeEntity(let entity):
             return .system(.removeEntity(entity))
         case .removeComponent(let entity, let componentId):
@@ -42,9 +38,7 @@ public indirect enum ComponentEffect<Action: Equatable & Codable> {
         case .stopAllSounds:
             return .system(.stopAllSounds)
         case .many(let effects):
-            return .many(effects.map { $0.widened() })
+            return .many(effects.map { $0.toGameEffect() })
         }
     }
 }
-
-extension ComponentEffect: Equatable where Action: Equatable {}

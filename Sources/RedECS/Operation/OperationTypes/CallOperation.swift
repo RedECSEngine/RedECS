@@ -1,5 +1,7 @@
 
-public struct CallOperation<GameAction: Equatable & Codable>: Operation {
+public struct CallOperation<GameAction: Equatable & Codable>: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.call" }
+
     public var currentTime: Double = 0
     public var duration: Double { Self.InstantDuration }
     
@@ -12,11 +14,7 @@ public struct CallOperation<GameAction: Equatable & Codable>: Operation {
         self.action = action
     }
         
-    public mutating func run(
-        id: EntityId,
-        state: inout BasicOperationComponentContext,
-        delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, GameAction> {
+    public mutating func run<S: GameState>(id: EntityId) -> GameEffect<S, GameAction> {
         guard !isComplete else { return .none }
         isComplete = true
         return .game(action)
