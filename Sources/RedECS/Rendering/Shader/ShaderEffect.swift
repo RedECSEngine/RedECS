@@ -20,6 +20,7 @@ public struct ShaderId: Hashable, Sendable, Codable, ExpressibleByStringLiteral 
     public static let shaky = ShaderId(rawValue: "shaky")
     public static let shakyTiles = ShaderId(rawValue: "shakyTiles")
     public static let shuffle = ShaderId(rawValue: "shuffle")
+    public static let fade = ShaderId(rawValue: "fade")
 }
 
 // The per-sprite fragment effect a sprite/RenderGroup carries: which program
@@ -40,6 +41,7 @@ public enum ShaderEffect: Equatable, Codable, Sendable {
     case shaky(time: Double)
     case shakyTiles(time: Double)
     case shuffle(time: Double)
+    case fade(time: Double)
 
     // One source→destination colour substitution for paletteRemap.
     public struct ColorKey: Equatable, Codable, Sendable {
@@ -66,6 +68,7 @@ public enum ShaderEffect: Equatable, Codable, Sendable {
         case .shaky:             return .shaky
         case .shakyTiles:        return .shakyTiles
         case .shuffle:           return .shuffle
+        case .fade:              return .fade
         }
     }
 
@@ -89,8 +92,47 @@ public enum ShaderEffect: Equatable, Codable, Sendable {
             return params
         case .ripple(let t), .waves(let t), .liquid(let t), .turnOff(let t),
              .splitRows(let t), .splitCols(let t), .shaky(let t),
-             .shakyTiles(let t), .shuffle(let t):
+             .shakyTiles(let t), .shuffle(let t), .fade(let t):
             return [Float(t)]
+        }
+    }
+}
+
+public extension ShaderEffect {
+    enum TimeBased: String, Equatable, Codable, Sendable, CaseIterable {
+        case ripple, waves, liquid, turnOff, splitRows, splitCols
+        case shaky, shakyTiles, shuffle, fade
+
+        public func effect(at time: Double) -> ShaderEffect {
+            switch self {
+            case .ripple:     return .ripple(time: time)
+            case .waves:      return .waves(time: time)
+            case .liquid:     return .liquid(time: time)
+            case .turnOff:    return .turnOff(time: time)
+            case .splitRows:  return .splitRows(time: time)
+            case .splitCols:  return .splitCols(time: time)
+            case .shaky:      return .shaky(time: time)
+            case .shakyTiles: return .shakyTiles(time: time)
+            case .shuffle:    return .shuffle(time: time)
+            case .fade:       return .fade(time: time)
+            }
+        }
+    }
+
+    var timeBasedCase: TimeBased? {
+        switch self {
+        case .ripple:     return .ripple
+        case .waves:      return .waves
+        case .liquid:     return .liquid
+        case .turnOff:    return .turnOff
+        case .splitRows:  return .splitRows
+        case .splitCols:  return .splitCols
+        case .shaky:      return .shaky
+        case .shakyTiles: return .shakyTiles
+        case .shuffle:    return .shuffle
+        case .fade:       return .fade
+        case .tint, .paletteRemap, .custom:
+            return nil
         }
     }
 }

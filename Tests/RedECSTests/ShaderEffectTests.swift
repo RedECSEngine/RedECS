@@ -73,6 +73,37 @@ final class ShaderEffectTests: XCTestCase {
         XCTAssertTrue(source.contains("uniform float u_params[\(1 + ShaderRegistry.paletteRemapMaxKeys * 6)];"))
     }
 
+    func testFadeIsRegisteredAndEncodesTime() {
+        let registry = ShaderRegistry()
+        XCTAssertNotNil(registry[.fade])
+        XCTAssertEqual(registry[.fade]?.metalFragmentFunction, "fadeFragment")
+        XCTAssertEqual(ShaderEffect.fade(time: 0.25).programId, .fade)
+        XCTAssertEqual(ShaderEffect.fade(time: 0.25).encodeUniforms(), [0.25])
+    }
+
+    func testTimeBasedCasesRoundTripThroughEffectAt() {
+        for timeCase in ShaderEffect.TimeBased.allCases {
+            let effect = timeCase.effect(at: 0.5)
+            XCTAssertEqual(effect.timeBasedCase, timeCase)
+            XCTAssertEqual(effect.encodeUniforms(), [0.5])
+            XCTAssertEqual(effect.programId.rawValue, timeCase.rawValue)
+        }
+        XCTAssertNil(ShaderEffect.tint(.white).timeBasedCase)
+        XCTAssertNil(ShaderEffect.paletteRemap([]).timeBasedCase)
+        XCTAssertNil(ShaderEffect.custom("x", params: []).timeBasedCase)
+    }
+
+    func testTimeBasedCodableRoundTrip() throws {
+        for timeCase in ShaderEffect.TimeBased.allCases {
+            let data = try JSONEncoder().encode(timeCase)
+            let decoded = try JSONDecoder().decode(ShaderEffect.TimeBased.self, from: data)
+            XCTAssertEqual(decoded, timeCase)
+        }
+        let effectData = try JSONEncoder().encode(ShaderEffect.fade(time: 0.75))
+        let decodedEffect = try JSONDecoder().decode(ShaderEffect.self, from: effectData)
+        XCTAssertEqual(decodedEffect, .fade(time: 0.75))
+    }
+
     func testRenderGroupDefaultsToNilShader() {
         let group = RenderGroup(
             triangles: [],

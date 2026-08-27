@@ -9,6 +9,7 @@ public extension ShaderRegistry {
         shakyDefinition,
         shakyTilesDefinition,
         shuffleDefinition,
+        fadeDefinition,
     ]
 
     internal static func timeShader(
