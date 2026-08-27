@@ -118,6 +118,7 @@ public extension RenderGroup {
             zIndex: zIndex,
             opacity: opacity,
             projectionSpace: projectionSpace,
+            shader: shader,
             clipRect: clipRect
         )
     }
@@ -133,7 +134,34 @@ public extension RenderGroup {
             zIndex: zIndex,
             opacity: opacity,
             projectionSpace: projectionSpace,
+            shader: shader,
             clipRect: clipped
+        )
+    }
+
+    func withShader(_ shader: ShaderEffect?) -> RenderGroup {
+        RenderGroup(
+            triangles: triangles,
+            transformMatrix: transformMatrix,
+            fragmentType: fragmentType,
+            zIndex: zIndex,
+            opacity: opacity,
+            projectionSpace: projectionSpace,
+            shader: shader,
+            clipRect: clipRect
+        )
+    }
+
+    func withZIndexOffset(_ offset: Int) -> RenderGroup {
+        RenderGroup(
+            triangles: triangles,
+            transformMatrix: transformMatrix,
+            fragmentType: fragmentType,
+            zIndex: zIndex + offset,
+            opacity: opacity,
+            projectionSpace: projectionSpace,
+            shader: shader,
+            clipRect: clipRect
         )
     }
 
