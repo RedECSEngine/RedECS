@@ -20,7 +20,7 @@ final class EntityHierarchyTests: XCTestCase {
         store.sendSystemAction(.addEntity("a", []))
 
         XCTAssertEqual(store.state.entities["a"]?.parentId, EntityRepository.Constants.rootTreeId)
-        XCTAssertEqual(store.state.entities.tree.children?.map(\.id), ["a"])
+        XCTAssertEqual(store.state.entities.hierarchy.roots, ["a"])
     }
 
     func testAddAndRemoveTagKeepsReverseIndexInSync() {
@@ -114,7 +114,57 @@ final class EntityHierarchyTests: XCTestCase {
         XCTAssertNil(store.state.entities["child"])
         XCTAssertNil(store.state.entities["grandchild"])
         XCTAssertNil(store.state.transform["grandchild"], "components of removed descendants should be destroyed")
-        XCTAssertEqual(store.state.entities.tree.childCount, 0)
+        XCTAssertTrue(store.state.entities.hierarchy.roots.isEmpty)
+    }
+
+    func testSetParentKeepsMovedSubtree() {
+        let store = makeStore()
+        store.sendSystemAction(.addEntity("newParent", []))
+        store.sendSystemAction(.addEntity("mover", []))
+        store.sendSystemAction(.addEntity("child", []))
+        store.sendSystemAction(.addEntity("grandchild", []))
+        store.sendSystemAction(.setParent("child", "mover"))
+        store.sendSystemAction(.setParent("grandchild", "child"))
+
+        store.sendSystemAction(.setParent("mover", "newParent"))
+
+        XCTAssertEqual(store.state.entities["mover"]?.parentId, "newParent")
+        XCTAssertEqual(store.state.entities.descendants(of: "newParent"), ["mover", "child", "grandchild"])
+        XCTAssertEqual(store.state.entities.descendants(of: "mover"), ["child", "grandchild"])
+    }
+
+    func testSetParentToRootKeepsMovedSubtree() {
+        let store = makeStore()
+        store.sendSystemAction(.addEntity("container", []))
+        store.sendSystemAction(.addEntity("mover", []))
+        store.sendSystemAction(.addEntity("child", []))
+        store.sendSystemAction(.setParent("mover", "container"))
+        store.sendSystemAction(.setParent("child", "mover"))
+
+        store.sendSystemAction(.setParent("mover", nil))
+
+        XCTAssertEqual(store.state.entities["mover"]?.parentId, EntityRepository.Constants.rootTreeId)
+        XCTAssertEqual(store.state.entities.descendants(of: "mover"), ["child"])
+        XCTAssertEqual(store.state.entities.descendants(of: "container"), [])
+        XCTAssertEqual(store.state.entities.hierarchy.roots, ["container", "mover"])
+    }
+
+    func testRemoveEntityCascadesThroughMovedSubtree() {
+        let store = makeStore()
+        store.sendSystemAction(.addEntity("newParent", []))
+        store.sendSystemAction(.addEntity("mover", []))
+        store.sendSystemAction(.addEntity("child", []))
+        store.sendSystemAction(.setParent("child", "mover"))
+        store.sendSystemAction(.addComponent(TransformComponent(entity: "child"), into: \.transform))
+
+        store.sendSystemAction(.setParent("mover", "newParent"))
+        store.sendSystemAction(.removeEntity("newParent"))
+
+        XCTAssertNil(store.state.entities["newParent"])
+        XCTAssertNil(store.state.entities["mover"])
+        XCTAssertNil(store.state.entities["child"])
+        XCTAssertNil(store.state.transform["child"])
+        XCTAssertTrue(store.state.entities.hierarchy.roots.isEmpty)
     }
 
     func testStateSurvivesCodingRoundTripWithHierarchy() throws {

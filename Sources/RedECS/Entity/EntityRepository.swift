@@ -1,22 +1,24 @@
+import Graphs
+
 public struct EntityRepository: Equatable, Codable {
     public struct Constants {
         public static let rootTreeId = "Root"
     }
-    
+
     public private(set) var entities: [EntityId: GameEntity] = [:]
     public private(set) var tags: [String: Set<EntityId>] = [:]
-    /// Parent/child relationships. Rendering walks this tree, composing each
+    /// Parent/child relationships. Rendering walks this forest, composing each
     /// entity's transform with its ancestors' and honoring `isHidden` subtrees.
-    public private(set) var tree: EntityTree = .init(id: Constants.rootTreeId)
-    
+    public private(set) var hierarchy: OrderedForest<EntityId> = .init()
+
     public init() { }
-    
+
     public subscript(index: EntityId) -> GameEntity? {
         get {
             entities[index]
         }
     }
-    
+
     public var entityIds: Dictionary<String, GameEntity>.Keys {
         entities.keys
     }
@@ -31,28 +33,25 @@ public extension EntityRepository {
         e.tags.forEach { tag in
             tags[tag, default: []].insert(e.id)
         }
-        
-        var parentId = Constants.rootTreeId
-        if let entityParent = e.parentId {
-            parentId = entityParent
+
+        var parentId = e.parentId.flatMap { $0 == Constants.rootTreeId ? nil : $0 }
+        if !hierarchy.insert(e.id, under: parentId) {
+            assertionFailure("Failed to find parent '\(parentId ?? Constants.rootTreeId)' for entity '\(e.id)'")
+            parentId = nil
+            hierarchy.insert(e.id, under: nil)
         }
-        var tree = self.tree
-        let result = insertEntity(e.id, intoTree: &tree, withParent: parentId)
-        self.tree = tree
-        assert(result, "Failed to find parent in tree '\(parentId)'")
-        e.parentId = parentId
+        e.parentId = parentId ?? Constants.rootTreeId
         entities[e.id] = e
     }
-    
+
     mutating func removeEntity(_ id: EntityId) {
-//        assert(entities[id] != nil, "removing already removed entity")
-        entities[id]?.tags.forEach { tag in
-            tags[tag]?.remove(id)
+        let removed = hierarchy.remove(id)
+        for removedId in removed.isEmpty ? [id] : removed {
+            entities[removedId]?.tags.forEach { tag in
+                tags[tag]?.remove(removedId)
+            }
+            entities[removedId] = nil
         }
-        var tree = self.tree
-        _ = removeEntity(id, fromTree: &tree)
-        self.tree = tree
-        entities[id] = nil
     }
 
     /// Adds `tag` to an existing entity, keeping the reverse `tags` index in
@@ -73,92 +72,22 @@ public extension EntityRepository {
     }
 }
 
-// MARK: - Tree Management
+// MARK: - Hierarchy Management
 
 public extension EntityRepository {
     /// Reparents an entity. Passing `nil` moves it back to the root.
     mutating func setParent(of entityId: EntityId, to parentId: EntityId?) {
-        var tree = self.tree
-        moveEntity(entityId, toParent: parentId ?? Constants.rootTreeId, inTree: &tree)
-        self.tree = tree
+        let target = parentId.flatMap { $0 == Constants.rootTreeId ? nil : $0 }
+        guard hierarchy.move(entityId, under: target) else {
+            assertionFailure("Failed to move entity '\(entityId)' under '\(parentId ?? Constants.rootTreeId)'")
+            return
+        }
+        entities[entityId]?.parentId = target ?? Constants.rootTreeId
     }
 
     /// All ids in the subtree rooted at `entityId`, depth-first,
     /// not including `entityId` itself.
     func descendants(of entityId: EntityId) -> [EntityId] {
-        guard let node = findNode(entityId, in: tree) else { return [] }
-        var result: [EntityId] = []
-        func collect(_ tree: EntityTree) {
-            for child in tree.children ?? [] {
-                result.append(child.id)
-                collect(child)
-            }
-        }
-        collect(node)
-        return result
-    }
-
-    private func findNode(_ id: EntityId, in tree: EntityTree) -> EntityTree? {
-        if tree.id == id { return tree }
-        for child in tree.children ?? [] {
-            if let found = findNode(id, in: child) {
-                return found
-            }
-        }
-        return nil
-    }
-
-    mutating func insertEntity(
-        _ eId: EntityId,
-        intoTree tree: inout EntityTree,
-        withParent pId: EntityId
-    ) -> Bool {
-        if tree.id == pId {
-            tree.addChild(EntityTree(id: eId))
-            return true
-        } else {
-            for i in 0..<tree.childCount {
-                if var children = tree.children, insertEntity(eId, intoTree: &children[i], withParent: pId) {
-                    tree.children = children
-                    return true
-                }
-            }
-        }
-        return false
-    }
-    
-    mutating func moveEntity(
-        _ eId: EntityId,
-        toParent pId: EntityId,
-        inTree tree: inout EntityTree
-    ) {
-        guard var e = entities[eId] else {
-            assert(entities[eId] != nil, "expected entity to exist")
-            return
-        }
-        
-        let resultRemove = removeEntity(eId, fromTree: &tree)
-        assert(resultRemove, "Failed to find entity in tree '\(eId)'")
-        let resultInsert = insertEntity(eId, intoTree: &tree, withParent: pId)
-        assert(resultInsert, "Failed to find parent in tree '\(pId)'")
-        
-        e.parentId = pId
-        entities[eId] = e
-    }
-    
-    mutating func removeEntity(
-        _ eId: EntityId,
-        fromTree tree: inout EntityTree
-    ) -> Bool {
-            for i in 0..<tree.childCount {
-                if tree.children?[i].id == eId {
-                    tree.children?.remove(at: i)
-                    return true
-                } else if var children = tree.children, removeEntity(eId, fromTree: &children[i]) {
-                    tree.children = children
-                    return true
-                }
-            }
-        return false
+        hierarchy.descendants(of: entityId)
     }
 }
