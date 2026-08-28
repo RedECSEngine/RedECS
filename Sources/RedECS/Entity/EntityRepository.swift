@@ -27,20 +27,17 @@ public struct EntityRepository: Equatable, Codable {
 // MARK: - Entity Lifecycle
 
 public extension EntityRepository {
-    mutating func addEntity(_ e: GameEntity) {
+    mutating func addEntity(_ e: GameEntity, under parentId: EntityId? = nil) {
         assert(entities[e.id] == nil, "adding duplicate entity \(e.id)")
-        var e = e
         e.tags.forEach { tag in
             tags[tag, default: []].insert(e.id)
         }
 
-        var parentId = e.parentId.flatMap { $0 == Constants.rootTreeId ? nil : $0 }
-        if !hierarchy.insert(e.id, under: parentId) {
+        let target = parentId.flatMap { $0 == Constants.rootTreeId ? nil : $0 }
+        if !hierarchy.insert(e.id, under: target) {
             assertionFailure("Failed to find parent '\(parentId ?? Constants.rootTreeId)' for entity '\(e.id)'")
-            parentId = nil
             hierarchy.insert(e.id, under: nil)
         }
-        e.parentId = parentId ?? Constants.rootTreeId
         entities[e.id] = e
     }
 
@@ -82,7 +79,10 @@ public extension EntityRepository {
             assertionFailure("Failed to move entity '\(entityId)' under '\(parentId ?? Constants.rootTreeId)'")
             return
         }
-        entities[entityId]?.parentId = target ?? Constants.rootTreeId
+    }
+
+    func parent(of entityId: EntityId) -> EntityId? {
+        hierarchy.parent(of: entityId)
     }
 
     /// All ids in the subtree rooted at `entityId`, depth-first,
