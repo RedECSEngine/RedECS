@@ -148,7 +148,8 @@ public final class MetalResourceManager: ResourceManager {
                     self.loadJSONFile(source, decodedAs: TiledTilesetJSON.self)
                         .readValue { result in
                             if case let .success(tileSet) = result {
-                                self.tileSets[source] = tileSet
+                                let key = URL(string: source)?.lastPathComponent ?? source
+                                self.tileSets[key] = tileSet
                             }
                         }
                         .toVoid()

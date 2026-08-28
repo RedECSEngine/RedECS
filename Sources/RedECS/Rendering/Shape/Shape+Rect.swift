@@ -12,6 +12,24 @@ extension Shape {
             return Rect(center: c.center, size: c.size)
         case .polygon(let p):
             return GeometryAlgorithms.calculateContainingRect(of: p.points)
+        case .line(let line, let width):
+            let points = [line.a, line.b]
+            guard let originX = points.min(by: { $0.x < $1.x })?.x,
+            let originY = points.min(by: { $0.y < $1.y })?.y,
+            let maxX = points.max(by: { $0.x > $1.x })?.x,
+                  let maxY = points.max(by: { $0.y > $1.y })?.y else {
+                return .zero
+            }
+            return Rect(
+                origin: .init(
+                    x: originX,
+                    y: originY
+                ),
+                size: .init(
+                    width: maxX - originX,
+                    height: maxY - originY
+                )
+            )
         }
     }
 

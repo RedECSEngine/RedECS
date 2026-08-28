@@ -13,6 +13,18 @@ public struct EntityRepository: Equatable, Codable {
 
     public init() { }
 
+    public init(entities: [GameEntity] = []) {
+        entities.forEach {
+            self.addEntity($0)
+        }
+    }
+    
+    public init(entities: [(GameEntity, EntityId?)] = []) {
+        entities.forEach {
+            self.addEntity($0, under: $1)
+        }
+    }
+    
     public subscript(index: EntityId) -> GameEntity? {
         get {
             entities[index]

@@ -4,7 +4,7 @@ public typealias EntityId = String
 
 public func newEntityId(prefix: String? = nil) -> EntityId {
     let prefix = prefix.map({ "\($0)-" }) ?? ""
-    return prefix + "\(GameRandom.next())" + "\(GameRandom.next())" // TODO: weak implementation of a uuid string, needs improvement
+    return prefix + "-\(GameRandom.next())-\(GameRandom.next())"
 }
 
 public struct GameEntity: Hashable, Identifiable, Codable {
