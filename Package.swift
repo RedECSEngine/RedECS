@@ -58,7 +58,10 @@ let package = Package(
             from: "1.1.0"
         ),
 
-        .package(path: "../swift-graphs"),
+        .package(
+            url: "https://github.com/RedECSEngine/Graphs.git",
+            from: "0.1.0"
+        ),
 
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.18.0"),
     ],
@@ -79,7 +82,7 @@ let package = Package(
                 .product(name: "GeometryAlgorithms", package: "Geometry"),
                 .product(name: "Randomization", package: "Randomization"),
                 .product(name: "OrderedCollections", package: "swift-collections"),
-                .product(name: "Graphs", package: "swift-graphs"),
+                .product(name: "Graphs", package: "Graphs"),
                 "TiledInterpreter",
             ]
         ),
