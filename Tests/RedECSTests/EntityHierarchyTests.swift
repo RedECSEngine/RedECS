@@ -117,6 +117,17 @@ final class EntityHierarchyTests: XCTestCase {
         XCTAssertTrue(store.state.entities.hierarchy.roots.isEmpty)
     }
 
+    func testNewEntityEffectWithParentSpawnsUnderParent() {
+        let store = makeStore()
+        store.sendSystemAction(.addEntity("parent", []))
+
+        store.handleEffect(.newEntity("child", parent: "parent", with: \.transform) { _ in })
+
+        XCTAssertEqual(store.state.entities.parent(of: "child"), "parent")
+        XCTAssertEqual(store.state.entities.descendants(of: "parent"), ["child"])
+        XCTAssertNotNil(store.state.transform["child"])
+    }
+
     func testSetParentKeepsMovedSubtree() {
         let store = makeStore()
         store.sendSystemAction(.addEntity("newParent", []))
