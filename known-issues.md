@@ -17,15 +17,6 @@ record of what changed and when.
   Cause: the `AnyReducer` it builds stubs the delta and entityEvent positions with
   `{ _,_,_ in .none }` instead of forwarding to `self.reduce`.
 
-- **`setParent` drops the moved entity's entire subtree from the render tree**
-  Where: `Sources/RedECS/Entity/EntityRepository.swift:140-142`
-  Symptom: reparenting an entity that has children makes all descendants vanish
-  from rendering; later `removeEntity` no longer cascades to them (leak).
-  Cause: `removeEntity(_:fromTree:)` removes the node *with* its children, then
-  `insertEntity` re-inserts a fresh childless node. Also: if the new parent is a
-  descendant of the moved entity (or missing), the insert fails and in release
-  builds the entity disappears from the tree entirely (assert-only guard).
-
 - **Cold `Future` re-executes work per subscribe; `zip` can double-resolve**
   Where: `Sources/RedECS/Utilities/Future.swift:11-15, 69-86, 120-131`
   Symptom: multiple subscriptions re-run the underlying load; zero subscriptions
@@ -45,7 +36,7 @@ record of what changed and when.
 - **`newEntityId()` is collision-prone and nondeterministic**
   Where: `Sources/RedECS/Entity/GameEntity.swift:5`
   Symptom: possible silent state corruption on ID collision (duplicate-entity
-  check is assert-only, `EntityRepository.swift:29`); replay/lockstep determinism
+  check is assert-only, `EntityRepository.swift:31`); replay/lockstep determinism
   impossible; weaker on wasm32 where `Int` is 32-bit.
   Cause: two `Int.random` values concatenated without a separator (so distinct
   pairs can collide textually), system RNG. Known TODO in code.
@@ -88,7 +79,7 @@ record of what changed and when.
   tick (`SpriteComponent.swift:106-107`) — animations run slower than authored.
 
 - **Camera selection uses an invalid sort comparator**
-  Where: `Sources/RedECS/Rendering/RenderableComponent.swift:50`
+  Where: `Sources/RedECS/Rendering/RenderableComponent.swift:63`
   Symptom: with >1 camera, the chosen camera is nondeterministic frame-to-frame
   (and the comparator violates strict weak ordering).
   Cause: `sorted(by: { $1.isPrimaryCamera ? false : true })` never inspects `$0`,
@@ -269,7 +260,7 @@ is no benchmark target — so treat the ordering as untested. Added 2026-07-31.
 - **`Matrix3` is heap-backed, so every transform costs 4+ allocations**
   Where: `Geometry` 0.0.5, `Sources/GeometryAlgorithms/Matrix3/Matrix3.swift:5`;
   felt at `Sources/RedECS/Rendering/Transform/TransformComponent.swift:35-41` and
-  `Sources/RedECS/Rendering/RenderableComponent.swift:91,96,103`
+  `Sources/RedECS/Rendering/RenderableComponent.swift:106,111,118`
   Symptom: allocation churn scaling with entity count × tree depth, on every frame.
   Cause: `Matrix3` stores `values: [Double]` and every operation returns a new matrix
   built from an array literal. `TransformComponent.matrix()` chains `.identity →
@@ -278,7 +269,7 @@ is no benchmark target — so treat the ordering as untested. Added 2026-07-31.
   `Double`s in the Geometry package (needs a coordinated release).
 
 - **The render walk copies whole game state per node, per renderable type**
-  Where: `Sources/RedECS/Rendering/RenderableComponent.swift:18,26-28,87`
+  Where: `Sources/RedECS/Rendering/RenderableComponent.swift:18,26-28,102`
   Symptom: per-frame cost scales with (tree nodes × registered renderable types) even
   for entities that have none of those components.
   Cause: `RenderableComponentType.getRenderComponent` is `(EntityId, State) -> …`,

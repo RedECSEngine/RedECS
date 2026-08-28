@@ -1,5 +1,5 @@
 {
-  "originHash" : "dfc6214b0d00777e47d1f81878c8c511a87b403abde520c485a38d2b8acb582c",
+  "originHash" : "c69da3054392501da4a4d39044d28f7638f50ef0b270d40144e47e82f49ab767",
   "pins" : [
     {
       "identity" : "geometry",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "90247082d2e42f726a6e6a17a877b3ad9a059629",
         "version" : "0.0.5"
+      }
+    },
+    {
+      "identity" : "graphs",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RedECSEngine/Graphs.git",
+      "state" : {
+        "revision" : "d8ba813561de4517b7f5517d67c7f6492de72b43",
+        "version" : "0.1.0"
       }
     },
     {

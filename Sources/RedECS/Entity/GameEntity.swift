@@ -22,18 +22,3 @@ public struct GameEntity: Hashable, Identifiable, Codable {
         self.parentId = parentId
     }
 }
-
-public struct EntityTree: Hashable, Codable, Identifiable {
-    public var id: EntityId
-    public var children: [EntityTree]?
-    
-    public var childCount: Int { children?.count ?? 0 }
-    
-    mutating func addChild(_ c: EntityTree) {
-        if children == nil {
-            children = [c]
-        } else {
-            children?.append(c)
-        }
-    }
-}

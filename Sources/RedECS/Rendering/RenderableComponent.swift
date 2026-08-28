@@ -69,7 +69,7 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
             renderer.setProjectionMatrix(projectionMatrix)
 
             enqueue(
-                childrenOf: state.entities.tree,
+                children: state.entities.hierarchy.roots,
                 worldMatrix: .identity,
                 state: state,
                 projectionMatrix: projectionMatrix,
@@ -80,26 +80,26 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
         return .none
     }
 
-    /// Walks the entity tree depth-first, composing each entity's transform
+    /// Walks the entity forest depth-first, composing each entity's transform
     /// with its ancestors' so children render in their parent's frame.
     /// A hidden entity hides its entire subtree.
     private func enqueue(
-        childrenOf tree: EntityTree,
+        children: [EntityId],
         worldMatrix: Matrix3,
         state: State,
         projectionMatrix: Matrix3,
         environment: RenderingEnvironment,
         order: ((EntityId, State) -> Double)? = nil
     ) {
-        for node in Self.ordered(tree.children ?? [], by: order, in: state) {
-            let transform = state.transform[node.id]
+        for entityId in Self.ordered(children, by: order, in: state) {
+            let transform = state.transform[entityId]
             if transform?.isHidden == true {
                 continue
             }
 
             if let transform = transform {
                 for type in renderableComponentTypes {
-                    guard let renderComponent = type.renderComponent(entityId: node.id, state: state) else {
+                    guard let renderComponent = type.renderComponent(entityId: entityId, state: state) else {
                         continue
                     }
                     let groups = renderComponent.renderGroups(
@@ -117,7 +117,7 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
             // anchor-point offset (that only affects the parent's own drawing).
             let childWorldMatrix = transform.map { .multiply(worldMatrix, $0.matrix()) } ?? worldMatrix
             enqueue(
-                childrenOf: node,
+                children: state.entities.hierarchy.children(of: entityId),
                 worldMatrix: childWorldMatrix,
                 state: state,
                 projectionMatrix: projectionMatrix,
@@ -129,15 +129,15 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
     /// Stable: entities with an equal key keep the order they were added in,
     /// so a tie can't shimmer between frames.
     private static func ordered(
-        _ nodes: [EntityTree],
+        _ ids: [EntityId],
         by order: ((EntityId, State) -> Double)?,
         in state: State
-    ) -> [EntityTree] {
-        guard let order else { return nodes }
-        return nodes
+    ) -> [EntityId] {
+        guard let order else { return ids }
+        return ids
             .enumerated()
             .sorted { a, b in
-                let ka = order(a.element.id, state), kb = order(b.element.id, state)
+                let ka = order(a.element, state), kb = order(b.element, state)
                 return ka == kb ? a.offset < b.offset : ka < kb
             }
             .map(\.element)
