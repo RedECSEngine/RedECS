@@ -81,6 +81,9 @@ public final class GameStore<R: Reducer> where R.State: OperationCapableGameStat
             handleEffect(removeEntity(entityId))
         case .setParent(let entityId, let parentId):
             state.entities.setParent(of: entityId, to: parentId)
+        case .setHidden(let entityId, let hidden):
+            assert(state.transform[entityId] != nil, "setHidden on entity '\(entityId)' with no TransformComponent")
+            state.transform[entityId]?.isHidden = hidden
         case .addTag(let entityId, let tag):
             state.entities.addTag(tag, to: entityId)
         case .removeTag(let entityId, let tag):

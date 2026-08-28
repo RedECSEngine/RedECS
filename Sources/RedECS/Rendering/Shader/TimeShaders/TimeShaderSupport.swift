@@ -9,6 +9,7 @@ public extension ShaderRegistry {
         shakyDefinition,
         shakyTilesDefinition,
         shuffleDefinition,
+        fadeDefinition,
     ]
 
     internal static func timeShader(
@@ -51,6 +52,10 @@ func timeShaderGLSL(_ body: String) -> String {
 
     \(body)
 
+        if (u_textureSize.x == 1.0 && u_textureSize.y == 1.0) {
+            gl_FragColor = vec4(v_color.xyz, v_color.w * mask);
+            return;
+        }
         vec4 c = texture2D(u_image, uv);
         if (c.w == 0.0) {
             gl_FragColor = c;
@@ -83,6 +88,9 @@ func timeShaderMSL(_ name: String, _ body: String) -> String {
 
     \(body)
 
+        if (colorMap.get_width() == 1 && colorMap.get_height() == 1) {
+            return float4(in.color.xyz, in.color.w * mask);
+        }
         half4 c = colorMap.sample(smp, uv);
         if (c.w == 0) {
             return float4(c);

@@ -32,6 +32,7 @@ extension RenderGroup {
                 zIndex: zIndex,
                 opacity: opacity * factor,
                 projectionSpace: projectionSpace,
+                shader: shader,
                 clipRect: clipRect
             )
         case .texture:
