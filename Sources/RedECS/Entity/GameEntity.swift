@@ -9,16 +9,13 @@ public func newEntityId(prefix: String? = nil) -> EntityId {
 
 public struct GameEntity: Hashable, Identifiable, Codable {
     public var id: EntityId
-    public var parentId: EntityId?
     public var tags: Set<String>
-    
+
     public init(
         id: EntityId,
-        tags: Set<String>,
-        parentId: EntityId? = nil
+        tags: Set<String>
     ) {
         self.id = id
         self.tags = tags
-        self.parentId = parentId
     }
 }

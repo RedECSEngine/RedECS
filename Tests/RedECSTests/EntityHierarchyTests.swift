@@ -19,7 +19,7 @@ final class EntityHierarchyTests: XCTestCase {
         let store = makeStore()
         store.sendSystemAction(.addEntity("a", []))
 
-        XCTAssertEqual(store.state.entities["a"]?.parentId, EntityRepository.Constants.rootTreeId)
+        XCTAssertNil(store.state.entities.parent(of: "a"))
         XCTAssertEqual(store.state.entities.hierarchy.roots, ["a"])
     }
 
@@ -68,12 +68,12 @@ final class EntityHierarchyTests: XCTestCase {
         store.sendSystemAction(.addEntity("child", []))
         store.sendSystemAction(.setParent("child", "parent"))
 
-        XCTAssertEqual(store.state.entities["child"]?.parentId, "parent")
+        XCTAssertEqual(store.state.entities.parent(of: "child"), "parent")
         XCTAssertEqual(store.state.entities.descendants(of: "parent"), ["child"])
 
         // and back to the root
         store.sendSystemAction(.setParent("child", nil))
-        XCTAssertEqual(store.state.entities["child"]?.parentId, EntityRepository.Constants.rootTreeId)
+        XCTAssertNil(store.state.entities.parent(of: "child"))
         XCTAssertEqual(store.state.entities.descendants(of: "parent"), [])
     }
 
@@ -128,7 +128,7 @@ final class EntityHierarchyTests: XCTestCase {
 
         store.sendSystemAction(.setParent("mover", "newParent"))
 
-        XCTAssertEqual(store.state.entities["mover"]?.parentId, "newParent")
+        XCTAssertEqual(store.state.entities.parent(of: "mover"), "newParent")
         XCTAssertEqual(store.state.entities.descendants(of: "newParent"), ["mover", "child", "grandchild"])
         XCTAssertEqual(store.state.entities.descendants(of: "mover"), ["child", "grandchild"])
     }
@@ -143,7 +143,7 @@ final class EntityHierarchyTests: XCTestCase {
 
         store.sendSystemAction(.setParent("mover", nil))
 
-        XCTAssertEqual(store.state.entities["mover"]?.parentId, EntityRepository.Constants.rootTreeId)
+        XCTAssertNil(store.state.entities.parent(of: "mover"))
         XCTAssertEqual(store.state.entities.descendants(of: "mover"), ["child"])
         XCTAssertEqual(store.state.entities.descendants(of: "container"), [])
         XCTAssertEqual(store.state.entities.hierarchy.roots, ["container", "mover"])
@@ -176,7 +176,7 @@ final class EntityHierarchyTests: XCTestCase {
         let data = try JSONEncoder().encode(store.state)
         let restored = try JSONDecoder().decode(TestGlobalState.self, from: data)
 
-        XCTAssertEqual(restored.entities["child"]?.parentId, "parent")
+        XCTAssertEqual(restored.entities.parent(of: "child"), "parent")
         XCTAssertEqual(restored.entities.descendants(of: "parent"), ["child"])
     }
 }

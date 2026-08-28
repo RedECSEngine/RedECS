@@ -120,7 +120,7 @@ public final class GameStore<R: Reducer> where R.State: OperationCapableGameStat
     }
 
     public func addEntity(_ id: EntityId, tags: Set<String>, parentId: EntityId? = nil) -> GameEffect<R.State, R.Action> {
-        state.entities.addEntity(GameEntity(id: id, tags: tags, parentId: parentId))
+        state.entities.addEntity(GameEntity(id: id, tags: tags), under: parentId)
         return reducer.reduce(state: &state, entityEvent: .added(id), environment: environment)
     }
 
