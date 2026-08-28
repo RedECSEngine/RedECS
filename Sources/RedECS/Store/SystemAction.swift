@@ -3,6 +3,7 @@ public enum SystemAction<State: GameState> {
     case removeEntity(EntityId)
     /// Reparents an entity in the entity tree; `nil` moves it back to the root.
     case setParent(EntityId, EntityId?)
+    case setHidden(EntityId, Bool)
     case addComponent(EntityId, AnyComponent<State>)
     case removeComponent(EntityId, RegisteredComponentId)
     /// Adds/removes a tag on an existing entity, keeping the reverse tag index
@@ -25,6 +26,8 @@ public enum SystemAction<State: GameState> {
             return .removeEntity(e)
         case .setParent(let e, let p):
             return .setParent(e, p)
+        case .setHidden(let e, let hidden):
+            return .setHidden(e, hidden)
         case .addTag(let e, let tag):
             return .addTag(e, tag)
         case .removeTag(let e, let tag):
