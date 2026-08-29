@@ -45,7 +45,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/RedECSEngine/Geometry.git",
-            from: "0.0.5"
+            from: "0.0.7"
         ),
 
         .package(

@@ -15,16 +15,29 @@ public protocol RenderableGameState: GameState {
 }
 
 public struct RenderableComponentType<State: GameState> {
-    var getRenderComponent: (EntityId, State) -> RenderableComponent?
-    
+    var produceRenderGroups: (EntityId, State, Matrix3, TransformComponent, ResourceManager) -> [RenderGroup]?
+
     public init<C: RenderableComponent>(keyPath: KeyPath<State, [EntityId: C]>) {
-        getRenderComponent = { id, gameState in
-            gameState[keyPath: keyPath][id]
+        produceRenderGroups = { entityId, state, cameraMatrix, transform, resourceManager in
+            guard let component = state[keyPath: keyPath][entityId] else {
+                return nil
+            }
+            return component.renderGroups(
+                cameraMatrix: cameraMatrix,
+                transform: transform,
+                resourceManager: resourceManager
+            )
         }
     }
-    
-    func renderComponent(entityId: EntityId, state: State) -> RenderableComponent? {
-       getRenderComponent(entityId, state)
+
+    func renderGroups(
+        entityId: EntityId,
+        state: State,
+        cameraMatrix: Matrix3,
+        transform: TransformComponent,
+        resourceManager: ResourceManager
+    ) -> [RenderGroup]? {
+        produceRenderGroups(entityId, state, cameraMatrix, transform, resourceManager)
     }
 }
 
@@ -32,7 +45,7 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
     public typealias State = ContextState
     public typealias Action = Never
     public typealias Environment = RenderingEnvironment
-    
+
     var renderableComponentTypes: [RenderableComponentType<State>]
     var rootDrawOrder: ((EntityId, State) -> Double)?
 
@@ -59,10 +72,10 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
         delta: Double,
         environment: RenderingEnvironment
     ) -> GameEffect<State, Never> {
-        
+
         if let camera = state.camera.values.sorted(by: { $1.isPrimaryCamera ? false : true }).first,
            let transform = state.transform[camera.entity] {
-            
+
             let renderer = environment.renderer
             let size = renderer.viewportSize
             let projectionMatrix = camera.matrix(withRect: Rect(center: transform.position, size: size))
@@ -91,6 +104,7 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
         environment: RenderingEnvironment,
         order: ((EntityId, State) -> Double)? = nil
     ) {
+        let cameraMatrix = Matrix3.multiply(projectionMatrix, worldMatrix)
         for entityId in Self.ordered(children, by: order, in: state) {
             let transform = state.transform[entityId]
             if transform?.isHidden == true {
@@ -99,14 +113,15 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
 
             if let transform = transform {
                 for type in renderableComponentTypes {
-                    guard let renderComponent = type.renderComponent(entityId: entityId, state: state) else {
-                        continue
-                    }
-                    let groups = renderComponent.renderGroups(
-                        cameraMatrix: .multiply(projectionMatrix, worldMatrix),
+                    guard let groups = type.renderGroups(
+                        entityId: entityId,
+                        state: state,
+                        cameraMatrix: cameraMatrix,
                         transform: transform,
                         resourceManager: environment.resourceManager
-                    )
+                    ) else {
+                        continue
+                    }
                     environment.renderer.enqueue(groups.map { group in
                         group.withTransformMatrix(.multiply(worldMatrix, group.transformMatrix))
                     })

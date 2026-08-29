@@ -241,42 +241,39 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
             let color = renderGroup.color?.asVectorFloat4 ?? vector_float4(0, 0, 0, Float(renderGroup.opacity))
             var triangleVertices: [AAPLVertex] = []
             var textureVertices: [TextureInfo] = []
+            triangleVertices.reserveCapacity(renderGroup.triangles.count * 3)
+            textureVertices.reserveCapacity(renderGroup.triangles.count * 3)
             var uniforms = Uniforms(
                 projectionMatrix: renderGroup.projectionSpace == .screen
                     ? screenProjectionMatrix
                     : projectionMatrix,
                 modelViewMatrix: renderGroup.transformMatrix.asMatrix4x4
             )
-            
+
+            var texSize = vector_float2(0, 0)
+            if let textureId = renderGroup.textureId,
+               let texture = resourceManager.textureImages[textureId] {
+                texSize.x = Float(texture.width)
+                texSize.y = Float(texture.height)
+            }
+
             for renderTriangle in renderGroup.triangles {
-                triangleVertices.append(contentsOf: [
-                    AAPLVertex(
-                        position: renderTriangle.triangle.a.asVectorFloat2,
-                        color: color
-                    ),
-                    AAPLVertex(
-                        position: renderTriangle.triangle.b.asVectorFloat2,
-                        color: color
-                    ),
-                    AAPLVertex(
-                        position: renderTriangle.triangle.c.asVectorFloat2,
-                        color: color
-                    )
-                ])
-                var texSize = vector_float2(0, 0)
-                if let textureId = renderGroup.textureId,
-                   let texture = resourceManager.textureImages[textureId] {
-                    texSize.x = Float(texture.width)
-                    texSize.y = Float(texture.height)
-                }
-                textureVertices.append(contentsOf: [
-                    TextureInfo(
-                        texCoord: (renderTriangle.textureTriangle ?? RenderTriangle.noTextureTriangle) .a.asVectorFloat2, texSize: texSize),
-                    TextureInfo(
-                        texCoord: (renderTriangle.textureTriangle ?? RenderTriangle.noTextureTriangle) .b.asVectorFloat2, texSize: texSize),
-                    TextureInfo(
-                        texCoord: (renderTriangle.textureTriangle ?? RenderTriangle.noTextureTriangle) .c.asVectorFloat2, texSize: texSize),
-                ])
+                triangleVertices.append(AAPLVertex(
+                    position: renderTriangle.triangle.a.asVectorFloat2,
+                    color: color
+                ))
+                triangleVertices.append(AAPLVertex(
+                    position: renderTriangle.triangle.b.asVectorFloat2,
+                    color: color
+                ))
+                triangleVertices.append(AAPLVertex(
+                    position: renderTriangle.triangle.c.asVectorFloat2,
+                    color: color
+                ))
+                let textureTriangle = renderTriangle.textureTriangle ?? RenderTriangle.noTextureTriangle
+                textureVertices.append(TextureInfo(texCoord: textureTriangle.a.asVectorFloat2, texSize: texSize))
+                textureVertices.append(TextureInfo(texCoord: textureTriangle.b.asVectorFloat2, texSize: texSize))
+                textureVertices.append(TextureInfo(texCoord: textureTriangle.c.asVectorFloat2, texSize: texSize))
             }
             
             if let textureId = renderGroup.textureId {
@@ -306,18 +303,30 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
 
             renderEncoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.size, index: AAPLVertexInputIndex.uniforms.rawValue)
             
-            let chunkAmount = 3
-            for i in 0..<(triangleVertices.count / chunkAmount) {
-                let index = i * chunkAmount
-                renderEncoder.setVertexBytes(Array(triangleVertices[index..<index+chunkAmount]), length:  MemoryLayout<AAPLVertex>.size * chunkAmount, index: AAPLVertexInputIndex.indices.rawValue)
-                
-                renderEncoder.setVertexBytes(Array(textureVertices[index..<index+chunkAmount]), length: MemoryLayout<TextureInfo>.size * chunkAmount, index: AAPLVertexInputIndex.textureCoordinates.rawValue)
-                
-                renderEncoder.drawPrimitives(
-                    type: .triangle,
-                    vertexStart: 0,
-                    vertexCount: chunkAmount
-                )
+            let maxChunkVertices = 126
+            triangleVertices.withUnsafeBufferPointer { positions in
+                textureVertices.withUnsafeBufferPointer { texCoords in
+                    var index = 0
+                    while index < positions.count {
+                        let chunk = min(maxChunkVertices, positions.count - index)
+                        renderEncoder.setVertexBytes(
+                            positions.baseAddress! + index,
+                            length: MemoryLayout<AAPLVertex>.stride * chunk,
+                            index: AAPLVertexInputIndex.indices.rawValue
+                        )
+                        renderEncoder.setVertexBytes(
+                            texCoords.baseAddress! + index,
+                            length: MemoryLayout<TextureInfo>.stride * chunk,
+                            index: AAPLVertexInputIndex.textureCoordinates.rawValue
+                        )
+                        renderEncoder.drawPrimitives(
+                            type: .triangle,
+                            vertexStart: 0,
+                            vertexCount: chunk
+                        )
+                        index += chunk
+                    }
+                }
             }
         }
         

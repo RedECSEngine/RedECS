@@ -1,13 +1,13 @@
 {
-  "originHash" : "c69da3054392501da4a4d39044d28f7638f50ef0b270d40144e47e82f49ab767",
+  "originHash" : "5f0fba68aa6b1c36b813b3f00ae45852c5f927879aeb1755272a685468daac27",
   "pins" : [
     {
       "identity" : "geometry",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/RedECSEngine/Geometry.git",
       "state" : {
-        "revision" : "90247082d2e42f726a6e6a17a877b3ad9a059629",
-        "version" : "0.0.5"
+        "revision" : "92514af3db789d5e5afd8afd32b19953dcf55fd6",
+        "version" : "0.0.7"
       }
     },
     {

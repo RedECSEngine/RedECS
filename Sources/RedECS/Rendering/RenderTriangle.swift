@@ -181,7 +181,5 @@ public struct RenderTriangle {
 }
 
 public extension RenderTriangle {
-    static var noTextureTriangle: Triangle {
-        Triangle(a: .init(x: -1, y: -1), b: .init(x: -1, y: -1), c: .init(x: -1, y: -1))
-    }
+    static let noTextureTriangle = Triangle(a: .init(x: -1, y: -1), b: .init(x: -1, y: -1), c: .init(x: -1, y: -1))
 }
