@@ -67,8 +67,10 @@ final class OperationTypeMapTests: XCTestCase {
             .wait(duration: 0.1),
             .call(.done("x"))
         ])
-        var context = BasicOperationComponentContext(entities: .init(), transform: [:], sprite: [:])
-        _ = local.run(id: "e1", state: &context, delta: 0.2)
+        var context = OperationComponentContext<MapLocalAction>(
+            entities: .init(), operation: [:], transform: [:], sprite: [:]
+        )
+        _ = local.run(id: "e1", state: &context, delta: 0.2, registration: .init())
 
         let mapped = local.map(MapUmbrellaAction.fromLocal)
 
@@ -91,8 +93,8 @@ final class OperationTypeMapTests: XCTestCase {
 
     func testCallProgressSurvivesMapping() {
         var callOp = CallOperation<MapLocalAction>(action: .done("x"))
-        var context = BasicOperationComponentContext(entities: .init(), transform: [:], sprite: [:])
-        _ = callOp.run(id: "e1", state: &context, delta: 0.1)
+        let effect: GameEffect<OperationComponentContext<MapLocalAction>, MapLocalAction> = callOp.run(id: "e1")
+        _ = effect
         XCTAssertTrue(callOp.isComplete)
 
         let mapped = callOp.map(MapUmbrellaAction.fromLocal)

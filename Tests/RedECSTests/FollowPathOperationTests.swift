@@ -6,16 +6,17 @@ final class FollowPathOperationTests: XCTestCase {
 
     private let id: EntityId = "walker"
 
-    private func makeContext(startAt position: Point) -> BasicOperationComponentContext {
-        BasicOperationComponentContext(
+    private func makeState<A: Equatable & Codable>(startAt position: Point) -> OperationComponentContext<A> {
+        OperationComponentContext(
             entities: .init(),
+            operation: [:],
             transform: [id: TransformComponent(entity: id, position: position)],
             sprite: [:]
         )
     }
 
     func testStepsTowardTheFirstWaypointAtTravelSpeed() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         var op = FollowPathOperation(path: [Point(x: 100, y: 0)], travelSpeed: 60)
 
         _ = op.run(id: id, state: &state, delta: 0.5)
@@ -26,7 +27,7 @@ final class FollowPathOperationTests: XCTestCase {
     }
 
     func testConsumesWaypointsAndCompletes() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         var op = FollowPathOperation(path: [Point(x: 10, y: 0), Point(x: 10, y: 10)], travelSpeed: 60)
 
         for _ in 0..<60 where !op.isComplete {
@@ -38,7 +39,7 @@ final class FollowPathOperationTests: XCTestCase {
     }
 
     func testOvershootSnapsToTheWaypointInsteadOfOrbiting() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         var op = FollowPathOperation(path: [Point(x: 20, y: 0)], travelSpeed: 600)
 
         for _ in 0..<10 where !op.isComplete {
@@ -50,7 +51,7 @@ final class FollowPathOperationTests: XCTestCase {
     }
 
     func testDiagonalTravelMovesAtUniformSpeed() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         var op = FollowPathOperation(path: [Point(x: 30, y: 40)], travelSpeed: 50)
 
         _ = op.run(id: id, state: &state, delta: 0.5)
@@ -60,7 +61,7 @@ final class FollowPathOperationTests: XCTestCase {
     }
 
     func testMissingTransformCompletesImmediately() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         state.transform = [:]
         var op = FollowPathOperation(path: [Point(x: 100, y: 0)], travelSpeed: 60)
 
@@ -70,7 +71,7 @@ final class FollowPathOperationTests: XCTestCase {
     }
 
     func testResetRewindsToTheFirstWaypoint() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         var op = FollowPathOperation(path: [Point(x: 1, y: 0)], travelSpeed: 60)
         for _ in 0..<10 where !op.isComplete {
             _ = op.run(id: id, state: &state, delta: 1.0 / 60.0)
@@ -84,14 +85,14 @@ final class FollowPathOperationTests: XCTestCase {
     }
 
     func testSequencedCallRunsAfterThePathCompletes() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<String> = makeState(startAt: .zero)
         var op: OperationType<String> = OperationType
             .followPath([Point(x: 10, y: 0)], travelSpeed: 60)
             .call("arrived")
 
         var calls: [String] = []
         for _ in 0..<60 where !op.isComplete {
-            let effect = op.run(id: id, state: &state, delta: 1.0 / 60.0)
+            let effect = op.run(id: id, state: &state, delta: 1.0 / 60.0, registration: .init())
             if case .game(let action) = effect { calls.append(action) }
         }
 
@@ -100,12 +101,12 @@ final class FollowPathOperationTests: XCTestCase {
     }
 
     func testSpeedOperationAcceleratesAPathFollow() {
-        var state = makeContext(startAt: .zero)
+        var state: OperationComponentContext<String> = makeState(startAt: .zero)
         var op: OperationType<String> = OperationType
             .followPath([Point(x: 100, y: 0)], travelSpeed: 60)
             .speed(2)
 
-        _ = op.run(id: id, state: &state, delta: 0.5)
+        _ = op.run(id: id, state: &state, delta: 0.5, registration: .init())
 
         XCTAssertEqual(state.transform[id]?.position.x ?? 0, 60, accuracy: 0.0001)
     }
@@ -115,22 +116,27 @@ final class SpeedOperationTests: XCTestCase {
 
     private let id: EntityId = "runner"
 
-    func testScalesTheDeltaFedToTheWrappedOperation() {
-        var state = BasicOperationComponentContext(
+    private func makeState(startAt position: Point) -> OperationComponentContext<Int> {
+        OperationComponentContext(
             entities: .init(),
-            transform: [id: TransformComponent(entity: id, position: .zero)],
+            operation: [:],
+            transform: [id: TransformComponent(entity: id, position: position)],
             sprite: [:]
         )
+    }
+
+    func testScalesTheDeltaFedToTheWrappedOperation() {
+        var state: OperationComponentContext<Int> = makeState(startAt: .zero)
         var op: OperationType<Int> = OperationType
             .move(.by(Point(x: 100, y: 0)), duration: 1)
             .speed(2)
 
-        _ = op.run(id: id, state: &state, delta: 0.25)
+        _ = op.run(id: id, state: &state, delta: 0.25, registration: .init())
 
         XCTAssertEqual(state.transform[id]?.position.x ?? 0, 50, accuracy: 0.0001)
         XCTAssertFalse(op.isComplete)
 
-        _ = op.run(id: id, state: &state, delta: 0.25)
+        _ = op.run(id: id, state: &state, delta: 0.25, registration: .init())
         XCTAssertEqual(state.transform[id]?.position.x ?? 0, 100, accuracy: 0.0001)
         XCTAssertTrue(op.isComplete)
     }

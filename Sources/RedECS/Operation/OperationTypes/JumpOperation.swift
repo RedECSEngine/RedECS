@@ -10,8 +10,9 @@ import Geometry
 /// On top of that translation, `height` adds a parabolic arc that peaks `jumps`
 /// times over the duration. `CCJumpTo` is a subclass of `CCJumpBy` in cocos2d;
 /// here both are the one operation, distinguished only by how `delta` is resolved.
-public struct JumpOperation: Operation {
-    public typealias Action = Int
+public struct JumpOperation: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.jump" }
+
 
     public enum Strategy: Equatable, Codable {
         case by(Point)
@@ -46,11 +47,11 @@ public struct JumpOperation: Operation {
         self.currentTime = currentTime
     }
 
-    public mutating func run(
+    public mutating func run<S: TransformProviding>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout S,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Action> {
+    ) {
         if currentTime == 0 {
             switch strategy {
             case .by(let amount):
@@ -79,8 +80,6 @@ public struct JumpOperation: Operation {
 
         state.transform[id]?.position += offset - previousOffset
         previousOffset = offset
-
-        return .none
     }
 
     public mutating func reset() {

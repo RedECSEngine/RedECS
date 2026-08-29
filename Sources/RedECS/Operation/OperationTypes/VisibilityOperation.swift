@@ -1,7 +1,8 @@
 import Geometry
 
-public struct VisibilityOperation: Operation {
-    public typealias Action = Int
+public struct VisibilityOperation: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.visibility" }
+
     
     public enum Strategy: Equatable, Codable {
         case show
@@ -18,12 +19,12 @@ public struct VisibilityOperation: Operation {
         self.strategy = strategy
     }
     
-    public mutating func run(
+    public mutating func run<S: TransformProviding>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout S,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Action> {
-        guard !isComplete else { return .none }
+    ) {
+        guard !isComplete else { return }
         isComplete = true
         switch strategy {
         case .hide:
@@ -33,7 +34,6 @@ public struct VisibilityOperation: Operation {
         case .toggle:
             state.transform[id]?.isHidden.toggle()
         }
-        return .none
     }
     
     public mutating func reset() {

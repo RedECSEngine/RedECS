@@ -40,3 +40,29 @@ public struct TransformComponent: GameComponent {
             .scaledBy(sx: scale.x, sy: scale.y)
     }
 }
+
+public protocol TransformProviding: GameState {
+    var transform: [EntityId: TransformComponent] { get set }
+}
+
+public extension LerpKey where Value == Point {
+    static var position: Self { .init("TransformComponent.position") }
+    static var scale: Self { .init("TransformComponent.scale") }
+}
+
+public extension LerpKey where Value == Double {
+    static var rotation: Self { .init("TransformComponent.rotate") }
+}
+
+public extension LerpKey where Value == Int {
+    static var zIndex: Self { .init("TransformComponent.zIndex") }
+}
+
+extension TransformComponent: OperationSupportingComponent {
+    public static func bindOperationSupport<B: ComponentBinder>(_ binder: inout B) where B.Component == Self {
+        binder.value(.position, \.position)
+        binder.value(.scale, \.scale)
+        binder.value(.rotation, \.rotate)
+        binder.value(.zIndex, \.zIndex)
+    }
+}

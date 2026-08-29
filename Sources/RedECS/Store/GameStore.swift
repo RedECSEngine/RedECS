@@ -1,4 +1,4 @@
-public final class GameStore<R: Reducer> where R.State: OperationCapableGameState, R.State.GameAction == R.Action {
+public final class GameStore<R: Reducer> where R.State: OperationStoringGameState, R.State.GameAction == R.Action {
     public private(set) var state: R.State
     public private(set) var environment: R.Environment
     private var reducer: R
@@ -181,5 +181,21 @@ extension GameStore {
 
     func removeAllOperations(_ entityId: EntityId) {
         state.operation[entityId]?.removeAllOperations()
+    }
+}
+
+public extension GameStore {
+    convenience init(
+        state: R.State,
+        environment: R.Environment,
+        reducer: R,
+        registration: GameRegistration<R.State, R.Action>
+    ) {
+        self.init(
+            state: state,
+            environment: environment,
+            reducer: reducer,
+            registeredComponentTypes: registration.components
+        )
     }
 }

@@ -1,7 +1,8 @@
 import Geometry
 
-public struct OpacityOperation: Operation {
-    public typealias Action = Int
+public struct OpacityOperation: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.opacity" }
+
     
     public enum Strategy: Equatable, Codable {
         case by(Double) // degrees
@@ -25,11 +26,11 @@ public struct OpacityOperation: Operation {
         self.currentTime = currentTime
     }
     
-    public mutating func run(
+    public mutating func run<S: SpriteProviding>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout S,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Action> {
+    ) {
         if currentTime == 0 {
             switch strategy {
             case .by(let amount):
@@ -48,7 +49,6 @@ public struct OpacityOperation: Operation {
         let opacityIncrement = amount * percentage
         state.sprite[id]?.opacity += opacityIncrement // TODO: this doesnt work for shapes or labels
         currentTime += delta
-        return .none
     }
     
     public mutating func reset() {

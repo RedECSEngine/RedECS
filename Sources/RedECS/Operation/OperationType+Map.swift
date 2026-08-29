@@ -19,6 +19,7 @@ public extension OperationType {
         case .timing(let op): return .timing(op.map(transform))
         case .removeEntity(let op): return .removeEntity(op.map(transform))
         case .sound(let op): return .sound(op.map(transform))
+        case .custom(let op): return .custom(op)
         }
     }
 }

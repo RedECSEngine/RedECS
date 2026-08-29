@@ -1,5 +1,6 @@
-public struct SoundOperation<GameAction: Equatable & Codable>: Operation {
-    public typealias Action = GameAction
+public struct SoundOperation<GameAction: Equatable & Codable>: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.sound" }
+
 
     public enum Strategy: Equatable, Codable {
         case play(SoundId)
@@ -17,7 +18,7 @@ public struct SoundOperation<GameAction: Equatable & Codable>: Operation {
         self.strategy = strategy
     }
 
-    public mutating func run(id: EntityId, state: inout BasicOperationComponentContext, delta: Double) -> GameEffect<BasicOperationComponentContext, Action> {
+    public mutating func run<S: GameState>(id: EntityId) -> GameEffect<S, GameAction> {
         isComplete = true
         switch strategy {
         case .play(let sound):

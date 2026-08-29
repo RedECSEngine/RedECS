@@ -1,7 +1,8 @@
 import Geometry
 
-public struct FollowPathOperation: Operation {
-    public typealias Action = Int
+public struct FollowPathOperation: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.followPath" }
+
 
     public var path: [Point]
     public var currentIndex: Int = 0
@@ -22,15 +23,15 @@ public struct FollowPathOperation: Operation {
         self.proximityVariance = proximityVariance
     }
 
-    public mutating func run(
+    public mutating func run<S: TransformProviding>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout S,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Action> {
-        guard currentIndex < path.count else { return .none }
+    ) {
+        guard currentIndex < path.count else { return }
         guard let position = state.transform[id]?.position else {
             currentIndex = path.count
-            return .none
+            return
         }
 
         currentTime += delta
@@ -41,12 +42,11 @@ public struct FollowPathOperation: Operation {
         if distance <= max(proximityVariance, step) {
             state.transform[id]?.position = target
             currentIndex += 1
-            return .none
+            return
         }
 
         let direction = target.diffOf(position) / distance
         state.transform[id]?.position = position + direction * step
-        return .none
     }
 
     public mutating func reset() {

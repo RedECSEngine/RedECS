@@ -18,38 +18,43 @@ public struct OperationComponentContext<GameAction: Equatable & Codable>: GameSt
     }
 }
 
-public struct OperationReducer<GameAction: Equatable & Codable>: Reducer {
+public struct OperationReducer<State: OperationCapableGameState>: Reducer {
+    public typealias Action = State.GameAction
+    public typealias Environment = Void
+
+    let registration: GameRegistration<State, State.GameAction>
+
+    public init(registration: GameRegistration<State, State.GameAction>) {
+        self.registration = registration
+    }
+
     public func reduce(
-        state: inout OperationComponentContext<GameAction>,
-        action: GameAction,
-        environment: ()
-    ) -> GameEffect<OperationComponentContext<GameAction>, GameAction> {
+        state: inout State,
+        action: Action,
+        environment: Void
+    ) -> GameEffect<State, Action> {
         .none
     }
-    
-    public init() { }
+
     public func reduce(
-        state: inout OperationComponentContext<GameAction>,
+        state: inout State,
         delta: Double,
         environment: Void
-    ) -> GameEffect<OperationComponentContext<GameAction>, GameAction> {
-        var effects: [GameEffect<OperationComponentContext<GameAction>, GameAction>] = []
-        state.operation.forEach { (id, operationComponent) in
-            var operationComponent = operationComponent
-            for (key, operation) in operationComponent.operations {
-                var operation = operation
-                let effect = operation.run(id: id, state: &state.basicOperationComponentState, delta: delta)
-                effects.append(effect.map(
-                    stateTransform: \.basicOperationComponentState,
-                    actionTransform: { $0 }
-                ))
-                if operation.isComplete == true {
-                    operationComponent.operations[key] = nil
+    ) -> GameEffect<State, Action> {
+        var effects: [GameEffect<State, Action>] = []
+        for id in Array(state.operation.keys) {
+            guard let component = state.operation[id] else { continue }
+            for key in Array(component.operations.keys) {
+                guard var operation = state.operation[id]?.operations[key] else { continue }
+                effects.append(
+                    operation.run(id: id, state: &state, delta: delta, registration: registration)
+                )
+                if operation.isComplete {
+                    state.operation[id]?.operations[key] = nil
                 } else {
-                    operationComponent.operations[key] = operation
+                    state.operation[id]?.operations[key] = operation
                 }
             }
-            state.operation[id] = operationComponent
         }
         return .many(effects)
     }

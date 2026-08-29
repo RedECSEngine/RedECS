@@ -1,5 +1,7 @@
 
-public struct RepeatOperation<GameAction: Equatable & Codable>: Operation {
+public struct RepeatOperation<GameAction: Equatable & Codable>: OperationPayload {
+    public static var operationTypeId: OperationTypeId { "engine.repeat" }
+
     public enum Strategy: Equatable, Codable {
         case forever
         case times(Int)
@@ -28,13 +30,14 @@ public struct RepeatOperation<GameAction: Equatable & Codable>: Operation {
         self.operation = operation
     }
         
-    public mutating func run(
+    public mutating func run<S: OperationCapableGameState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
-        delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, GameAction> {
+        state: inout S,
+        delta: Double,
+        registration: GameRegistration<S, GameAction>
+    ) -> GameEffect<S, GameAction> where S.GameAction == GameAction {
         
-        let effect = operation.run(id: id, state: &state, delta: delta)
+        let effect = operation.run(id: id, state: &state, delta: delta, registration: registration)
         
         currentTime += delta
         totalTime += delta
