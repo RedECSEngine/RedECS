@@ -5,9 +5,9 @@ import RedECSBasicComponents
 
 final class JumpOperationTests: XCTestCase {
 
-    private func makeContext(startAt position: Point) -> (EntityId, BasicOperationComponentContext) {
+    private func makeContext(startAt position: Point) -> (EntityId, OperationTestContext) {
         let id: EntityId = "jumper"
-        let context = BasicOperationComponentContext(
+        let context = OperationTestContext(
             entities: .init(),
             transform: [id: TransformComponent(entity: id, position: position)],
             sprite: [:]
@@ -20,7 +20,7 @@ final class JumpOperationTests: XCTestCase {
     private func run(
         _ op: inout JumpOperation,
         id: EntityId,
-        state: inout BasicOperationComponentContext
+        state: inout OperationTestContext
     ) -> [Point] {
         var positions: [Point] = []
         for _ in 0..<4 {
