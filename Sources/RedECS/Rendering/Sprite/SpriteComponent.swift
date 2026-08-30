@@ -27,20 +27,48 @@ public struct SpriteComponent: GameComponent {
     public var entity: EntityId
     public var type: SpriteType?
     public var animation: SpriteAnimation?
-    
+
     public var fillColor: Color = .clear
     public var opacity: Double = 1
-    
+    public var tileAnimationTime: Double = 0
+    public var shader: ShaderEffect? = nil // fragment effect applied to this sprite's draws; nil = passthrough
+    /// Where this sprite's content hangs on its transform's frame, from 0 to 1.
+    /// The transform's position is where the anchor point of the content sits,
+    /// and rotation/scale pivot around it. Content only — children of the
+    /// entity attach to the frame itself.
+    public var anchorPoint: Point = .init(x: 0.5, y: 0.5)
+
     public init(entity: EntityId) {
         self.init(entity: entity, type: nil)
     }
-    
+
     public init(
         entity: EntityId,
-        type: SpriteType?
+        type: SpriteType?,
+        anchorPoint: Point = .init(x: 0.5, y: 0.5)
     ) {
         self.entity = entity
         self.type = type
+        self.setAnchorPoint(anchorPoint)
+    }
+
+    /// Clamps values between 0 and 1. A value of 0.5 for both x and y means center
+    public mutating func setAnchorPoint(_ anchorPoint: Point) {
+        self.anchorPoint = .init(
+            x: max(0, min(1, anchorPoint.x)),
+            y: max(0, min(1, anchorPoint.y))
+        )
+    }
+
+    /// The model matrix for drawing content of `containerSize` in `transform`'s
+    /// frame, offset so the anchor point of the content lands on the frame's
+    /// position.
+    public func contentMatrix(transform: TransformComponent, containerSize: Size) -> Matrix3 {
+        transform.matrix()
+            .translatedBy(
+                tx: -anchorPoint.x * containerSize.width,
+                ty: -anchorPoint.y * containerSize.height
+            )
     }
     
     public mutating func runAnimation(
@@ -64,6 +92,10 @@ public struct SpriteComponent: GameComponent {
     }
     
     public mutating func applyDelta(_ delta: Double) -> CompletedAnimationId? {
+        if case .tileMap? = type {
+            tileAnimationTime += delta * 1000
+            return nil
+        }
         guard var runningAnimation = animation else {
             return nil
         }
@@ -143,13 +175,14 @@ extension SpriteComponent: RenderableComponent {
                 .map { (i, triangle) -> RenderTriangle in
                     RenderTriangle(triangle: triangle)
                 }
-            let matrix = transform.matrix(containerSize: shape.rect.size)
+            let matrix = contentMatrix(transform: transform, containerSize: shape.rect.size)
             return [
                 RenderGroup(
                     triangles: triangles,
                     transformMatrix: matrix,
                     fragmentType: .color(fillColor),
-                    zIndex: transform.zIndex
+                    zIndex: transform.zIndex,
+                    shader: shader // carry the sprite's effect onto its group
                 )
             ]
         case let .label(font, text):
@@ -164,8 +197,7 @@ extension SpriteComponent: RenderableComponent {
            return tileMapRenderGroups(
                tileMap: map,
                cameraMatrix: cameraMatrix,
-               transform: transform,
-               resourceManager: resourceManager
+               transform: transform
            )
         }
     }
@@ -182,55 +214,19 @@ extension SpriteComponent {
         guard let font = resourceManager.fonts[font] else {
             return []
         }
-        
-        var currentOffsetX: Double = 0
-        var maxHeight: Double = 0
-        var renderTriangles: [RenderTriangle] = []
         do {
-            for character in text {
-                let characterData: BitmapFont.Character
-                if let data = font.characterMap[String(character)] {
-                    characterData = data
-                } else if character == " ", let data = font.characterMap["space"] {
-                    currentOffsetX += data.xadvance
-                    continue
-                } else {
-                    continue
-                }
-                let renderRect = Rect(
-                    x: currentOffsetX,
-                    y: (font.common.base - characterData.height - characterData.yoffset),
-                    width: characterData.width,
-                    height: characterData.height
-                )
-                let textureY = font.common.scaleH - (characterData.y + characterData.height)
-                let textureRect = Rect(
-                    origin: .init(x: characterData.x, y: textureY),
-                    size: Size(width: characterData.width, height: characterData.height)
-                )
-                let renderTris = try renderRect.triangulate()
-                let textureTris = try textureRect.triangulate()
-                for i in 0..<2 {
-                    renderTriangles.append(
-                        RenderTriangle(
-                            triangle: renderTris[i],
-                            textureTriangle: textureTris[i]
-                        )
-                    )
-                }
-                maxHeight = max(maxHeight, characterData.height)
-                currentOffsetX += characterData.xadvance
-            }
-            let textureName = font.page.file.split(separator: ".").dropLast().joined(separator: ".")
+            let layout = try font.layoutText(text)
             return [
                 RenderGroup(
-                    triangles: renderTriangles,
-                    transformMatrix: transform.matrix(
-                        containerSize: Size(width: currentOffsetX, height: maxHeight)
+                    triangles: layout.triangles,
+                    transformMatrix: contentMatrix(
+                        transform: transform,
+                        containerSize: layout.size
                     ),
-                    fragmentType: .texture(textureName),
+                    fragmentType: .texture(font.pageTextureName),
                     zIndex: transform.zIndex,
-                    opacity: opacity
+                    opacity: opacity,
+                    shader: shader // e.g. tinting a label
                 )
             ]
         } catch {
@@ -255,8 +251,13 @@ extension SpriteComponent {
             return []
         }
         let textureRect: Rect
-        if let frameId = texture.frameId,
-            let frameInfo = textureMap.frames.first(where: { $0.filename == frameId }) {
+        if let frameId = texture.frameId {
+            // A named frame that isn't in the atlas is always a bug; drawing
+            // the whole sheet as a fallback painted sprite sheets over the map.
+            guard let frameInfo = textureMap.frames.first(where: { $0.filename == frameId }) else {
+                print("frame \(frameId) not found in texture \(texture.textureId); not rendering")
+                return []
+            }
             textureRect = Rect(
                 x: frameInfo.frame.x,
                 y: textureMap.meta.size.h - frameInfo.frame.y - frameInfo.frame.h,
@@ -264,12 +265,14 @@ extension SpriteComponent {
                 height: frameInfo.frame.h
             )
         } else {
-            print("using full texture, no frame info", textureMap.frames)
+            // No frame requested: single-image textures draw whole.
             let size = textureMap.meta.size
             textureRect = Rect(x: 0, y: 0, width: size.w, height: size.h)
         }
         
-        let renderRect = Rect(center: .zero, size: textureRect.size)
+        // Corner-origin like every other sprite type, so `contentMatrix`'s
+        // anchor offset means the same thing for textures as for shapes.
+        let renderRect = Rect(origin: .zero, size: textureRect.size)
         let topRenderTri = RenderTriangle(
             triangle: Triangle(
                 a: Point(x: renderRect.minX, y: renderRect.maxY),
@@ -297,113 +300,12 @@ extension SpriteComponent {
         return [
             RenderGroup(
                 triangles: [topRenderTri, bottomRenderTri],
-                transformMatrix: transform.matrix(containerSize: renderRect.size),
+                transformMatrix: contentMatrix(transform: transform, containerSize: renderRect.size),
                 fragmentType: .texture(texture.textureId),
                 zIndex: transform.zIndex,
-                opacity: opacity
+                opacity: opacity,
+                shader: shader // e.g. the hero's palette remap
             )
         ]
-    }
-}
-
-extension SpriteComponent {
-    func tileMapRenderGroups(
-        tileMap: TiledMapJSON,
-        cameraMatrix: Matrix3,
-        transform: TransformComponent,
-        resourceManager: ResourceManager
-    ) -> [RenderGroup] {
-        let tileWidth = tileMap.tileWidth,
-            tileHeight = tileMap.tileHeight,
-            layerCols = tileMap.width,
-            layerRows = tileMap.height,
-            tileSize = Size(width: Double(tileWidth), height: Double(tileHeight))
-        
-        var renderGroups = [RenderGroup]()
-        tileMap.tileLayers.enumerated().forEach { (i, layer) in
-            guard let tileSetName = tileMap.tileSets.first?.source,
-                  let tileSet = resourceManager.tileSets[tileSetName] else {
-                return
-            }
-            
-            let matrix = transform.matrix(containerSize: Size(
-                width: tileMap.totalWidth,
-                height: tileMap.totalHeight
-            ))
-            
-            var renderTriangles: [RenderTriangle] = []
-            
-            for r in 0..<layerRows {
-                for c in 0..<layerCols {
-                    let rectForTile = Rect(
-                        center: .init(
-                            x: Double(c * tileWidth + tileWidth / 2),
-                            y: Double(r * tileHeight + tileHeight / 2)
-                        ),
-                        size: tileSize
-                    )
-                    
-                    let projectedPosition = rectForTile.center.multiplyingMatrix(cameraMatrix)
-                    if abs(projectedPosition.x) > 1.125 || abs(projectedPosition.y) > 1.125 {
-                        continue
-                    }
-                    
-                    guard let tileIndex = layer.tileDataAt(column: c, row: r, flipY: true) else { continue }
-                    
-                    guard tileIndex != 0 else { continue } // empty
-                    
-                    let tileSetCol = (tileIndex) % tileSet.columns - 1
-                    let tileSetRow = ((tileIndex) / tileSet.columns)
-                    
-                    let textureRect = Rect(
-                        center: .init(
-                            x: Double(tileSetCol * tileWidth + tileWidth / 2),
-                            y: Double(tileSet.imageHeight) - Double(tileSetRow * tileHeight + tileHeight / 2)
-                        ),
-                        size: tileSize
-                    )
-                    
-                    let topRenderTri = RenderTriangle(
-                        triangle: Triangle(
-                            a: Point(x: rectForTile.minX, y: rectForTile.maxY),
-                            b: Point(x: rectForTile.maxX, y: rectForTile.minY),
-                            c: Point(x: rectForTile.maxX, y: rectForTile.maxY)
-                        ),
-                        textureTriangle: Triangle(
-                            a: Point(x: textureRect.minX, y: textureRect.maxY),
-                            b: Point(x: textureRect.maxX, y: textureRect.minY),
-                            c: Point(x: textureRect.maxX, y: textureRect.maxY)
-                        )
-                    )
-                    let bottomRenderTri = RenderTriangle(
-                        triangle: Triangle(
-                            a: Point(x: rectForTile.minX, y: rectForTile.minY),
-                            b: Point(x: rectForTile.maxX, y: rectForTile.minY),
-                            c: Point(x: rectForTile.minX, y: rectForTile.maxY)
-                        ),
-                        textureTriangle: Triangle(
-                            a: Point(x: textureRect.minX, y: textureRect.minY),
-                            b: Point(x: textureRect.maxX, y: textureRect.minY),
-                            c: Point(x: textureRect.minX, y: textureRect.maxY)
-                        )
-                    )
-                    
-                    renderTriangles.append(contentsOf: [topRenderTri, bottomRenderTri])
-                }
-            }
-            
-            guard !renderTriangles.isEmpty else {
-                return
-            }
-            
-            let textureId = tileSet.image.split(separator: ".").dropLast().joined(separator: ".")
-            renderGroups.append(RenderGroup(
-                triangles: renderTriangles,
-                transformMatrix: matrix,
-                fragmentType: .texture(textureId),
-                zIndex: transform.zIndex
-            ))
-        }
-        return renderGroups
     }
 }

@@ -4,37 +4,45 @@ import RedECS
 import GeometryAlgorithms
 
 final class Draw2DProgram {
+    let definition: ShaderDefinition // this program's effect (its GLSL source)
+
     var triangles: [RenderTriangle]
     var textureSize: Size
     var image: JSValue
     var color: Color
-    
+    var params: [Float] // values for u_params, packed by ShaderEffect.encodeUniforms()
+
     var projectionMatrix: Matrix3
     var modelMatrix: Matrix3
-    
+
     var program: JSValue?
-    
+
     init(
+        definition: ShaderDefinition,
         triangles: [RenderTriangle],
         textureSize: Size,
         image: JSValue,
         color: Color,
+        params: [Float] = [],
         projectionMatrix: Matrix3,
         modelMatrix: Matrix3
     ) {
+        self.definition = definition
         self.triangles = triangles
         self.textureSize = textureSize
         self.image = image
         self.color = color
+        self.params = params
         self.projectionMatrix = projectionMatrix
         self.modelMatrix = modelMatrix
     }
-    
+
     func update(
         triangles: [RenderTriangle],
         textureSize: Size,
         image: JSValue,
         color: Color,
+        params: [Float],
         projectionMatrix: Matrix3,
         modelMatrix: Matrix3
     ) {
@@ -42,6 +50,7 @@ final class Draw2DProgram {
         self.textureSize = textureSize
         self.image = image
         self.color = color
+        self.params = params
         self.projectionMatrix = projectionMatrix
         self.modelMatrix = modelMatrix
     }
@@ -67,6 +76,7 @@ extension Draw2DProgram: WebGLProgram {
         let projectionMatrixUniformLocation = gl.getUniformLocation(program, "u_projectionMatrix")
         let modelMatrixUniformLocation = gl.getUniformLocation(program, "u_modelMatrix")
         let textureSizeLocation = gl.getUniformLocation(program, "u_textureSize")
+        let paramsLocation = gl.getUniformLocation(program, "u_params") // null on passthrough
     
         // MARK: - Attributes
         // MARK: - Attribute; Position
@@ -212,7 +222,13 @@ extension Draw2DProgram: WebGLProgram {
         
         // set the textureSize
         _ = gl.uniform2f(textureSizeLocation, textureSize.width, textureSize.height);
-        
+
+        // Upload u_params only for effects that declare and encode it.
+        if !paramsLocation.isNull, !params.isEmpty,
+           let paramsArrayData = JSObject.global.Float32Array.function?.new(params) {
+            _ = gl.uniform1fv(paramsLocation, paramsArrayData)
+        }
+
         // MARK: - Draw
 
         // Draw the rectangle.
@@ -246,31 +262,9 @@ extension Draw2DProgram: WebGLProgram {
     """
     }
     
+    // Vertex shader is shared; the fragment shader comes from the effect.
     var fragmentShader: String {
-    """
-    precision mediump float;
-    
-    // our texture
-    uniform sampler2D u_image;
-    uniform vec2 u_textureSize;
-    
-    varying vec4 v_color;
-    varying vec2 v_texCoord; // the texCoords passed in from the vertex shader.
-    
-    void main() {
-        if (u_textureSize.x == 1.0 && u_textureSize.y == 1.0) {
-            gl_FragColor = v_color;
-        } else {
-            vec4 color = texture2D(u_image, v_texCoord);
-            if(color.w == 0.0) {
-                gl_FragColor = color;
-            } else {
-                gl_FragColor = vec4(color.xyz, v_color.w);
-            }
-        }
+        definition.webGLFragmentSource
     }
-    """
-    }
-    
 }
 

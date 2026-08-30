@@ -1,4 +1,5 @@
 import MetalKit
+import QuartzCore
 import RedECS
 import Geometry
 import GeometryAlgorithms
@@ -33,10 +34,14 @@ struct Uniforms {
 }
 
 public class MetalRenderer: NSObject, MTKViewDelegate {
+    static let fragmentParamsBufferIndex = 0 // fragment buffer slot for u_params
+
     var resourceManager: MetalResourceManager
     var device: MTLDevice
-    var pipelineState: MTLRenderPipelineState
-    
+    var shaderRegistry: ShaderRegistry // effects to build pipelines for
+    var pipelineStates: [ShaderId: MTLRenderPipelineState] // one pipeline per effect
+    var passthroughPipelineState: MTLRenderPipelineState // fallback for unknown ids
+
     // The command queue used to pass commands to the device.
     var commandQueue: MTLCommandQueue
     
@@ -48,6 +53,9 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
     public var deltaCallback: ((Double) -> Void)?
     
     var projectionMatrix: matrix_float4x4 = matrix_float4x4()
+    /// Projection for `.screen` render groups (viewport points, top-left
+    /// origin); tracks the drawable size, independent of the world camera.
+    var screenProjectionMatrix: matrix_float4x4 = matrix_float4x4()
     
     private lazy var emptyTexture: MTLTexture = {
         creatyEmptyPixelTexture(device: device)!
@@ -56,61 +64,109 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
     public init?(
         device: MTLDevice,
         pixelFormat: MTLPixelFormat,
-        resourceManager: MetalResourceManager
+        resourceManager: MetalResourceManager,
+        shaderRegistry: ShaderRegistry = ShaderRegistry()
     ) {
         self.resourceManager = resourceManager
-        
+        self.shaderRegistry = shaderRegistry
+
         self.device = device
-        
-        guard let defaultLibrary = try? device.makeDefaultLibrary(bundle: .module) else {
+
+        // Compile one library holding every effect's fragment function.
+        guard let library = Self.makeShaderLibrary(device: device, registry: shaderRegistry),
+              let vertexFunction = library.makeFunction(name: "vertexShader") else {
             return nil
         }
-        
-        let vertexFunction = defaultLibrary.makeFunction(name: "vertexShader")
-        let fragmentFunction = defaultLibrary.makeFunction(name: "fragmentShader")
-        
-        let pipelineDescriptor = MTLRenderPipelineDescriptor()
-        pipelineDescriptor.label = "2D Rendering Pipeline"
-        pipelineDescriptor.vertexFunction = vertexFunction
-        pipelineDescriptor.fragmentFunction = fragmentFunction
-        pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat
-        
-        pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
-        pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
-        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add
-        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-        pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
-        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
-        
-        do {
-            try self.pipelineState = device.makeRenderPipelineState(descriptor: pipelineDescriptor)
-        } catch {
+
+        // Build a pipeline pairing the shared vertex fn with one fragment fn.
+        func makePipeline(fragmentFunctionName: String) -> MTLRenderPipelineState? {
+            guard let fragmentFunction = library.makeFunction(name: fragmentFunctionName) else {
+                return nil
+            }
+            let pipelineDescriptor = MTLRenderPipelineDescriptor()
+            pipelineDescriptor.label = "2D Rendering Pipeline: \(fragmentFunctionName)"
+            pipelineDescriptor.vertexFunction = vertexFunction
+            pipelineDescriptor.fragmentFunction = fragmentFunction
+            pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat
+
+            // Standard premultiplied-style alpha blending (unchanged).
+            pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
+            pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
+            pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add
+            pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+            pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+            pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+            pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+
+            return try? device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+        }
+
+        // Passthrough is the fallback, so build it explicitly.
+        guard let passthrough = makePipeline(
+            fragmentFunctionName: ShaderRegistry.passthroughDefinition.metalFragmentFunction
+        ) else {
             return nil
         }
-        
+        self.passthroughPipelineState = passthrough
+
+        // One pipeline per registered effect, keyed by id for per-group lookup.
+        var states: [ShaderId: MTLRenderPipelineState] = [:]
+        for definition in shaderRegistry.ordered {
+            guard let state = makePipeline(fragmentFunctionName: definition.metalFragmentFunction) else {
+                return nil
+            }
+            states[definition.id] = state
+        }
+        self.pipelineStates = states
+
         guard let commandQueue = device.makeCommandQueue() else {
             return nil
         }
-        
+
         self.commandQueue = commandQueue
+    }
+
+    /// The base source (`baseMetalSource`) and each registered shader's
+    /// `metalSource` are compiled together at runtime, so Xcode and
+    /// `swift build`/`swift test` render identically — a precompiled
+    /// default.metallib produced subtly different texture sampling than the
+    /// runtime compiler, which broke snapshot references across the two
+    /// (see known-issues.md). Compiling from an embedded string (rather than a
+    /// bundled `Shaders.metal`) also means no resource lookup that Xcode fails
+    /// to stage. Preset and game-defined fragment functions live in one library.
+    private static func makeShaderLibrary(device: MTLDevice, registry: ShaderRegistry) -> MTLLibrary? {
+        // Append each effect's MSL (empty for effects already in the base).
+        let appended = registry.ordered
+            .map(\.metalSource)
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n\n")
+        // Compile it all as one translation unit so appended fns see base types.
+        let source = baseMetalSource + "\n\n" + appended
+        return try? device.makeLibrary(source: source, options: nil)
     }
     
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         viewportSize.width = size.width
         viewportSize.height = size.height
+        if size.width > 0 && size.height > 0 {
+            screenProjectionMatrix = Matrix3.screenProjection(size: viewportSize).asMatrix4x4
+        }
     }
     
-    var lastDrawTime: Date?
-    
+    // A *monotonic* timestamp (seconds). `Date()` is the wall clock and can jump
+    // backward on NTP corrections, sleep/wake, or manual clock changes, which
+    // produced negative frame deltas; `CACurrentMediaTime()` never goes back.
+    var lastDrawTime: CFTimeInterval?
+
     public func updateDelta() {
-        guard let drawTime = lastDrawTime else {
-            lastDrawTime = Date()
-            return
-        }
-        let delta = Date().timeIntervalSince(drawTime)
+        let now = CACurrentMediaTime()
+        defer { lastDrawTime = now }
+        guard let drawTime = lastDrawTime else { return }
+        let delta = now - drawTime
+        // Should always hold with a monotonic clock, but guard so two draws in
+        // the same instant (delta == 0) can't trip sendDelta's `delta > 0`.
+        guard delta > 0 else { return }
         deltaCallback?(delta)
-        lastDrawTime = Date()
     }
     
     public func draw(in view: MTKView) {
@@ -153,48 +209,71 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
             zfar: 1.0
         ))
         
-        renderEncoder.setRenderPipelineState(pipelineState)
-        
         var lastBoundTexture: TextureId?
+        var lastPipelineId: ShaderId? // skip redundant pipeline switches
 
-        for renderGroup in queuedWork.sorted(by: { $0.zIndex < $1.zIndex }) {
+        let sortedWork = queuedWork.sortedForDrawing()
+        for renderGroup in sortedWork {
+            // Select this group's effect pipeline (falling back to passthrough).
+            let shaderId = renderGroup.shader?.programId ?? .passthrough
+            if lastPipelineId != shaderId {
+                renderEncoder.setRenderPipelineState(pipelineStates[shaderId] ?? passthroughPipelineState)
+                lastPipelineId = shaderId
+            }
+
+            // Scissor: clip this group to its rect (screen/viewport pixels,
+            // top-left origin — matches the screen projection), or reset to the
+            // full viewport when unclipped. Fully-clipped groups are skipped.
+            if let clip = renderGroup.clipRect {
+                if clip.size.width <= 0 || clip.size.height <= 0 { continue }
+                let vw = viewportSize.width, vh = viewportSize.height
+                let x = max(0, min(clip.minX, vw))
+                let y = max(0, min(clip.minY, vh))
+                let w = max(0, min(clip.maxX, vw) - x)
+                let h = max(0, min(clip.maxY, vh) - y)
+                if w <= 0 || h <= 0 { continue }
+                renderEncoder.setScissorRect(MTLScissorRect(x: Int(x), y: Int(y), width: Int(w), height: Int(h)))
+            } else {
+                renderEncoder.setScissorRect(MTLScissorRect(
+                    x: 0, y: 0, width: Int(viewportSize.width), height: Int(viewportSize.height)))
+            }
+
             let color = renderGroup.color?.asVectorFloat4 ?? vector_float4(0, 0, 0, Float(renderGroup.opacity))
             var triangleVertices: [AAPLVertex] = []
             var textureVertices: [TextureInfo] = []
+            triangleVertices.reserveCapacity(renderGroup.triangles.count * 3)
+            textureVertices.reserveCapacity(renderGroup.triangles.count * 3)
             var uniforms = Uniforms(
-                projectionMatrix: projectionMatrix,
+                projectionMatrix: renderGroup.projectionSpace == .screen
+                    ? screenProjectionMatrix
+                    : projectionMatrix,
                 modelViewMatrix: renderGroup.transformMatrix.asMatrix4x4
             )
-            
+
+            var texSize = vector_float2(0, 0)
+            if let textureId = renderGroup.textureId,
+               let texture = resourceManager.textureImages[textureId] {
+                texSize.x = Float(texture.width)
+                texSize.y = Float(texture.height)
+            }
+
             for renderTriangle in renderGroup.triangles {
-                triangleVertices.append(contentsOf: [
-                    AAPLVertex(
-                        position: renderTriangle.triangle.a.asVectorFloat2,
-                        color: color
-                    ),
-                    AAPLVertex(
-                        position: renderTriangle.triangle.b.asVectorFloat2,
-                        color: color
-                    ),
-                    AAPLVertex(
-                        position: renderTriangle.triangle.c.asVectorFloat2,
-                        color: color
-                    )
-                ])
-                var texSize = vector_float2(0, 0)
-                if let textureId = renderGroup.textureId,
-                   let texture = resourceManager.textureImages[textureId] {
-                    texSize.x = Float(texture.width)
-                    texSize.y = Float(texture.height)
-                }
-                textureVertices.append(contentsOf: [
-                    TextureInfo(
-                        texCoord: (renderTriangle.textureTriangle ?? RenderTriangle.noTextureTriangle) .a.asVectorFloat2, texSize: texSize),
-                    TextureInfo(
-                        texCoord: (renderTriangle.textureTriangle ?? RenderTriangle.noTextureTriangle) .b.asVectorFloat2, texSize: texSize),
-                    TextureInfo(
-                        texCoord: (renderTriangle.textureTriangle ?? RenderTriangle.noTextureTriangle) .c.asVectorFloat2, texSize: texSize),
-                ])
+                triangleVertices.append(AAPLVertex(
+                    position: renderTriangle.triangle.a.asVectorFloat2,
+                    color: color
+                ))
+                triangleVertices.append(AAPLVertex(
+                    position: renderTriangle.triangle.b.asVectorFloat2,
+                    color: color
+                ))
+                triangleVertices.append(AAPLVertex(
+                    position: renderTriangle.triangle.c.asVectorFloat2,
+                    color: color
+                ))
+                let textureTriangle = renderTriangle.textureTriangle ?? RenderTriangle.noTextureTriangle
+                textureVertices.append(TextureInfo(texCoord: textureTriangle.a.asVectorFloat2, texSize: texSize))
+                textureVertices.append(TextureInfo(texCoord: textureTriangle.b.asVectorFloat2, texSize: texSize))
+                textureVertices.append(TextureInfo(texCoord: textureTriangle.c.asVectorFloat2, texSize: texSize))
             }
             
             if let textureId = renderGroup.textureId {
@@ -210,20 +289,44 @@ public class MetalRenderer: NSObject, MTKViewDelegate {
                 lastBoundTexture = nil
             }
             
+            // Pack this effect's parameters and bind them as u_params.
+            if shaderRegistry[shaderId] != nil {
+                var params = renderGroup.shader?.encodeUniforms() ?? []
+                if !params.isEmpty { // passthrough encodes nothing and reads no buffer
+                    renderEncoder.setFragmentBytes(
+                        &params,
+                        length: MemoryLayout<Float>.stride * params.count,
+                        index: Self.fragmentParamsBufferIndex
+                    )
+                }
+            }
+
             renderEncoder.setVertexBytes(&uniforms, length: MemoryLayout<Uniforms>.size, index: AAPLVertexInputIndex.uniforms.rawValue)
             
-            let chunkAmount = 3
-            for i in 0..<(triangleVertices.count / chunkAmount) {
-                let index = i * chunkAmount
-                renderEncoder.setVertexBytes(Array(triangleVertices[index..<index+chunkAmount]), length:  MemoryLayout<AAPLVertex>.size * chunkAmount, index: AAPLVertexInputIndex.indices.rawValue)
-                
-                renderEncoder.setVertexBytes(Array(textureVertices[index..<index+chunkAmount]), length: MemoryLayout<TextureInfo>.size * chunkAmount, index: AAPLVertexInputIndex.textureCoordinates.rawValue)
-                
-                renderEncoder.drawPrimitives(
-                    type: .triangle,
-                    vertexStart: 0,
-                    vertexCount: chunkAmount
-                )
+            let maxChunkVertices = 126
+            triangleVertices.withUnsafeBufferPointer { positions in
+                textureVertices.withUnsafeBufferPointer { texCoords in
+                    var index = 0
+                    while index < positions.count {
+                        let chunk = min(maxChunkVertices, positions.count - index)
+                        renderEncoder.setVertexBytes(
+                            positions.baseAddress! + index,
+                            length: MemoryLayout<AAPLVertex>.stride * chunk,
+                            index: AAPLVertexInputIndex.indices.rawValue
+                        )
+                        renderEncoder.setVertexBytes(
+                            texCoords.baseAddress! + index,
+                            length: MemoryLayout<TextureInfo>.stride * chunk,
+                            index: AAPLVertexInputIndex.textureCoordinates.rawValue
+                        )
+                        renderEncoder.drawPrimitives(
+                            type: .triangle,
+                            vertexStart: 0,
+                            vertexCount: chunk
+                        )
+                        index += chunk
+                    }
+                }
             }
         }
         

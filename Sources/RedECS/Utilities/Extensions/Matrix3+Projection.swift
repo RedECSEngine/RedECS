@@ -16,4 +16,14 @@ public extension Matrix3 {
                 ty: (rect.size.height/2 / zoom) - rect.center.y
             ) // camera position
     }
+
+    /// Projection for `RenderGroup.ProjectionSpace.screen` groups: maps
+    /// viewport points with a top-left origin and y pointing down to clip
+    /// space, independent of any camera. (0,0) is the top-left corner of
+    /// the screen; (size.width, size.height) the bottom-right.
+    static func screenProjection(size: Size) -> Matrix3 {
+        Matrix3.identity
+            .translatedBy(tx: -1, ty: 1)
+            .scaledBy(sx: 2 / size.width, sy: -2 / size.height)
+    }
 }

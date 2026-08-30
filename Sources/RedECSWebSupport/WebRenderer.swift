@@ -2,7 +2,6 @@ import JavaScriptKit
 import RedECS
 import Geometry
 import GeometryAlgorithms
-import RedECSUIComponents
 
 open class WebRenderer {
     public enum State {
@@ -15,32 +14,46 @@ open class WebRenderer {
     public private(set) var glContext: JSValue = .undefined
     
     public var webResourceManager: WebResourceManager
-    
+    public var shaderRegistry: ShaderRegistry // effects to compile programs for
+
     public var queuedWork: [RenderGroup] = []
-    
+
     private(set) var projectionMatrix: Matrix3 = .identity
-    
-    lazy var drawProgram: Draw2DProgram = {
-        Draw2DProgram(
-            triangles: [],
-            textureSize: .zero,
-            image: .null,
-            color: .clear,
-            projectionMatrix: .identity,
-            modelMatrix: .identity
-        )
+    /// Projection for `.screen` render groups (viewport points, top-left
+    /// origin), independent of the world camera.
+    var screenProjectionMatrix: Matrix3 {
+        .screenProjection(size: size)
+    }
+
+    // One GL program per effect, compiled lazily on first draw and reused.
+    lazy var programs: [ShaderId: Draw2DProgram] = {
+        var result: [ShaderId: Draw2DProgram] = [:]
+        for definition in shaderRegistry.ordered {
+            result[definition.id] = Draw2DProgram(
+                definition: definition,
+                triangles: [],
+                textureSize: .zero,
+                image: .null,
+                color: .clear,
+                projectionMatrix: .identity,
+                modelMatrix: .identity
+            )
+        }
+        return result
     }()
-    
+
     lazy var emptyImage: JSValue = {
         createEmptyImage(size: .init(width: 1, height: 1))
     }()
-    
+
     public init(
         size: Size,
-        resourceLoader: WebResourceManager
+        resourceLoader: WebResourceManager,
+        shaderRegistry: ShaderRegistry = ShaderRegistry()
     ) {
         self.size = size
         self.webResourceManager = resourceLoader
+        self.shaderRegistry = shaderRegistry
         setUp()
     }
     
@@ -57,24 +70,48 @@ open class WebRenderer {
     public func draw() {
         do {
             clearCanvas()
-            for renderGroup in queuedWork.sorted(by: { $0.zIndex < $1.zIndex }) {
+            let sortedWork = queuedWork.sortedForDrawing()
+            for renderGroup in sortedWork {
+                // Scissor: clip this group to its rect, or disable clipping when
+                // unclipped. WebGL's scissor origin is bottom-left, so the
+                // top-left/y-down clip rect is y-flipped. Fully-clipped skipped.
+                if let clip = renderGroup.clipRect {
+                    if clip.size.width <= 0 || clip.size.height <= 0 { continue }
+                    let flippedY = viewportSize.height - (clip.minY + clip.size.height)
+                    _ = glContext.enable(glContext.SCISSOR_TEST)
+                    _ = glContext.scissor(
+                        Int(clip.minX), Int(flippedY),
+                        Int(clip.size.width), Int(clip.size.height))
+                } else {
+                    _ = glContext.disable(glContext.SCISSOR_TEST)
+                }
+                let groupProjection = renderGroup.projectionSpace == .screen
+                    ? screenProjectionMatrix
+                    : projectionMatrix
+                // Pick this group's effect program (falling back to passthrough).
+                guard let program = programs[renderGroup.shader?.programId ?? .passthrough] ?? programs[.passthrough] else {
+                    continue
+                }
+                // Pack its parameters for u_params.
+                let params = renderGroup.shader?.encodeUniforms() ?? []
                 switch renderGroup.fragmentType {
-                case .color(let color):
-                    drawProgram.update(
+                case .color:
+                    program.update(
                         triangles: renderGroup.triangles,
                         textureSize: .init(width: 1, height: 1),
                         image: emptyImage,
                         color: renderGroup.color ?? .clear,
-                        projectionMatrix: projectionMatrix,
+                        params: params,
+                        projectionMatrix: groupProjection,
                         modelMatrix: renderGroup.transformMatrix
                     )
-                    try drawProgram.execute(with: self)
+                    try program.execute(with: self)
                 case .texture(let textureId):
                     if let image = webResourceManager.textureImages[textureId],
                        let imageObject = image.object,
                        let width = imageObject.width.number,
                        let height = imageObject.height.number {
-                        drawProgram.update(
+                        program.update(
                             triangles: renderGroup.triangles,
                             textureSize: .init(
                                 width: width,
@@ -82,10 +119,11 @@ open class WebRenderer {
                             ),
                             image: image,
                             color: renderGroup.color ?? .init(red: 0, green: 0, blue: 0, alpha: renderGroup.opacity),
-                            projectionMatrix: projectionMatrix,
+                            params: params,
+                            projectionMatrix: groupProjection,
                             modelMatrix: renderGroup.transformMatrix
                         )
-                        try drawProgram.execute(with: self)
+                        try program.execute(with: self)
                     } else {
                         print("no texture loaded for", textureId)
                         webResourceManager.startTextureLoadIfNeeded(textureId: textureId)
@@ -117,11 +155,11 @@ open class WebRenderer {
     
     private func createEmptyImage(size: Size) -> JSValue {
         let document = JSObject.global.document
-        var canvas = document.createElement("canvas")
+        let canvas = document.createElement("canvas")
         canvas.width = size.width.jsValue
         canvas.height = size.height.jsValue
         
-        var ctx = canvas.getContext("2d")
+        let ctx = canvas.getContext("2d")
         ctx.fillStyle = "rgba(0, 0, 0, 0)"
         _ = ctx.fillRect(0, 0, size.width.jsValue, size.height.jsValue)
 

@@ -1,52 +1,96 @@
 {
-  "object": {
-    "pins": [
-      {
-        "package": "Geometry",
-        "repositoryURL": "git@github.com:RedECSEngine/Geometry.git",
-        "state": {
-          "branch": null,
-          "revision": "7c9ba07e4ee2e09ab8454870c8ede2ad96e544f6",
-          "version": "0.0.4"
-        }
-      },
-      {
-        "package": "JavaScriptKit",
-        "repositoryURL": "https://github.com/swiftwasm/JavaScriptKit",
-        "state": {
-          "branch": null,
-          "revision": "9a3b7d5f316e6d1709bd25e3e0392efca357f525",
-          "version": "0.14.0"
-        }
-      },
-      {
-        "package": "swift-collections",
-        "repositoryURL": "git@github.com:apple/swift-collections.git",
-        "state": {
-          "branch": null,
-          "revision": "48254824bb4248676bf7ce56014ff57b142b77eb",
-          "version": "1.0.2"
-        }
-      },
-      {
-        "package": "swift-numerics",
-        "repositoryURL": "https://github.com/apple/swift-numerics.git",
-        "state": {
-          "branch": null,
-          "revision": "6583ac70c326c3ee080c1d42d9ca3361dca816cd",
-          "version": "0.1.0"
-        }
-      },
-      {
-        "package": "SnapshotTesting",
-        "repositoryURL": "https://github.com/pointfreeco/swift-snapshot-testing.git",
-        "state": {
-          "branch": null,
-          "revision": "f8a9c997c3c1dab4e216a8ec9014e23144cbab37",
-          "version": "1.9.0"
-        }
+  "originHash" : "5f0fba68aa6b1c36b813b3f00ae45852c5f927879aeb1755272a685468daac27",
+  "pins" : [
+    {
+      "identity" : "geometry",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RedECSEngine/Geometry.git",
+      "state" : {
+        "revision" : "92514af3db789d5e5afd8afd32b19953dcf55fd6",
+        "version" : "0.0.7"
       }
-    ]
-  },
-  "version": 1
+    },
+    {
+      "identity" : "graphs",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RedECSEngine/Graphs.git",
+      "state" : {
+        "revision" : "d8ba813561de4517b7f5517d67c7f6492de72b43",
+        "version" : "0.1.0"
+      }
+    },
+    {
+      "identity" : "javascriptkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftwasm/JavaScriptKit",
+      "state" : {
+        "revision" : "22905075f8b61834810babe5fb9a2f613f22f398",
+        "version" : "0.56.1"
+      }
+    },
+    {
+      "identity" : "randomization",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/RedECSEngine/Randomization.git",
+      "state" : {
+        "revision" : "73b2bba60187e8c983458db889657234d610e17a",
+        "version" : "0.0.1"
+      }
+    },
+    {
+      "identity" : "swift-collections",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-collections.git",
+      "state" : {
+        "revision" : "a0cb0954ecb21e4e31b0070e6ed5674e8556685a",
+        "version" : "1.6.0"
+      }
+    },
+    {
+      "identity" : "swift-custom-dump",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-custom-dump",
+      "state" : {
+        "revision" : "a8cd6c976f335ed361dcecddb0dc39ebda51bc3e",
+        "version" : "1.6.1"
+      }
+    },
+    {
+      "identity" : "swift-numerics",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-numerics.git",
+      "state" : {
+        "revision" : "0c0290ff6b24942dadb83a929ffaaa1481df04a2",
+        "version" : "1.1.1"
+      }
+    },
+    {
+      "identity" : "swift-snapshot-testing",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-snapshot-testing.git",
+      "state" : {
+        "revision" : "f5bfff796ee8e3bc9a685b7ffba1bf20663eb370",
+        "version" : "1.18.0"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-syntax",
+      "state" : {
+        "revision" : "0687f71944021d616d34d922343dcef086855920",
+        "version" : "600.0.1"
+      }
+    },
+    {
+      "identity" : "xctest-dynamic-overlay",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
+      "state" : {
+        "revision" : "8f6abcf4c8950e2679d5b2fee4ca284fd7c34886",
+        "version" : "1.11.0"
+      }
+    }
+  ],
+  "version" : 3
 }

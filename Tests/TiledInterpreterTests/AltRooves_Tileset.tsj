@@ -1,0 +1,15 @@
+{
+ "columns": 30,
+ "image": "AltRoofs_Tileset.png",
+ "imageheight": 640,
+ "imagewidth": 480,
+ "margin": 0,
+ "name": "AltRooves_Tileset",
+ "spacing": 0,
+ "tilecount": 1200,
+ "tiledversion": "1.12.2",
+ "tileheight": 16,
+ "tilewidth": 16,
+ "type": "tileset",
+ "version": "1.10"
+}

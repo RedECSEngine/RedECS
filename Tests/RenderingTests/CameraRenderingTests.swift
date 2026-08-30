@@ -16,14 +16,14 @@ import Geometry
 import GeometryAlgorithms
 import RedECSBasicComponents
 
+@MainActor
 class CameraRenderingTests: XCTestCase {
     var mtkView: MTKView!
     var renderer: MetalRenderer!
     var store: GameStore<AnyReducer<RenderingTestState, RenderingTestAction, RenderingTestEnvironment>>!
-        
-    override func setUp() {
-        super.setUp()
-        
+
+    override func setUp() async throws {
+
         let device = MTLCreateSystemDefaultDevice()!
         self.mtkView = MTKView(
             frame: .init(origin: .zero, size: .init(width: 480, height: 480)),
@@ -36,25 +36,17 @@ class CameraRenderingTests: XCTestCase {
         )
         mtkView.delegate = renderer
         renderer.mtkView(mtkView, drawableSizeWillChange: .init(width: 480, height: 480))
-        
+
         let reducer: AnyReducer<RenderingTestState, RenderingTestAction, RenderingTestEnvironment> =
-        (
-            RenderingReducer(renderableComponentTypes: [
-                .init(keyPath: \.sprite),
-                .init(keyPath: \.shape)
-            ])
-                .pullback(
-                    toLocalState: \.self,
-                    toLocalEnvironment: { $0 as RenderingEnvironment }
-                )
-            +
-            CameraReducer()
-                .pullback(
-                    toLocalState: \.cameraContext,
-                    toLocalEnvironment: { $0 as RenderingEnvironment }
-                )
-        ).eraseToAnyReducer()
-        
+        RenderingReducer(renderableComponentTypes: [
+            .init(keyPath: \.sprite)
+        ])
+            .pullback(
+                toLocalState: \.self,
+                toLocalEnvironment: { $0 as RenderingEnvironment }
+            )
+            .eraseToAnyReducer()
+
         store = GameStore(
             state: RenderingTestState(),
             environment: RenderingTestEnvironment(
@@ -65,89 +57,88 @@ class CameraRenderingTests: XCTestCase {
             registeredComponentTypes: [
                 .init(keyPath: \.transform),
                 .init(keyPath: \.sprite),
-                .init(keyPath: \.shape),
                 .init(keyPath: \.camera),
             ])
     }
 
     func testCameraRender() throws {
         let entityId = newEntityId()
-        let shape = ShapeComponent(
-            entity: entityId ,
+        let sprite = SpriteComponent(
+            entity: entityId,
             shape: .triangle(Triangle(
                 a: .zero,
                 b: .init(x: 0, y: 240),
                 c: .init(x: 240, y: 0)
             )),
-            fillColor: .red
+            fillColor: .red,
+            anchorPoint: .zero
         )
-        let transform = TransformComponent(entity: entityId, position: .zero, anchorPoint: .zero)
+        let transform = TransformComponent(entity: entityId, position: .zero)
         let camera = CameraComponent(entity: entityId)
-        
+
         store.sendSystemAction(.addEntity(entityId, []))
         store.sendSystemAction(.addComponent(transform, into: \.transform))
-        store.sendSystemAction(.addComponent(shape, into: \.shape))
+        store.sendSystemAction(.addComponent(sprite, into: \.sprite))
         store.sendSystemAction(.addComponent(camera, into: \.camera))
-        
+
         enqueueGrid(into: renderer)
         store.sendDelta(1)
         assertSnapshot(matching: mtkView, as: .image(renderer: renderer), named: "first pass")
         store.sendDelta(1)
         assertSnapshot(matching: mtkView, as: .image(renderer: renderer), named: "second pass")
     }
-    
+
     func testCameraRenderOffset() throws {
         let entityId = newEntityId()
-        let shape = ShapeComponent(
-            entity: entityId ,
+        let sprite = SpriteComponent(
+            entity: entityId,
             shape: .triangle(Triangle(
                 a: .zero,
                 b: .init(x: 0, y: 240),
                 c: .init(x: 240, y: 0)
             )),
-            fillColor: .red
+            fillColor: .red,
+            anchorPoint: .zero
         )
-        let transform = TransformComponent(entity: entityId, position: .init(x: 100, y: 100), anchorPoint: .zero)
+        let transform = TransformComponent(entity: entityId, position: .init(x: 100, y: 100))
         let camera = CameraComponent(entity: entityId)
-        
+
         store.sendSystemAction(.addEntity(entityId, []))
         store.sendSystemAction(.addComponent(transform, into: \.transform))
-        store.sendSystemAction(.addComponent(shape, into: \.shape))
+        store.sendSystemAction(.addComponent(sprite, into: \.sprite))
         store.sendSystemAction(.addComponent(camera, into: \.camera))
-       
+
         enqueueGrid(into: renderer)
         store.sendDelta(1)
         assertSnapshot(matching: mtkView, as: .image(renderer: renderer))
     }
-    
+
     func testCameraRenderZoom() throws {
         let entityId = newEntityId()
-        let shape = ShapeComponent(
-            entity: entityId ,
+        let sprite = SpriteComponent(
+            entity: entityId,
             shape: .triangle(Triangle(
                 a: .zero,
                 b: .init(x: 0, y: 240),
                 c: .init(x: 240, y: 0)
             )),
-            fillColor: .red
+            fillColor: .red,
+            anchorPoint: .zero
         )
         let transform = TransformComponent(
             entity: entityId,
-            position: .zero,
-            anchorPoint: .zero
+            position: .zero
         )
         let camera = CameraComponent(entity: entityId, zoom: 0.5)
-        
+
         store.sendSystemAction(.addEntity(entityId, []))
         store.sendSystemAction(.addComponent(transform, into: \.transform))
-        store.sendSystemAction(.addComponent(shape, into: \.shape))
+        store.sendSystemAction(.addComponent(sprite, into: \.sprite))
         store.sendSystemAction(.addComponent(camera, into: \.camera))
-       
+
         enqueueGrid(into: renderer)
         store.sendDelta(1)
         assertSnapshot(matching: mtkView, as: .image(renderer: renderer))
-//        assertSnapshot(matching: mtkView, as: .image(renderer: renderer), named: "temp", record: true)
     }
-    
-    
+
 }

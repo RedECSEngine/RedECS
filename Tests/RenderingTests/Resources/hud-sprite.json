@@ -1,0 +1,62 @@
+{
+  "frames": [
+    {
+      "filename": "frame-0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 16,
+        "h": 16
+      },
+      "duration": 160
+    },
+    {
+      "filename": "frame-1",
+      "frame": {
+        "x": 16,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 16,
+        "h": 16
+      },
+      "sourceSize": {
+        "w": 16,
+        "h": 16
+      },
+      "duration": 160
+    }
+  ],
+  "meta": {
+    "size": {
+      "w": 32,
+      "h": 16
+    },
+    "frameTags": [
+      {
+        "name": "blink",
+        "from": 0,
+        "to": 1,
+        "direction": "forward"
+      }
+    ]
+  }
+}

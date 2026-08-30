@@ -1,0 +1,170 @@
+import Geometry
+import GeometryAlgorithms
+import RedECS
+
+/// Draws a texture-map frame (or a whole texture) at its native size, or an
+/// animation frame — either on the HUD's own frame clock, or at a time the
+/// game derives from its state. Requires the texture's `TextureMap` to be
+/// loaded; without it (or with an unknown frame/animation) the sprite
+/// occupies no space, like a `Text` with no font.
+public struct Sprite: BuiltinHUDView {
+    public enum Source: Equatable {
+        case texture(TextureReference)
+        /// A nil `time` self-clocks off the render cache; a non-nil one is
+        /// the game's own progress.
+        case animation(textureId: TextureId, name: String, time: Double?)
+    }
+
+    public var source: Source
+    /// Multiplies the frame's native size in both layout and render, so a
+    /// scaled sprite occupies a matching layout slot (unlike `scaleEffect`,
+    /// which scales the drawing only and leaves the native footprint behind).
+    public var scale: Double
+
+    public init(_ textureId: TextureId, frame frameId: String? = nil, scale: Double = 1) {
+        self.source = .texture(TextureReference(textureId: textureId, frameId: frameId))
+        self.scale = scale
+    }
+
+    /// Plays the animation on the HUD's own frame clock, looping forever.
+    /// Progress lives in the render cache keyed by the sprite's position in
+    /// the view tree, so it survives the per-frame rebuild — and resets when
+    /// the sprite leaves the tree.
+    public init(_ textureId: TextureId, animation name: String, scale: Double = 1) {
+        self.source = .animation(textureId: textureId, name: name, time: nil)
+        self.scale = scale
+    }
+
+    /// `time` is in seconds and wraps around the animation's total duration,
+    /// so state-derived elapsed time (an effect's age, a cooldown) drives the
+    /// playhead instead of the frame clock.
+    public init(_ textureId: TextureId, animation name: String, time: Double, scale: Double = 1) {
+        self.source = .animation(textureId: textureId, name: name, time: time)
+        self.scale = scale
+    }
+
+    /// The frame's native size scaled — the sprite's size, shared by `size`
+    /// (layout-only) and `resolve` (which triangulates a rect of this size).
+    private func renderSize(_ resolved: ResolvedFrame) -> Size {
+        Size(
+            width: resolved.textureRect.size.width * scale,
+            height: resolved.textureRect.size.height * scale
+        )
+    }
+
+    public func size(proposed: ProposedSize, context: HUDRenderContext) -> Size {
+        // Layout-only: the frame's native size × scale, skipping triangulation.
+        resolveFrame(context).map(renderSize) ?? .zero
+    }
+
+    public func resolve(proposed: ProposedSize, context: HUDRenderContext) -> HUDNode {
+        guard let resolved = resolveFrame(context) else {
+            return HUDNode(frame: Rect(origin: .zero, size: .zero))
+        }
+        let renderRect = Rect(origin: .zero, size: renderSize(resolved))
+        guard let renderTris = try? renderRect.triangulate(),
+              let textureTris = try? resolved.textureRect.triangulate() else {
+            return HUDNode(frame: renderRect)
+        }
+        // Texture quads arrive in the engine's y-up math; flip into local
+        // y-down space (same as Text's glyph quads).
+        let flip = Matrix3.flippingYUpToLocal(height: renderRect.size.height)
+        return HUDNode(
+            frame: renderRect,
+            groups: [
+                RenderGroup(
+                    triangles: zip(renderTris, textureTris).map {
+                        RenderTriangle(triangle: $0, textureTriangle: $1)
+                    },
+                    transformMatrix: flip,
+                    fragmentType: .texture(resolved.textureId),
+                    zIndex: 0,
+                    opacity: context.opacity,
+                    projectionSpace: context.projectionSpace
+                )
+            ]
+        )
+    }
+
+    private struct ResolvedFrame {
+        var textureId: TextureId
+        /// Atlas coordinates, y-up (origin bottom-left of the page).
+        var textureRect: Rect
+    }
+
+    private func resolveFrame(_ context: HUDRenderContext) -> ResolvedFrame? {
+        guard let resourceManager = context.resourceManager else { return nil }
+        let reference: TextureReference
+        switch source {
+        case .texture(let ref):
+            reference = ref
+        case .animation(let textureId, let name, let time):
+            guard let animations = resourceManager.animationsForTexture(textureId),
+                  let animation = animations[name],
+                  let frame = animation.frame(at: time ?? playhead(of: animation, context: context)) else {
+                return nil
+            }
+            reference = TextureReference(textureId: textureId, frameId: frame.name)
+        }
+
+        guard let textureMap = resourceManager.getTexture(textureId: reference.textureId) else {
+            return nil
+        }
+        if let frameId = reference.frameId {
+            guard let frame = textureMap.frames.first(where: { $0.filename == frameId }) else {
+                return nil
+            }
+            return ResolvedFrame(
+                textureId: reference.textureId,
+                textureRect: Rect(
+                    x: frame.frame.x,
+                    y: textureMap.meta.size.h - frame.frame.y - frame.frame.h,
+                    width: frame.frame.w,
+                    height: frame.frame.h
+                )
+            )
+        }
+        return ResolvedFrame(
+            textureId: reference.textureId,
+            textureRect: Rect(x: 0, y: 0, width: textureMap.meta.size.w, height: textureMap.meta.size.h)
+        )
+    }
+
+    /// The self-clocked playhead for this sprite. Without a cache (a bare
+    /// context in tests, or measurement outside the reducer) it holds at the
+    /// animation's first frame.
+    private func playhead(
+        of animation: SpriteAnimationDictionary.Animation,
+        context: HUDRenderContext
+    ) -> Double {
+        guard let cache = context.cache else { return 0 }
+        return cache.stepSpriteClock(
+            key: AnimationKey(path: context.identityPath, kind: "sprite"),
+            loopDuration: animation.duration,
+            delta: context.delta
+        )
+    }
+}
+
+public extension SpriteAnimationDictionary.Animation {
+    /// Total play time in seconds. Frame durations are in milliseconds
+    /// (matching `SpriteAnimation`).
+    var duration: Double {
+        frames.reduce(0) { $0 + $1.duration / 1000 }
+    }
+
+    /// The frame playing at `time` seconds since the animation started,
+    /// looping over the total duration.
+    func frame(at time: Double) -> Frame? {
+        guard !frames.isEmpty else { return nil }
+        let total = duration
+        guard total > 0 else { return frames[0] }
+        var remaining = time.truncatingRemainder(dividingBy: total)
+        if remaining < 0 { remaining += total }
+        for frame in frames {
+            remaining -= frame.duration / 1000
+            if remaining < 0 { return frame }
+        }
+        return frames[frames.count - 1]
+    }
+}

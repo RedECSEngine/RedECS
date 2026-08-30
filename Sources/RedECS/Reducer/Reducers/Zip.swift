@@ -16,17 +16,17 @@ where A.State == B.State,
         action: A.Action,
         environment: A.Environment
     ) -> GameEffect<A.State, A.Action> {
-        .many([
+        .many(
             a.reduce(state: &state, action: action, environment: environment),
             b.reduce(state: &state, action: action, environment: environment)
-        ])
+        )
     }
     
     public func reduce(state: inout A.State, delta: Double, environment: A.Environment) -> GameEffect<A.State, A.Action> {
-        .many([
+        .many(
             a.reduce(state: &state, delta: delta, environment: environment),
             b.reduce(state: &state, delta: delta, environment: environment)
-        ])
+        )
     }
     
     public func reduce(
@@ -34,10 +34,10 @@ where A.State == B.State,
         entityEvent: EntityEvent,
         environment: A.Environment
     ) -> GameEffect<State, Action> {
-        .many([
+        .many(
             a.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             b.reduce(state: &state, entityEvent: entityEvent, environment: environment)
-        ])
+        )
     }
 }
 
@@ -75,27 +75,27 @@ where A.State == B.State,
         action: A.Action,
         environment: A.Environment
     ) -> GameEffect<A.State, A.Action> {
-        .many([
+        .many(
             a.reduce(state: &state, action: action, environment: environment),
             b.reduce(state: &state, action: action, environment: environment),
             c.reduce(state: &state, action: action, environment: environment)
-        ])
+        )
     }
     
     public func reduce(state: inout A.State, delta: Double, environment: A.Environment) -> GameEffect<A.State, A.Action> {
-        .many([
+        .many(
             a.reduce(state: &state, delta: delta, environment: environment),
             b.reduce(state: &state, delta: delta, environment: environment),
             c.reduce(state: &state, delta: delta, environment: environment)
-        ])
+        )
     }
     
     public func reduce(state: inout A.State, entityEvent: EntityEvent, environment: A.Environment) -> GameEffect<State, Action> {
-        .many([
+        .many(
             a.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             b.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             c.reduce(state: &state, entityEvent: entityEvent, environment: environment)
-        ])
+        )
     }
 }
 
@@ -131,30 +131,30 @@ where A.State == B.State,
         action: A.Action,
         environment: A.Environment
     ) -> GameEffect<A.State, A.Action> {
-        .many([
+        .many(
             a.reduce(state: &state, action: action, environment: environment),
             b.reduce(state: &state, action: action, environment: environment),
             c.reduce(state: &state, action: action, environment: environment),
             d.reduce(state: &state, action: action, environment: environment)
-        ])
+        )
     }
     
     public func reduce(state: inout A.State, delta: Double, environment: A.Environment) -> GameEffect<A.State, A.Action> {
-        .many([
+        .many(
             a.reduce(state: &state, delta: delta, environment: environment),
             b.reduce(state: &state, delta: delta, environment: environment),
             c.reduce(state: &state, delta: delta, environment: environment),
             d.reduce(state: &state, delta: delta, environment: environment)
-        ])
+        )
     }
     
     public func reduce(state: inout A.State, entityEvent: EntityEvent, environment: A.Environment) -> GameEffect<State, Action> {
-        .many([
+        .many(
             a.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             b.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             c.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             d.reduce(state: &state, entityEvent: entityEvent, environment: environment)
-        ])
+        )
     }
 }
 
@@ -200,33 +200,33 @@ where A.State == B.State,
         action: A.Action,
         environment: A.Environment
     ) -> GameEffect<A.State, A.Action> {
-        .many([
+        .many(
             a.reduce(state: &state, action: action, environment: environment),
             b.reduce(state: &state, action: action, environment: environment),
             c.reduce(state: &state, action: action, environment: environment),
             d.reduce(state: &state, action: action, environment: environment),
             e.reduce(state: &state, action: action, environment: environment)
-        ])
+        )
     }
     
     public func reduce(state: inout A.State, delta: Double, environment: A.Environment) -> GameEffect<A.State, A.Action> {
-        .many([
+        .many(
             a.reduce(state: &state, delta: delta, environment: environment),
             b.reduce(state: &state, delta: delta, environment: environment),
             c.reduce(state: &state, delta: delta, environment: environment),
             d.reduce(state: &state, delta: delta, environment: environment),
             e.reduce(state: &state, delta: delta, environment: environment)
-        ])
+        )
     }
     
     public func reduce(state: inout A.State, entityEvent: EntityEvent, environment: A.Environment) -> GameEffect<State, Action> {
-        .many([
+        .many(
             a.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             b.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             c.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             d.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             e.reduce(state: &state, entityEvent: entityEvent, environment: environment)
-        ])
+        )
     }
 }
 
@@ -278,36 +278,36 @@ where A.State == B.State,
         action: A.Action,
         environment: A.Environment
     ) -> GameEffect<A.State, A.Action> {
-        .many([
+        .many(
             a.reduce(state: &state, action: action, environment: environment),
             b.reduce(state: &state, action: action, environment: environment),
             c.reduce(state: &state, action: action, environment: environment),
             d.reduce(state: &state, action: action, environment: environment),
             e.reduce(state: &state, action: action, environment: environment),
             f.reduce(state: &state, action: action, environment: environment),
-        ])
+        )
     }
     
     public func reduce(state: inout A.State, delta: Double, environment: A.Environment) -> GameEffect<A.State, A.Action> {
-        .many([
+        .many(
             a.reduce(state: &state, delta: delta, environment: environment),
             b.reduce(state: &state, delta: delta, environment: environment),
             c.reduce(state: &state, delta: delta, environment: environment),
             d.reduce(state: &state, delta: delta, environment: environment),
             e.reduce(state: &state, delta: delta, environment: environment),
             f.reduce(state: &state, delta: delta, environment: environment),
-        ])
+        )
     }
     
     public func reduce(state: inout A.State, entityEvent: EntityEvent, environment: A.Environment) -> GameEffect<State, Action> {
-        .many([
+        .many(
             a.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             b.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             c.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             d.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             e.reduce(state: &state, entityEvent: entityEvent, environment: environment),
             f.reduce(state: &state, entityEvent: entityEvent, environment: environment)
-        ])
+        )
     }
 }
 

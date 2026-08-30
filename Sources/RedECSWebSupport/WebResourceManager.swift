@@ -1,6 +1,6 @@
 import JavaScriptKit
 import RedECS
-import RedECSUIComponents
+import RedHUD
 import TiledInterpreter
 
 public final class WebResourceManager: ResourceManager {
@@ -10,7 +10,7 @@ public final class WebResourceManager: ResourceManager {
         case fileDecodeFailure(String?)
         case windowLocationOriginNotAvailable
         case jsFetchFunctionNotAvailable
-        case jsError(JSValue)
+        case jsError(String)
     }
     
     public var textures: [TextureId: Resource<TextureMap>] = [:]
@@ -25,6 +25,26 @@ public final class WebResourceManager: ResourceManager {
     
     public init(resourcePath: String) {
         self.resourcePath = resourcePath
+        registerDefaultHUDFont()
+    }
+
+    /// Makes RedHUD's embedded fallback font renderable with no game-side
+    /// setup: the metrics go into `fonts` and the embedded atlas page is
+    /// decoded from a data URL into `textureImages`. A game that later
+    /// preloads the same face overwrites the metrics; the atlas entries
+    /// short-circuit that load's image fetch.
+    private func registerDefaultHUDFont() {
+        let font = DefaultHUDFont.font
+        fonts[font.info.face] = font
+        guard let image = JSObject.global.Image.function?.new() else {
+            print("⚠️ failed to create image for default HUD font atlas")
+            return
+        }
+        image.src = .string("data:image/png;base64," + DefaultHUDFont.pageImageBase64)
+        textureImages[font.pageTextureName] = image.jsValue
+        // loadBitmapFontTextFile fetches the page by file name; alias it so
+        // a later preload of the same face reuses this image.
+        textureImages[font.page.file] = image.jsValue
     }
     
     @discardableResult
@@ -72,7 +92,7 @@ public final class WebResourceManager: ResourceManager {
             
             (JSPromise(from: fetchFunc(url)))?
                 .then(success: { response in
-                    JSPromise(from: response.json())
+                    JSPromise(from: response.json())?.jsValue ?? .null
                 })
                 .then(success: { json in
                     do {
@@ -85,7 +105,7 @@ public final class WebResourceManager: ResourceManager {
                     return JSValue.null
                 }, failure: { error in
                     print("error", error)
-                    resolve(.failure(WebResourceManagerError.jsError(error.jsValue)))
+                    resolve(.failure(WebResourceManagerError.jsError(String(describing: error.jsValue))))
                     return JSValue.null
                 })
         }
@@ -112,7 +132,7 @@ public final class WebResourceManager: ResourceManager {
             let url = origin + "/" + self.resourcePath + "/" + name
             (JSPromise(from: fetchFunc(url)))?
                 .then(success: { response in
-                    JSPromise(from: response.blob())
+                    JSPromise(from: response.blob())?.jsValue ?? .null
                 })
                 .then(success: { value in
                     let url = JSObject.global.URL.function?.createObjectURL.function?(value)
@@ -120,7 +140,7 @@ public final class WebResourceManager: ResourceManager {
                     image?.src = url ?? .null
                     image?.onload = JSClosure({ args in
                         guard let value = image?.jsValue else {
-                            resolve(.failure(WebResourceManagerError.jsError(.undefined)))
+                            resolve(.failure(WebResourceManagerError.jsError("undefined")))
                             return .undefined
                         }
                         self.textureImages[name] = value
@@ -130,40 +150,56 @@ public final class WebResourceManager: ResourceManager {
                     return JSValue.null
                 }, failure: { error in
                     print("error", error)
-                    resolve(.failure(WebResourceManagerError.jsError(error.jsValue)))
+                    resolve(.failure(WebResourceManagerError.jsError(String(describing: error.jsValue))))
                     return JSValue.null
                 })
         }
     }
     
     public func loadTiledMap(_ name: String) -> Future<TiledMapJSON, Swift.Error> {
-        return loadJSONFile(
-            name,
-            decodedAs: TiledMapJSON.self
-        )
-        .flatMap { mapInfo in
-            let tileSetSources = Set(mapInfo.tileSets.map { $0.source })
-            let tileSetFutures: [Future<Void, Swift.Error>] = tileSetSources
-                .map { filename -> Future<Void, Swift.Error> in
-                    var textureName = ""
-                    return self.loadJSONFile(filename, decodedAs: TiledTilesetJSON.self)
-                        .flatMap { tileSet -> Future<JSValue, Swift.Error> in
-                            textureName = tileSet.image.split(separator: ".").dropLast().joined(separator: ".")
-                            self.tileSets[filename] = tileSet
-                            return self.loadImageFile(name: tileSet.image)
-                        }
-                        .flatMap { value -> Future<Void, Swift.Error> in
-                            self.textureImages[textureName] = value
-                            return .just(())
+        return loadJSONFile(name, decodedAs: TiledMapJSON.self)
+            .flatMap { tileMap -> Future<TiledMapJSON, Swift.Error> in
+                let loads = Set(tileMap.unresolvedTileSetSources).map { source -> Future<Void, Swift.Error> in
+                    self.loadJSONFile(source, decodedAs: TiledTilesetJSON.self)
+                        .readValue { result in
+                            if case let .success(tileSet) = result {
+                                self.tileSets[source] = tileSet
+                            }
                         }
                         .toVoid()
                 }
-            return .zip(tileSetFutures)
-                .flatMap { tileSets in
-                    self.tileMaps[name] = mapInfo
-                    return .just(mapInfo)
+                return Future<Void, Swift.Error>.zip(loads).flatMap { _ -> Future<TiledMapJSON, Swift.Error> in
+                    do {
+                        return .just(try tileMap.resolvingTileSets(from: self.tileSets))
+                    } catch {
+                        return .fail(error)
+                    }
                 }
-        }
+            }
+            .flatMap { tileMap -> Future<TiledMapJSON, Swift.Error> in
+                let images = tileMap.tileSets.compactMap { reference -> (String, String)? in
+                    guard let tileSet = reference.tileSet,
+                          let fileName = tileSet.imageFileName,
+                          let textureId = tileSet.textureId else { return nil }
+                    return (textureId, fileName)
+                }
+                let loads = Dictionary(images, uniquingKeysWith: { first, _ in first })
+                    .map { textureId, fileName -> Future<Void, Swift.Error> in
+                        self.loadImageFile(name: fileName)
+                            .readValue { result in
+                                if case let .success(value) = result {
+                                    self.textureImages[textureId] = value
+                                }
+                            }
+                            .toVoid()
+                    }
+                return Future<Void, Swift.Error>.zip(loads).map { _ in tileMap }
+            }
+            .readValue { result in
+                if case let .success(tileMap) = result {
+                    self.tileMaps[name] = tileMap
+                }
+            }
     }
     
     public func preload(_ assets: [LoadableResource]) -> Future<Void, Error> {
@@ -211,7 +247,7 @@ public final class WebResourceManager: ResourceManager {
             let url = origin + "/" + self.resourcePath + "/" + name
             (JSPromise(from: fetchFunc(url)))?
                 .then(success: { response in
-                    JSPromise(from: response.text())
+                    JSPromise(from: response.text())?.jsValue ?? .null
                 })
                 .then(success: { value in
                     guard let fontText = value.string else {
@@ -228,7 +264,7 @@ public final class WebResourceManager: ResourceManager {
                     return JSValue.null
                 }, failure: { error in
                     print("error", error)
-                    resolve(.failure(WebResourceManagerError.jsError(error.jsValue)))
+                    resolve(.failure(WebResourceManagerError.jsError(String(describing: error.jsValue))))
                     return JSValue.null
                 })
         }

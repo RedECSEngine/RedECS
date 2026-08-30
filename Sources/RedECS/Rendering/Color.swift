@@ -1,5 +1,5 @@
 /// Values represented from 0 to 1
-public struct Color: Equatable, Codable {
+public struct Color: Equatable, Codable, Sendable {
     public var red: Double
     public var green: Double
     public var blue: Double
@@ -35,13 +35,86 @@ public struct Color: Equatable, Codable {
             alpha: 1.0
         )
     }
-    
-    init(hex: Int) {
+
+    public init(hex: Int, alpha: Double = 1) {
         self.init(
-            red: (hex >> 16) & 0xFF,
-            green: (hex >> 8) & 0xFF,
-            blue: hex & 0xFF
+            red: Double((hex >> 16) & 0xFF) / 255.0,
+            green: Double((hex >> 8) & 0xFF) / 255.0,
+            blue: Double(hex & 0xFF) / 255.0,
+            alpha: alpha
         )
+    }
+}
+
+/// Hue in degrees [0, 360), saturation and value in [0, 1].
+public struct HSVColor: Equatable, Sendable {
+    public var hue: Double
+    public var saturation: Double
+    public var value: Double
+    public var alpha: Double
+
+    public init(hue: Double, saturation: Double, value: Double, alpha: Double = 1) {
+        self.hue = hue
+        self.saturation = saturation
+        self.value = value
+        self.alpha = alpha
+    }
+}
+
+public extension Color {
+    var hsv: HSVColor {
+        let maxComponent = max(red, green, blue)
+        let minComponent = min(red, green, blue)
+        let delta = maxComponent - minComponent
+
+        var hue: Double = 0
+        if delta > 0 {
+            if maxComponent == red {
+                hue = 60 * ((green - blue) / delta).truncatingRemainder(dividingBy: 6)
+            } else if maxComponent == green {
+                hue = 60 * ((blue - red) / delta + 2)
+            } else {
+                hue = 60 * ((red - green) / delta + 4)
+            }
+            if hue < 0 { hue += 360 }
+        }
+
+        return HSVColor(
+            hue: hue,
+            saturation: maxComponent == 0 ? 0 : delta / maxComponent,
+            value: maxComponent,
+            alpha: alpha
+        )
+    }
+
+    init(hsv: HSVColor) {
+        var hue = hsv.hue.truncatingRemainder(dividingBy: 360)
+        if hue < 0 { hue += 360 }
+        let saturation = min(1, max(0, hsv.saturation))
+        let value = min(1, max(0, hsv.value))
+
+        let chroma = value * saturation
+        let huePrime = hue / 60
+        let x = chroma * (1 - abs(huePrime.truncatingRemainder(dividingBy: 2) - 1))
+        let m = value - chroma
+
+        let rgb: (Double, Double, Double)
+        switch huePrime {
+        case ..<1: rgb = (chroma, x, 0)
+        case ..<2: rgb = (x, chroma, 0)
+        case ..<3: rgb = (0, chroma, x)
+        case ..<4: rgb = (0, x, chroma)
+        case ..<5: rgb = (x, 0, chroma)
+        default:   rgb = (chroma, 0, x)
+        }
+
+        self.init(red: rgb.0 + m, green: rgb.1 + m, blue: rgb.2 + m, alpha: hsv.alpha)
+    }
+
+    func rotatingHue(by degrees: Double) -> Color {
+        var hsv = self.hsv
+        hsv.hue += degrees
+        return Color(hsv: hsv)
     }
 }
 

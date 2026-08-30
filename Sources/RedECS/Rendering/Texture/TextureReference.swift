@@ -1,4 +1,4 @@
-public struct TextureReference: Equatable, Codable {
+public struct TextureReference: Equatable, Codable, Sendable {
     public let textureId: TextureId
     public var frameId: String?
     
@@ -7,5 +7,5 @@ public struct TextureReference: Equatable, Codable {
         self.frameId = frameId
     }
     
-    public static var empty: TextureReference = .init(textureId: "", frameId: nil)
+    public static let empty: TextureReference = .init(textureId: "", frameId: nil)
 }

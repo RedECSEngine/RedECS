@@ -55,8 +55,8 @@ public struct Future<T, E: Error> {
 }
 
 public extension Future {
-    static func zip<A, B, E: Error>(_ a: Future<A, E>, _ b: Future<B, E>) -> Future<(A, B), E> {
-        Future<(A, B), E> { resolver in
+    static func zip<A, B, Failure: Error>(_ a: Future<A, Failure>, _ b: Future<B, Failure>) -> Future<(A, B), Failure> {
+        Future<(A, B), Failure> { resolver in
             var valueA: A?
             var valueB: B?
             
@@ -87,8 +87,8 @@ public extension Future {
         }
     }
     
-    static func zip<A, B, C, E: Error>(_ a: Future<A, E>, _ b: Future<B, E>, _ c: Future<C, E>) -> Future<(A, B, C), E> {
-        Future<(A, B, C), E> { resolver in
+    static func zip<A, B, C, Failure: Error>(_ a: Future<A, Failure>, _ b: Future<B, Failure>, _ c: Future<C, Failure>) -> Future<(A, B, C), Failure> {
+        Future<(A, B, C), Failure> { resolver in
             zip(zip(a, b), c)
                 .subscribe { result in
                     switch result {
@@ -101,11 +101,11 @@ public extension Future {
         }
     }
     
-    static func zip<A, E: Error>(_ all: [Future<A, E>]) -> Future<[A], E> {
+    static func zip<A, Failure: Error>(_ all: [Future<A, Failure>]) -> Future<[A], Failure> {
         if all.isEmpty {
             return .just([])
         }
-        return Future<[A], E> { resolver in
+        return Future<[A], Failure> { resolver in
             var cumulative: [(Int, A)] = []
             var cumulativeCount = 0
             cumulative.reserveCapacity(all.count)

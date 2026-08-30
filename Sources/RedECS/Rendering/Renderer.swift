@@ -10,11 +10,6 @@ public protocol Renderer: AnyObject {
     func enqueue(_ work: [RenderGroup])
 }
 
-public enum RendererProgram {
-    case color
-    case texture
-}
-
 public extension Renderer {
     func clearQueue() {
         queuedWork.removeAll()

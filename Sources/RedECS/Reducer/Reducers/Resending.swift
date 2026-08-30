@@ -7,10 +7,10 @@ public extension Reducer {
             { state, action, env in
                 let effects = self.reduce(state: &state, action: action, environment: env)
                 if let resultingAction = transform(action) {
-                    return .many([
+                    return .many(
                         effects,
                         .game(resultingAction)
-                    ])
+                    )
                 }
                 return effects
             },

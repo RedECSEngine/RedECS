@@ -1,8 +1,19 @@
 public enum SystemAction<State: GameState> {
     case addEntity(EntityId, Set<String>)
     case removeEntity(EntityId)
+    /// Reparents an entity in the entity tree; `nil` moves it back to the root.
+    case setParent(EntityId, EntityId?)
     case addComponent(EntityId, AnyComponent<State>)
     case removeComponent(EntityId, RegisteredComponentId)
+    /// Adds/removes a tag on an existing entity, keeping the reverse tag index
+    /// in sync. Useful for moving a role marker (e.g. the controlled-player tag)
+    /// from one entity to another at runtime.
+    case addTag(EntityId, String)
+    case removeTag(EntityId, String)
+    case playSound(SoundId)
+    case stopSound(SoundId)
+    case stopAllSounds
+    case cancelPendingEffects
 
     public func map<S: GameState>(
         _ stateTransform: WritableKeyPath<S, State>
@@ -12,10 +23,24 @@ public enum SystemAction<State: GameState> {
             return .addEntity(e, tags)
         case .removeEntity(let e):
             return .removeEntity(e)
+        case .setParent(let e, let p):
+            return .setParent(e, p)
+        case .addTag(let e, let tag):
+            return .addTag(e, tag)
+        case .removeTag(let e, let tag):
+            return .removeTag(e, tag)
         case .addComponent(let eId, let registeredComponent):
             return .addComponent(eId, registeredComponent.map(stateTransform))
         case .removeComponent(let e, let registeredComponentId):
             return .removeComponent(e, registeredComponentId)
+        case .playSound(let sound):
+            return .playSound(sound)
+        case .stopSound(let sound):
+            return .stopSound(sound)
+        case .stopAllSounds:
+            return .stopAllSounds
+        case .cancelPendingEffects:
+            return .cancelPendingEffects
         }
     }
 

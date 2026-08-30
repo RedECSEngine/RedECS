@@ -1,5 +1,6 @@
 import Foundation
 import RedECS
+import RedHUD
 import TiledInterpreter
 import MetalKit
 
@@ -24,6 +25,33 @@ public final class MetalResourceManager: ResourceManager {
     public init(resourceBundle: Bundle = .main, metalDevice: MTLDevice) {
         self.resourceBundle = resourceBundle
         self.metalDevice = metalDevice
+        registerDefaultHUDFont()
+    }
+
+    /// Makes RedHUD's embedded fallback font renderable with no game-side
+    /// setup: the metrics go into `fonts` and the embedded atlas page into
+    /// `textureImages`. A game that later preloads the same face overwrites
+    /// the metrics; the atlas entry short-circuits that load's image fetch.
+    private func registerDefaultHUDFont() {
+        let font = DefaultHUDFont.font
+        fonts[font.info.face] = font
+        guard let data = Data(base64Encoded: DefaultHUDFont.pageImageBase64) else {
+            assertionFailure("embedded default HUD font atlas is not valid base64")
+            return
+        }
+        let textureLoader = MTKTextureLoader(device: metalDevice)
+        do {
+            textureImages[font.pageTextureName] = try textureLoader.newTexture(
+                data: data,
+                options: [
+                    .textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
+                    .textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue),
+                    .SRGB: NSNumber(value: false)
+                ]
+            )
+        } catch {
+            print("⚠️ failed to load default HUD font atlas:", error)
+        }
     }
     
     public func loadJSONFile<T: Decodable>(
@@ -114,28 +142,36 @@ public final class MetalResourceManager: ResourceManager {
     }
     
     public func loadTiledMap(_ name: String) -> Future<TiledMapJSON, Swift.Error> {
-        return loadJSONFile(
-            name,
-            decodedAs: TiledMapJSON.self
-        )
-        .flatMap { mapInfo in
-            let tileSetSources = Set(mapInfo.tileSets.map { $0.source })
-            let tileSetFutures: [Future<Void, Swift.Error>] = tileSetSources
-                .map { filename -> Future<Void, Swift.Error>  in
-                    self.loadJSONFile(filename, decodedAs: TiledTilesetJSON.self)
-                        .flatMap { tileSet -> Future<MTLTexture, Swift.Error> in
-                            self.tileSets[filename] = tileSet
-                            let imageName = tileSet.image.split(separator: ".").dropLast().joined(separator: ".")
-                            return self.loadImageFile(name: String(imageName))
+        return loadJSONFile(name, decodedAs: TiledMapJSON.self)
+            .flatMap { tileMap -> Future<TiledMapJSON, Swift.Error> in
+                let loads = Set(tileMap.unresolvedTileSetSources).map { source -> Future<Void, Swift.Error> in
+                    self.loadJSONFile(source, decodedAs: TiledTilesetJSON.self)
+                        .readValue { result in
+                            if case let .success(tileSet) = result {
+                                let key = URL(string: source)?.lastPathComponent ?? source
+                                self.tileSets[key] = tileSet
+                            }
                         }
                         .toVoid()
                 }
-            return .zip(tileSetFutures)
-                .flatMap { tileSets in
-                    self.tileMaps[name] = mapInfo
-                    return .just(mapInfo)
+                return Future<Void, Swift.Error>.zip(loads).flatMap { _ -> Future<TiledMapJSON, Swift.Error> in
+                    do {
+                        return .just(try tileMap.resolvingTileSets(from: self.tileSets))
+                    } catch {
+                        return .fail(error)
+                    }
                 }
-        }
+            }
+            .flatMap { tileMap -> Future<TiledMapJSON, Swift.Error> in
+                let textureIds = Set(tileMap.tileSets.compactMap { $0.tileSet?.textureId })
+                return Future<Void, Swift.Error>.zip(textureIds.map { self.loadImageFile(name: $0).toVoid() })
+                    .map { _ in tileMap }
+            }
+            .readValue { result in
+                if case let .success(tileMap) = result {
+                    self.tileMaps[name] = tileMap
+                }
+            }
     }
     
     public func loadImageFile(
@@ -156,10 +192,9 @@ public final class MetalResourceManager: ResourceManager {
             ]
             
             do {
-                let texture = try textureLoader.newTexture(
+                let texture = try self.loadTexture(
                     name: name,
-                    scaleFactor: 1.0,
-                    bundle: self.resourceBundle,
+                    textureLoader: textureLoader,
                     options: textureLoaderOptions
                 )
                 self.textureImages[name] = texture
@@ -169,7 +204,32 @@ public final class MetalResourceManager: ResourceManager {
             }
         }
     }
-    
+
+    /// Prefer the loose image file over an asset catalog entry: the catalog
+    /// is only compiled by Xcode, and its compiler re-encodes/color-manages
+    /// the image, so the same texture sampled from a catalog build has
+    /// subtly different texels than the raw file — which broke snapshot
+    /// references between Xcode and `swift test` (see known-issues.md).
+    /// The raw file is byte-identical in both environments; the catalog
+    /// remains the fallback for resources shipped only that way.
+    private func loadTexture(
+        name: String,
+        textureLoader: MTKTextureLoader,
+        options: [MTKTextureLoader.Option: NSNumber]
+    ) throws -> MTLTexture {
+        for ext in ["png", "jpg", "jpeg"] {
+            if let url = resourceBundle.url(forResource: name, withExtension: ext) {
+                return try textureLoader.newTexture(URL: url, options: options)
+            }
+        }
+        return try textureLoader.newTexture(
+            name: name,
+            scaleFactor: 1.0,
+            bundle: resourceBundle,
+            options: options
+        )
+    }
+
     public func loadBitmapFontTextFile(_ name: String) -> Future<BitmapFont, Swift.Error> {
         var name = name
         var ext = "fnt"

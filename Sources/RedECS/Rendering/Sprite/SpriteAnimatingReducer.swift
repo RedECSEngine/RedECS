@@ -1,7 +1,7 @@
 import Geometry
 
-public struct SpriteAnimationConfiguration: Codable, Equatable {
-    public static var `default` = SpriteAnimationConfiguration()
+public struct SpriteAnimationConfiguration: Codable, Equatable, Sendable {
+    public static let `default` = SpriteAnimationConfiguration()
     public var flipX: Bool
     public var flipY: Bool
     public init(
@@ -36,12 +36,10 @@ public struct SpriteAnimatingReducer: Reducer {
         environment: RenderingEnvironment
     ) -> GameEffect<SpriteContext, SpriteAnimatingAction> {
         var effects: [GameEffect<SpriteContext, SpriteAnimatingAction>] = []
-        state.sprite.forEach { (id, spriteComponent) in
-            var sprite = spriteComponent
-            if let completedAnimationId = sprite.applyDelta(delta) {
+        for id in Array(state.sprite.keys) {
+            if let completedAnimationId = state.sprite[id]?.applyDelta(delta) {
                 effects.append(.game(.animationComplete(completedAnimationId)))
             }
-            state.sprite[id] = sprite
         }
         return .many(effects)
     }

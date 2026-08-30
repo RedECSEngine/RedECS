@@ -1,6 +1,6 @@
 public struct Pullback<
     GlobalState: GameState,
-    GlobalAction: Equatable,
+    GlobalAction: Equatable & Codable,
     GlobalEnvironment,
     R: Reducer
 > : Reducer {

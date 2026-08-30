@@ -15,6 +15,7 @@ import CoreGraphics
 import Geometry
 import GeometryAlgorithms
 
+@MainActor
 class MetalRenderingTests: XCTestCase {
     
     var mtkView: MTKView!
@@ -33,9 +34,8 @@ class MetalRenderingTests: XCTestCase {
         zIndex: 1
     )
     
-    override func setUp() {
-        super.setUp()
-        
+    override func setUp() async throws {
+    
         let device = MTLCreateSystemDefaultDevice()!
         self.mtkView = MTKView(
             frame: .init(origin: .zero, size: .init(width: 480, height: 480)),
@@ -47,7 +47,7 @@ class MetalRenderingTests: XCTestCase {
             resourceManager: MetalResourceManager(metalDevice: device)
         )
         mtkView.delegate = renderer
-        
+    
         renderer.projectionMatrix = Matrix3.projection(
             rect: .init(origin: .zero, size: .init(width: 480, height: 480))
         ).asMatrix4x4

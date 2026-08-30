@@ -15,16 +15,29 @@ public protocol RenderableGameState: GameState {
 }
 
 public struct RenderableComponentType<State: GameState> {
-    var getRenderComponent: (EntityId, State) -> RenderableComponent?
-    
+    var produceRenderGroups: (EntityId, State, Matrix3, TransformComponent, ResourceManager) -> [RenderGroup]?
+
     public init<C: RenderableComponent>(keyPath: KeyPath<State, [EntityId: C]>) {
-        getRenderComponent = { id, gameState in
-            gameState[keyPath: keyPath][id]
+        produceRenderGroups = { entityId, state, cameraMatrix, transform, resourceManager in
+            guard let component = state[keyPath: keyPath][entityId] else {
+                return nil
+            }
+            return component.renderGroups(
+                cameraMatrix: cameraMatrix,
+                transform: transform,
+                resourceManager: resourceManager
+            )
         }
     }
-    
-    func renderComponent(entityId: EntityId, state: State) -> RenderableComponent? {
-       getRenderComponent(entityId, state)
+
+    func renderGroups(
+        entityId: EntityId,
+        state: State,
+        cameraMatrix: Matrix3,
+        transform: TransformComponent,
+        resourceManager: ResourceManager
+    ) -> [RenderGroup]? {
+        produceRenderGroups(entityId, state, cameraMatrix, transform, resourceManager)
     }
 }
 
@@ -32,42 +45,116 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
     public typealias State = ContextState
     public typealias Action = Never
     public typealias Environment = RenderingEnvironment
-    
+
     var renderableComponentTypes: [RenderableComponentType<State>]
-    
+    var rootDrawOrder: ((EntityId, State) -> Double)?
+
+    /// - Parameter rootDrawOrder: an optional sort key for the **top-level**
+    ///   entities, drawn in ascending order — lowest key first (furthest back),
+    ///   highest key last (on top). Subtrees are never reordered: a child draws
+    ///   with its parent, in the order it was added.
+    ///
+    ///   The engine deliberately has no opinion on what the key means. A
+    ///   top-down game wanting painter's-algorithm depth passes some function
+    ///   of the entity's y — which sign depends entirely on which way its
+    ///   world y points, so that decision stays with the game. Omit it and the
+    ///   walk keeps plain tree order.
     public init(
-        renderableComponentTypes: [RenderableComponentType<State>]
+        renderableComponentTypes: [RenderableComponentType<State>],
+        rootDrawOrder: ((EntityId, State) -> Double)? = nil
     ) {
         self.renderableComponentTypes = renderableComponentTypes
+        self.rootDrawOrder = rootDrawOrder
     }
-    
+
     public func reduce(
         state: inout State,
         delta: Double,
         environment: RenderingEnvironment
     ) -> GameEffect<State, Never> {
-        
+
         if let camera = state.camera.values.sorted(by: { $1.isPrimaryCamera ? false : true }).first,
            let transform = state.transform[camera.entity] {
-            
+
             let renderer = environment.renderer
             let size = renderer.viewportSize
             let projectionMatrix = camera.matrix(withRect: Rect(center: transform.position, size: size))
             renderer.setProjectionMatrix(projectionMatrix)
-            
-            state.entities.entities.forEach { id, entity in
-                renderableComponentTypes.forEach { type in
-                    if let renderComponent = type.renderComponent(entityId: id, state: state),
-                       let transform = state.transform[id] {
-                        renderer.enqueue(renderComponent.renderGroups(
-                            cameraMatrix: projectionMatrix,
-                            transform: transform,
-                            resourceManager: environment.resourceManager
-                        ))
-                    }
-                }
-            }
+
+            enqueue(
+                children: state.entities.hierarchy.roots,
+                worldMatrix: .identity,
+                state: state,
+                projectionMatrix: projectionMatrix,
+                environment: environment,
+                order: rootDrawOrder
+            )
         }
         return .none
+    }
+
+    /// Walks the entity forest depth-first, composing each entity's transform
+    /// with its ancestors' so children render in their parent's frame.
+    /// A hidden entity hides its entire subtree.
+    private func enqueue(
+        children: [EntityId],
+        worldMatrix: Matrix3,
+        state: State,
+        projectionMatrix: Matrix3,
+        environment: RenderingEnvironment,
+        order: ((EntityId, State) -> Double)? = nil
+    ) {
+        let cameraMatrix = Matrix3.multiply(projectionMatrix, worldMatrix)
+        for entityId in Self.ordered(children, by: order, in: state) {
+            let transform = state.transform[entityId]
+            if transform?.isHidden == true {
+                continue
+            }
+
+            if let transform = transform {
+                for type in renderableComponentTypes {
+                    guard let groups = type.renderGroups(
+                        entityId: entityId,
+                        state: state,
+                        cameraMatrix: cameraMatrix,
+                        transform: transform,
+                        resourceManager: environment.resourceManager
+                    ) else {
+                        continue
+                    }
+                    environment.renderer.enqueue(groups.map { group in
+                        group.withTransformMatrix(.multiply(worldMatrix, group.transformMatrix))
+                    })
+                }
+            }
+
+            // Children inherit position/rotation/scale, but not the
+            // anchor-point offset (that only affects the parent's own drawing).
+            let childWorldMatrix = transform.map { .multiply(worldMatrix, $0.matrix()) } ?? worldMatrix
+            enqueue(
+                children: state.entities.hierarchy.children(of: entityId),
+                worldMatrix: childWorldMatrix,
+                state: state,
+                projectionMatrix: projectionMatrix,
+                environment: environment
+            )
+        }
+    }
+
+    /// Stable: entities with an equal key keep the order they were added in,
+    /// so a tie can't shimmer between frames.
+    private static func ordered(
+        _ ids: [EntityId],
+        by order: ((EntityId, State) -> Double)?,
+        in state: State
+    ) -> [EntityId] {
+        guard let order else { return ids }
+        return ids
+            .enumerated()
+            .sorted { a, b in
+                let ka = order(a.element, state), kb = order(b.element, state)
+                return ka == kb ? a.offset < b.offset : ka < kb
+            }
+            .map(\.element)
     }
 }

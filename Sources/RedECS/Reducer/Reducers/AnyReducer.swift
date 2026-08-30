@@ -1,4 +1,4 @@
-public struct AnyReducer<State: GameState, Action: Equatable, Environment>: Reducer {
+public struct AnyReducer<State: GameState, Action: Equatable & Codable, Environment>: Reducer {
 
     var reduceDelta: (inout State, Double, Environment) -> GameEffect<State, Action>
     var reduceAction: (inout State, Action, Environment) -> GameEffect<State, Action>

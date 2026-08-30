@@ -3,14 +3,18 @@
 import Geometry
 import RedECSBasicComponents
 
-struct TestGlobalState: GameState {
+struct TestGlobalState: OperationCapableGameState {
+    typealias GameAction = TestGlobalAction
+
     var entities: EntityRepository = .init()
     var count: Int32 = 0
     var text: String = ""
-    
+
     var transform: [EntityId: TransformComponent] = [:]
     var movement: [EntityId: MovementComponent] = [:]
-    
+    var sprite: [EntityId: SpriteComponent] = [:]
+    var operation: [EntityId: OperationComponent<TestGlobalAction>] = [:]
+
     var containedState: TestLocalState {
         get {
             TestLocalState(entities: entities, count: count)
@@ -31,7 +35,7 @@ struct TestGlobalState: GameState {
     }
 }
 
-enum TestGlobalAction: Equatable {
+enum TestGlobalAction: Equatable, Codable {
     case incrementCount
     case updateVelocity(entity: EntityId, velocity: Point)
     case removeEntity(entity: EntityId)
