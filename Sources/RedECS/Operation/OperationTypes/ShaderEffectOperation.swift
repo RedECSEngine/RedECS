@@ -19,11 +19,11 @@ public struct ShaderEffectOperation: Operation {
         animated && effect.timeBasedCase != nil
     }
 
-    public mutating func run(
+    public mutating func run<State: BasicOperationCapableState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout State,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Action> {
+    ) -> GameEffect<State, Action> {
         guard !isComplete else { return .none }
 
         guard let timeCase = isTimeBased ? effect.timeBasedCase : nil else {

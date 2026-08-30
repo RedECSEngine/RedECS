@@ -5,11 +5,11 @@ public protocol Operation: Codable & Equatable {
     var duration: Double { get }
     var isComplete: Bool { get }
     
-    mutating func run(
+    mutating func run<State: BasicOperationCapableState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout State,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Action>
+    ) -> GameEffect<State, Action>
     
     mutating func reset()
 }

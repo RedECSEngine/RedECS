@@ -17,7 +17,7 @@ public struct SoundOperation<GameAction: Equatable & Codable>: Operation {
         self.strategy = strategy
     }
 
-    public mutating func run(id: EntityId, state: inout BasicOperationComponentContext, delta: Double) -> GameEffect<BasicOperationComponentContext, Action> {
+    public mutating func run<State: BasicOperationCapableState>(id: EntityId, state: inout State, delta: Double) -> GameEffect<State, Action> {
         isComplete = true
         switch strategy {
         case .play(let sound):

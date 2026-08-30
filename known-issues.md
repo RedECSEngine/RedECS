@@ -277,7 +277,7 @@ is no benchmark target — so treat the ordering as untested. Added 2026-07-31.
   component dictionary) and boxes any match into a `RenderableComponent` existential.
   No query or archetype index exists to skip non-matching nodes.
 
-- **`OperationReducer` materializes two whole component stores per operation**
+- **Legacy `OperationReducer` materializes two whole component stores per operation**
   Where: `Sources/RedECS/Operation/OperationReducer.swift:41,43`; bridges at
   `Sources/RedECS/Operation/OperationComponent.swift:13-27,29-41`
   Symptom: the most expensive line on the frame path; cost is
@@ -287,7 +287,12 @@ is no benchmark target — so treat the ordering as untested. Added 2026-07-31.
   Passing `&state.basicOperationComponentState` inside the nested loop forces a full
   get-modify-set each iteration, and the returned `GameEffect` stores the same key
   path (`:43`) so the copy is replayed when the effect is applied. `operationContext`
-  (`:13-27`) has the same shape.
+  (`:13-27`) has the same shape. Affects only the legacy context-struct path:
+  `OperationsReducer<State: OperationCapableGameState>`
+  (`Sources/RedECS/Operation/OperationsReducer.swift`) runs operations directly
+  against the game state via `BasicOperationCapableState`, with no context
+  materialization and no key-path replay. Entry closes when games have migrated and
+  `OperationReducer` + its context types are deleted.
 
 - **`HUDNode.flattenedGroups()` re-maps the accumulated group array per tree level**
   Where: `Sources/RedHUD/HUDNode.swift:59-75`

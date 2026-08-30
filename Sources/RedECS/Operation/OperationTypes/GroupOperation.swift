@@ -17,14 +17,14 @@ public struct GroupOperation<GameAction: Equatable & Codable>: Operation {
         self.operations = operations
     }
         
-    public mutating func run(
+    public mutating func run<State: BasicOperationCapableState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout State,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, GameAction> {
+    ) -> GameEffect<State, GameAction> {
         guard !operations.isEmpty, currentOperationCompletionCount < operations.count else { return .none }
         
-        var effects: [GameEffect<BasicOperationComponentContext, GameAction>] = []
+        var effects: [GameEffect<State, GameAction>] = []
         
         for i in 0..<operations.count {
             guard !operations[i].isComplete else { continue }

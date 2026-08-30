@@ -1,12 +1,10 @@
 import Geometry
 import OrderedCollections
 
-public protocol OperationCapableGameState: GameState {
+public protocol OperationCapableGameState: BasicOperationCapableState {
     associatedtype GameAction: Equatable & Codable
-    
+
     var operation: [EntityId: OperationComponent<GameAction>] { get set }
-    var transform: [EntityId: TransformComponent] { get set }
-    var sprite: [EntityId: SpriteComponent] { get set }
 }
 
 extension OperationCapableGameState {

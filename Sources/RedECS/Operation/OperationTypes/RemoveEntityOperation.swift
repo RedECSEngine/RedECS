@@ -13,7 +13,7 @@ public struct RemoveEntityOperation<GameAction: Equatable & Codable>: Operation 
         self.removeEntityId = removeEntityId
     }
     
-    public mutating func run(id: EntityId, state: inout BasicOperationComponentContext, delta: Double) -> GameEffect<BasicOperationComponentContext, Action> {
+    public mutating func run<State: BasicOperationCapableState>(id: EntityId, state: inout State, delta: Double) -> GameEffect<State, Action> {
         isComplete = true
         return .system(.removeEntity(removeEntityId ?? id))
     }

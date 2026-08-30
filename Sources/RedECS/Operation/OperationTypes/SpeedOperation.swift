@@ -18,11 +18,11 @@ public struct SpeedOperation<GameAction: Equatable & Codable>: Operation {
         self.operation = operation
     }
 
-    public mutating func run(
+    public mutating func run<State: BasicOperationCapableState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout State,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Action> {
+    ) -> GameEffect<State, Action> {
         let effect = operation.run(id: id, state: &state, delta: delta * multiplier)
         currentTime += delta
         return effect

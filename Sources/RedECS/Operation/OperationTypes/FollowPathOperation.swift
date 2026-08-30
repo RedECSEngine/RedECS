@@ -22,11 +22,11 @@ public struct FollowPathOperation: Operation {
         self.proximityVariance = proximityVariance
     }
 
-    public mutating func run(
+    public mutating func run<State: BasicOperationCapableState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout State,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Action> {
+    ) -> GameEffect<State, Action> {
         guard currentIndex < path.count else { return .none }
         guard let position = state.transform[id]?.position else {
             currentIndex = path.count
