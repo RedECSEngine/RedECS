@@ -102,11 +102,11 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         }
     }
     
-    public mutating func run(
+    public mutating func run<State: BasicOperationCapableState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout State,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, GameAction> {
+    ) -> GameEffect<State, GameAction> {
         switch self {
         case .wait(var wait):
             _ = wait.run(id: id, state: &state, delta: delta)

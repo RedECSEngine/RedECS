@@ -5,27 +5,12 @@ import XCTest
 private enum FlashAction: Equatable, Codable {
     case flashHit(EntityId)
     case flashDone(EntityId)
-
-    static func fromUmbrella(_ action: OpTestUmbrellaAction) -> FlashAction? {
-        switch action {
-        case .hitLanded(let id): return .flashHit(id)
-        case .entityFlashed(let id): return .flashDone(id)
-        case .ping: return nil
-        }
-    }
 }
 
+@CasePathable
 private enum OpTestUmbrellaAction: Equatable, Codable {
-    case hitLanded(EntityId)
-    case entityFlashed(EntityId)
+    case flash(FlashAction)
     case ping
-
-    static func fromFlash(_ action: FlashAction) -> OpTestUmbrellaAction {
-        switch action {
-        case .flashHit(let id): return .hitLanded(id)
-        case .flashDone(let id): return .entityFlashed(id)
-        }
-    }
 }
 
 private struct FlashContext: GameState {
@@ -78,11 +63,9 @@ final class OperationEffectStoreTests: XCTestCase {
                 FlashReducer()
                     .pullback(
                         toLocalState: \OpTestState.flashContext,
-                        toLocalAction: FlashAction.fromUmbrella,
-                        toGlobalAction: OpTestUmbrellaAction.fromFlash
+                        action: OpTestUmbrellaAction.allCasePaths.flash
                     ),
-                OperationReducer<OpTestUmbrellaAction>()
-                    .pullback(toLocalState: \.operationContext)
+                OperationsReducer<OpTestState>()
             ).eraseToAnyReducer(),
             registeredComponentTypes: [
                 .init(keyPath: \.operation),
@@ -96,14 +79,14 @@ final class OperationEffectStoreTests: XCTestCase {
         let store = makeStore()
         store.sendSystemAction(.addEntity("e1", []))
 
-        store.sendAction(.hitLanded("e1"))
+        store.sendAction(.flash(.flashHit("e1")))
 
         let component = store.state.operation["e1"]
         XCTAssertNotNil(component)
         XCTAssertEqual(component?.operations.count, 1)
         XCTAssertEqual(
             component?.operations.values.first,
-            .wait(duration: 0.05).call(.entityFlashed("e1"))
+            .wait(duration: 0.05).call(.flash(.flashDone("e1")))
         )
 
         store.sendDelta(0.1)
@@ -172,7 +155,7 @@ final class OperationEffectStoreTests: XCTestCase {
             key: "chain",
             .repeat(RepeatOperation(
                 strategy: .times(2),
-                operation: .wait(duration: 0.1).call(.entityFlashed("e1"))
+                operation: .wait(duration: 0.1).call(.flash(.flashDone("e1")))
             ))
         ))
 

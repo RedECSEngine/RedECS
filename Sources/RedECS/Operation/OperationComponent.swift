@@ -1,44 +1,10 @@
 import Geometry
 import OrderedCollections
 
-public protocol OperationCapableGameState: GameState {
+public protocol OperationCapableGameState: BasicOperationCapableState {
     associatedtype GameAction: Equatable & Codable
-    
-    var operation: [EntityId: OperationComponent<GameAction>] { get set }
-    var transform: [EntityId: TransformComponent] { get set }
-    var sprite: [EntityId: SpriteComponent] { get set }
-}
 
-extension OperationCapableGameState {
-    public var operationContext: OperationComponentContext<GameAction> {
-        get {
-            OperationComponentContext<GameAction>(
-                entities: entities,
-                operation: operation,
-                transform: transform,
-                sprite: sprite
-            )
-        }
-        set {
-            self.transform = newValue.transform
-            self.operation = newValue.operation
-            self.sprite = newValue.sprite
-        }
-    }
-    
-    var basicOperationComponentState: BasicOperationComponentContext {
-        get {
-            BasicOperationComponentContext(
-                entities: entities,
-                transform: transform,
-                sprite: sprite
-            )
-        }
-        set {
-            self.transform = newValue.transform
-            self.sprite = newValue.sprite
-        }
-    }
+    var operation: [EntityId: OperationComponent<GameAction>] { get set }
 }
 
 public struct OperationComponent<GameAction: Equatable & Codable>: GameComponent {

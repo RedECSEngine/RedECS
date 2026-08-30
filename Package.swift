@@ -1,5 +1,6 @@
 // swift-tools-version:6.2
 
+import CompilerPluginSupport
 import PackageDescription
 
 let package = Package(
@@ -64,6 +65,8 @@ let package = Package(
         ),
 
         .package(url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.18.0"),
+
+        .package(url: "https://github.com/swiftlang/swift-syntax.git", "600.0.0"..<"700.0.0"),
     ],
     targets: [
         .target(
@@ -84,6 +87,15 @@ let package = Package(
                 .product(name: "OrderedCollections", package: "swift-collections"),
                 .product(name: "Graphs", package: "Graphs"),
                 "TiledInterpreter",
+                "RedECSMacros",
+            ]
+        ),
+
+        .macro(
+            name: "RedECSMacros",
+            dependencies: [
+                .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
             ]
         ),
         .target(
@@ -119,6 +131,13 @@ let package = Package(
         .testTarget(
             name: "RedHUDTests",
             dependencies: ["RedHUD"]
+        ),
+        .testTarget(
+            name: "RedECSMacrosTests",
+            dependencies: [
+                "RedECSMacros",
+                .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+            ]
         ),
         .testTarget(
             name: "RenderingTests",

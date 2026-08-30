@@ -277,18 +277,6 @@ is no benchmark target — so treat the ordering as untested. Added 2026-07-31.
   component dictionary) and boxes any match into a `RenderableComponent` existential.
   No query or archetype index exists to skip non-matching nodes.
 
-- **`OperationReducer` materializes two whole component stores per operation**
-  Where: `Sources/RedECS/Operation/OperationReducer.swift:41,43`; bridges at
-  `Sources/RedECS/Operation/OperationComponent.swift:13-27,29-41`
-  Symptom: the most expensive line on the frame path; cost is
-  (entities with operations × operations each) × size of `transform` + `sprite`.
-  Cause: `basicOperationComponentState` is a *computed* property whose getter rebuilds
-  a context from the component dictionaries and whose setter writes them all back.
-  Passing `&state.basicOperationComponentState` inside the nested loop forces a full
-  get-modify-set each iteration, and the returned `GameEffect` stores the same key
-  path (`:43`) so the copy is replayed when the effect is applied. `operationContext`
-  (`:13-27`) has the same shape.
-
 - **`HUDNode.flattenedGroups()` re-maps the accumulated group array per tree level**
   Where: `Sources/RedHUD/HUDNode.swift:59-75`
   Symptom: HUD render cost grows super-linearly with nesting depth; deep stacks with

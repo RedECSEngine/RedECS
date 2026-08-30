@@ -25,11 +25,11 @@ public struct AnimateOperation: Operation {
         self.frames = frames
     }
         
-    public mutating func run(
+    public mutating func run<State: BasicOperationCapableState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout State,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Int> {
+    ) -> GameEffect<State, Int> {
         guard !isComplete, !frames.isEmpty else {
             isComplete = true
             return .none

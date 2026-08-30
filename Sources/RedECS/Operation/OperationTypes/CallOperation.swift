@@ -12,11 +12,11 @@ public struct CallOperation<GameAction: Equatable & Codable>: Operation {
         self.action = action
     }
         
-    public mutating func run(
+    public mutating func run<State: BasicOperationCapableState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout State,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, GameAction> {
+    ) -> GameEffect<State, GameAction> {
         guard !isComplete else { return .none }
         isComplete = true
         return .game(action)

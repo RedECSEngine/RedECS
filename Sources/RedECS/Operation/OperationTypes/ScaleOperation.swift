@@ -21,7 +21,7 @@ public struct ScaleOperation: Operation {
         self.currentTime = currentTime
     }
     
-    public mutating func run(id: EntityId, state: inout BasicOperationComponentContext, delta: Double) -> GameEffect<BasicOperationComponentContext, Action> {
+    public mutating func run<State: BasicOperationCapableState>(id: EntityId, state: inout State, delta: Double) -> GameEffect<State, Action> {
         
         if currentTime == 0 {
             switch strategy {

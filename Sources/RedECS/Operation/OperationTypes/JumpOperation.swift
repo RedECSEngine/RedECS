@@ -46,11 +46,11 @@ public struct JumpOperation: Operation {
         self.currentTime = currentTime
     }
 
-    public mutating func run(
+    public mutating func run<State: BasicOperationCapableState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout State,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Action> {
+    ) -> GameEffect<State, Action> {
         if currentTime == 0 {
             switch strategy {
             case .by(let amount):

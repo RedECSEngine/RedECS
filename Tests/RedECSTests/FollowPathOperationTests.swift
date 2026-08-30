@@ -6,8 +6,8 @@ final class FollowPathOperationTests: XCTestCase {
 
     private let id: EntityId = "walker"
 
-    private func makeContext(startAt position: Point) -> BasicOperationComponentContext {
-        BasicOperationComponentContext(
+    private func makeContext(startAt position: Point) -> OperationTestContext {
+        OperationTestContext(
             entities: .init(),
             transform: [id: TransformComponent(entity: id, position: position)],
             sprite: [:]
@@ -116,7 +116,7 @@ final class SpeedOperationTests: XCTestCase {
     private let id: EntityId = "runner"
 
     func testScalesTheDeltaFedToTheWrappedOperation() {
-        var state = BasicOperationComponentContext(
+        var state = OperationTestContext(
             entities: .init(),
             transform: [id: TransformComponent(entity: id, position: .zero)],
             sprite: [:]

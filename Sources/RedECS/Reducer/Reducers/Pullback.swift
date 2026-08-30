@@ -72,6 +72,57 @@ public extension Reducer {
     }
 }
 
+public extension Reducer {
+    func pullback<
+        GlobalState,
+        GlobalAction,
+        GlobalEnvironment
+    >(
+        toLocalState: WritableKeyPath<GlobalState, State>,
+        action: CasePath<GlobalAction, Action>,
+        toLocalEnvironment: @escaping (GlobalEnvironment) -> Environment
+    ) -> Pullback<GlobalState, GlobalAction, GlobalEnvironment, Self> {
+        return Pullback(
+            toLocalState: toLocalState,
+            toLocalAction: action.extract,
+            toGlobalAction: action.embed,
+            toLocalEnvironment: toLocalEnvironment,
+            reducer: self
+        )
+    }
+
+    func pullback<GlobalAction>(
+        action: CasePath<GlobalAction, Action>
+    ) -> Pullback<State, GlobalAction, Environment, Self> {
+        return Pullback(
+            toLocalState: \.self,
+            toLocalAction: action.extract,
+            toGlobalAction: action.embed,
+            toLocalEnvironment: { $0 },
+            reducer: self
+        )
+    }
+}
+
+public extension Reducer where Environment == Void {
+    func pullback<
+        GlobalState,
+        GlobalAction,
+        GlobalEnvironment
+    >(
+        toLocalState: WritableKeyPath<GlobalState, State>,
+        action: CasePath<GlobalAction, Action>
+    ) -> Pullback<GlobalState, GlobalAction, GlobalEnvironment, Self> {
+        return Pullback(
+            toLocalState: toLocalState,
+            toLocalAction: action.extract,
+            toGlobalAction: action.embed,
+            toLocalEnvironment: { _ in () },
+            reducer: self
+        )
+    }
+}
+
 public extension Reducer where Environment == Void  {
     func pullback<
         GlobalState,

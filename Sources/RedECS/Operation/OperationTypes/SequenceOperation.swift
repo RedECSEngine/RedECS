@@ -20,11 +20,11 @@ public struct SequenceOperation<GameAction: Equatable & Codable>: Operation {
         self.operations = operations
     }
         
-    public mutating func run(
+    public mutating func run<State: BasicOperationCapableState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout State,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, GameAction> {
+    ) -> GameEffect<State, GameAction> {
         guard !operations.isEmpty, currentOperationIndex < operations.count else { return .none }
         let effect = operations[currentOperationIndex].run(id: id, state: &state, delta: delta)
         if operations[currentOperationIndex].isComplete {

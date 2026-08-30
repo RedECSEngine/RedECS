@@ -9,11 +9,11 @@ public struct WaitOperation: Operation {
         self.duration = duration
     }
     
-    public mutating func run(
+    public mutating func run<State: BasicOperationCapableState>(
         id: EntityId,
-        state: inout BasicOperationComponentContext,
+        state: inout State,
         delta: Double
-    ) -> GameEffect<BasicOperationComponentContext, Int> {
+    ) -> GameEffect<State, Int> {
         currentTime += delta
         return .none
     }

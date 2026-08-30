@@ -33,23 +33,21 @@ class HUDSnapshotTestCase: XCTestCase {
         mtkView.delegate = renderer
         renderer.mtkView(mtkView, drawableSizeWillChange: .init(width: 480, height: 480))
 
-        let world = RenderingReducer(renderableComponentTypes: [
-            .init(keyPath: \.sprite)
-        ])
-        .pullback(
-            toLocalState: \.self,
-            toLocalEnvironment: { $0 as RenderingEnvironment }
-        ) as Pullback<RenderingTestState, RenderingTestAction, RenderingTestEnvironment, RenderingReducer<RenderingTestState>>
+        let world: Pullback<RenderingTestState, RenderingTestAction, RenderingTestEnvironment, RenderingReducer<RenderingTestState>> =
+            RenderingReducer(renderableComponentTypes: [
+                .init(keyPath: \.sprite)
+            ])
+            .pullback(
+                toLocalState: \.self,
+                toLocalEnvironment: { $0 as RenderingEnvironment }
+            )
 
         let hud = HUDRenderingReducer<RenderingTestState, RenderingTestAction> { [weak self] _ in
             self?.hudView
         }
         .pullback(
             toLocalState: \.self,
-            toLocalAction: { (action: RenderingTestAction) in
-                if case .hud(let hudAction) = action { return hudAction }
-                return nil
-            },
+            toLocalAction: RenderingTestAction.allCasePaths.hud.extract,
             toGlobalAction: { hudAction in
                 if case .triggered(let action) = hudAction { return action }
                 return .hud(hudAction)  // unreachable: only .triggered is emitted

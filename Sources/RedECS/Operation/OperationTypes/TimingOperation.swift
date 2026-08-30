@@ -24,7 +24,7 @@ public struct TimingOperation<GameAction: Equatable & Codable>: Operation {
         self.duration = operation.duration
     }
     
-    public mutating func run(id: EntityId, state: inout BasicOperationComponentContext, delta: Double) -> GameEffect<BasicOperationComponentContext, Action> {
+    public mutating func run<State: BasicOperationCapableState>(id: EntityId, state: inout State, delta: Double) -> GameEffect<State, Action> {
         
         let adjustedPercent = strategy.timing(currentTime / duration + delta / duration)
         let deltaPercent = adjustedPercent - previousPercentage
