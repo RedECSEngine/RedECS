@@ -10,13 +10,6 @@ record of what changed and when.
 
 ### Core ECS / Store
 
-- **`.resending` disables delta and entity-event reduction**
-  Where: `Sources/RedECS/Reducer/Reducers/Resending.swift:6,17`
-  Symptom: any reducer wrapped in `.resending { }` silently stops doing per-frame
-  work and stops reacting to entity added/removed events.
-  Cause: the `AnyReducer` it builds stubs the delta and entityEvent positions with
-  `{ _,_,_ in .none }` instead of forwarding to `self.reduce`.
-
 - **Cold `Future` re-executes work per subscribe; `zip` can double-resolve**
   Where: `Sources/RedECS/Utilities/Future.swift:11-15, 69-86, 120-131`
   Symptom: multiple subscriptions re-run the underlying load; zero subscriptions
