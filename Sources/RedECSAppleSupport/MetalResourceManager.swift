@@ -1,4 +1,5 @@
 import Foundation
+import CSVInterpreter
 import RedECS
 import RedHUD
 import TiledInterpreter
@@ -141,6 +142,40 @@ public final class MetalResourceManager: ResourceManager {
             .toVoid()
     }
     
+    public func loadCSVFile<T: Decodable>(
+        _ name: String,
+        decodedAs: T.Type
+    ) -> Future<T, Swift.Error> {
+        var name = name
+        var ext = "csv"
+        let nameSplit = name.split(separator: ".")
+        if nameSplit.count > 1 {
+            name = String(nameSplit.dropLast().joined(separator: "."))
+            ext = String(nameSplit[nameSplit.count - 1])
+        }
+        return Future { (resolve: (Result<T, Error>) -> Void) in
+            guard let path = self.resourceBundle.path(forResource: name, ofType: ext) else {
+                resolve(.failure(MetalResourceManagerError.fileNotFound("\(name).\(ext) in \(self.resourceBundle.description)")))
+                return
+            }
+
+            let url = URL(fileURLWithPath: path)
+
+            guard let data = try? Data(contentsOf: url, options: .mappedIfSafe),
+                  let string = String(data: data, encoding: .utf8) else {
+                resolve(.failure(MetalResourceManagerError.fileLoadFailure(url.absoluteString)))
+                return
+            }
+
+            do {
+                let decoded = try CSVDecoder().decode(T.self, from: string)
+                resolve(.success(decoded))
+            } catch {
+                resolve(.failure(MetalResourceManagerError.fileDecodeFailure("\(name).\(ext):" + String(describing: error))))
+            }
+        }
+    }
+
     public func loadTiledMap(_ name: String) -> Future<TiledMapJSON, Swift.Error> {
         return loadJSONFile(name, decodedAs: TiledMapJSON.self)
             .flatMap { tileMap -> Future<TiledMapJSON, Swift.Error> in

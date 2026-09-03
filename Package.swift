@@ -114,12 +114,13 @@ let package = Package(
 
         .target(
             name: "RedECSAppleSupport",
-            dependencies: ["RedECSKit"]
+            dependencies: ["RedECSKit", "CSVInterpreter"]
         ),
         .target(
             name: "RedECSWebSupport",
             dependencies: [
                 "RedECSKit",
+                "CSVInterpreter",
                 .product(name: "JavaScriptKit", package: "JavaScriptKit")
             ]
         ),
