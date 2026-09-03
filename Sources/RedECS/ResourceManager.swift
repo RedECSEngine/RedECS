@@ -39,6 +39,7 @@ public protocol ResourceManager: AnyObject {
     func animationsForTexture(_ textureId: TextureId) -> SpriteAnimationDictionary?
     
     func loadJSONFile<T: Decodable>(_ name: String, decodedAs: T.Type) -> Future<T, Error>
+    func loadCSVFile<T: Decodable>(_ name: String, decodedAs: T.Type) -> Future<T, Error>
     func loadTiledMap(_ name: String) -> Future<TiledMapJSON, Error>
     func loadBitmapFontTextFile(_ name: String) -> Future<BitmapFont, Error>
 }

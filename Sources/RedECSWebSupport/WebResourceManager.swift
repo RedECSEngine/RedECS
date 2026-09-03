@@ -1,4 +1,5 @@
 import JavaScriptKit
+import CSVInterpreter
 import RedECS
 import RedHUD
 import TiledInterpreter
@@ -111,6 +112,46 @@ public final class WebResourceManager: ResourceManager {
         }
     }
     
+    public func loadCSVFile<T: Decodable>(
+        _ name: String,
+        decodedAs: T.Type
+    ) -> Future<T, Swift.Error> {
+        Future { (resolve: @escaping (Result<T, Swift.Error>) -> Void) in
+            guard let origin = JSObject.global.window.object?.location.object?.origin.string else {
+                resolve(.failure(WebResourceManagerError.windowLocationOriginNotAvailable))
+                return
+            }
+            guard let fetchFunc = JSObject.global.fetch.function else {
+                resolve(.failure(WebResourceManagerError.jsFetchFunctionNotAvailable))
+                return
+            }
+
+            let url = origin + "/" + self.resourcePath + "/" + name
+
+            (JSPromise(from: fetchFunc(url)))?
+                .then(success: { response in
+                    JSPromise(from: response.text())?.jsValue ?? .null
+                })
+                .then(success: { value in
+                    guard let text = value.string else {
+                        resolve(.failure(WebResourceManagerError.fileDecodeFailure("\(name):")))
+                        return JSValue.null
+                    }
+                    do {
+                        let decoded = try CSVDecoder().decode(T.self, from: text)
+                        resolve(.success(decoded))
+                    } catch {
+                        resolve(.failure(WebResourceManagerError.fileDecodeFailure("\(name):" + String(describing: error))))
+                    }
+                    return JSValue.null
+                }, failure: { error in
+                    print("error", error)
+                    resolve(.failure(WebResourceManagerError.jsError(String(describing: error.jsValue))))
+                    return JSValue.null
+                })
+        }
+    }
+
     public func loadImageFile(
         name: String
     ) -> Future<JSValue, Swift.Error> {

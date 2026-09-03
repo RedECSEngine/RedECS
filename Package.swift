@@ -38,6 +38,11 @@ let package = Package(
             name: "TiledInterpreter",
             targets: ["TiledInterpreter"]
         ),
+
+        .library(
+            name: "CSVInterpreter",
+            targets: ["CSVInterpreter"]
+        ),
     ],
     dependencies: [
         .package(
@@ -109,18 +114,24 @@ let package = Package(
 
         .target(
             name: "RedECSAppleSupport",
-            dependencies: ["RedECSKit"]
+            dependencies: ["RedECSKit", "CSVInterpreter"]
         ),
         .target(
             name: "RedECSWebSupport",
             dependencies: [
                 "RedECSKit",
+                "CSVInterpreter",
                 .product(name: "JavaScriptKit", package: "JavaScriptKit")
             ]
         ),
 
         .target(
             name: "TiledInterpreter",
+            dependencies: []
+        ),
+
+        .target(
+            name: "CSVInterpreter",
             dependencies: []
         ),
 
@@ -152,6 +163,11 @@ let package = Package(
                 .process("Resources")
             ]
         ),
+        .testTarget(
+            name: "CSVInterpreterTests",
+            dependencies: ["CSVInterpreter"]
+        ),
+
         .testTarget(
             name: "TiledInterpreterTests",
             dependencies: [
