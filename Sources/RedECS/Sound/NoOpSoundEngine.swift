@@ -3,7 +3,7 @@ public final class NoOpSoundEngine: SoundEngine {
 
     public init() {}
 
-    public func preloadSoundSprite(_ name: String) -> Future<Void, Error> {
+    public func preloadSoundSprite(_ resource: LoadableResource) -> Future<Void, Error> {
         .just(())
     }
 

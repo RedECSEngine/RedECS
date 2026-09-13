@@ -17,6 +17,11 @@ public struct TileMap: BuiltinHUDView {
         self.zoom = zoom
     }
 
+    public init(_ resource: LoadableResource, zoom: Double = 1) {
+        assert(resource.type == .tilemap, "\(resource.fileName) is not a tilemap resource")
+        self.init(named: resource.fileName, zoom: zoom)
+    }
+
     public init(named name: String, zoom: Double = 1) {
         self.source = .named(name)
         self.zoom = zoom

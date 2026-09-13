@@ -37,27 +37,29 @@ public final class AppleSoundEngine: SoundEngine {
         }
     }
 
-    public func preloadSoundSprite(_ name: String) -> Future<Void, Error> {
-        if loadedSprites.contains(name) {
+    public func preloadSoundSprite(_ resource: LoadableResource) -> Future<Void, Error> {
+        assert(resource.type == .soundSprite, "\(resource.fileName) is not a sound sprite resource")
+        let spriteName = resource.fileName
+        if loadedSprites.contains(spriteName) {
             return .just(())
         }
         return Future { resolve in
             do {
-                let map = try self.loadMap(named: name)
+                let map = try self.loadMap(resource)
                 guard let source = map.src.first else {
-                    throw AppleSoundEngineError.emptySpriteSource(name)
+                    throw AppleSoundEngineError.emptySpriteSource(spriteName)
                 }
                 let file = try AVAudioFile(forReading: self.audioURL(for: source))
                 for (segmentName, segment) in map.sprite {
                     let soundId = SoundId(rawValue: segmentName)
-                    assert(self.sounds[soundId] == nil, "duplicate sound '\(segmentName)' while loading sprite '\(name)'")
+                    assert(self.sounds[soundId] == nil, "duplicate sound '\(segmentName)' while loading sprite '\(spriteName)'")
                     self.sounds[soundId] = LoadedSound(file: file, segment: segment)
                 }
-                self.loadedSprites.insert(name)
-                print("sound sprite loaded: \(name)")
+                self.loadedSprites.insert(spriteName)
+                print("sound sprite loaded: \(spriteName)")
                 resolve(.success(()))
             } catch {
-                print("error loading sound sprite \(name):", error)
+                print("error loading sound sprite \(spriteName):", error)
                 resolve(.failure(error))
             }
         }
@@ -112,9 +114,9 @@ public final class AppleSoundEngine: SoundEngine {
         activePlayers.removeAll()
     }
 
-    private func loadMap(named name: String) throws -> SoundSpriteMap {
-        guard let url = resourceBundle.url(forResource: name, withExtension: "json") else {
-            throw AppleSoundEngineError.fileNotFound("\(name).json in \(resourceBundle.description)")
+    private func loadMap(_ resource: LoadableResource) throws -> SoundSpriteMap {
+        guard let url = resourceBundle.url(forResource: resource.name, withExtension: resource.ext) else {
+            throw AppleSoundEngineError.fileNotFound("\(resource.fileName) in \(resourceBundle.description)")
         }
         return try JSONDecoder().decode(SoundSpriteMap.self, from: try Data(contentsOf: url))
     }

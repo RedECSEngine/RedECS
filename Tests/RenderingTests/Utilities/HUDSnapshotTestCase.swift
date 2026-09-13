@@ -76,7 +76,7 @@ class HUDSnapshotTestCase: XCTestCase {
     }
 
     func preloadFont() {
-        preloadResources([.init(name: "pt-mono.fnt", type: .bitmapFont)])
+        preloadResources([.init(name: "pt-mono", ext: "fnt", type: .bitmapFont)])
     }
 
     func preloadResources(_ resources: [LoadableResource]) {

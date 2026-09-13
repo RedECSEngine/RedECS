@@ -82,7 +82,7 @@ class BitmapFontTests: XCTestCase {
     func snapshotText(_ text: String) {
         let exp = expectation(description: "wait for async")
         renderer.resourceManager.resourceBundle = .module
-        renderer.resourceManager.preload([.init(name: "pt-mono.fnt", type: .bitmapFont)])
+        renderer.resourceManager.preload([.init(name: "pt-mono", ext: "fnt", type: .bitmapFont)])
             .subscribe { result in
                 switch result {
                 case .success:

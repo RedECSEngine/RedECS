@@ -126,7 +126,7 @@ open class WebRenderer {
                         try program.execute(with: self)
                     } else {
                         print("no texture loaded for", textureId)
-                        webResourceManager.startTextureLoadIfNeeded(textureId: textureId)
+                        webResourceManager.startTextureLoadIfNeeded(LoadableResource(name: textureId, ext: "png", type: .image))
                     }
                 }
             }

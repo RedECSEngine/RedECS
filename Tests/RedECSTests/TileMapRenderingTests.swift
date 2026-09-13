@@ -12,11 +12,14 @@ final class TileMapRenderingTests: XCTestCase {
         var tileMaps: [String: TiledMapJSON] = [:]
         var tileSets: [String: TiledTilesetJSON] = [:]
         var fonts: [String: BitmapFont] = [:]
-        func preload(_ assets: [LoadableResource]) -> Future<Void, Error> { .just(()) }
-        func startTextureLoadIfNeeded(textureId: TextureId) -> Future<Void, Error> { .just(()) }
-        func loadJSONFile<T: Decodable>(_ name: String, decodedAs: T.Type) -> Future<T, Error> { Future { _ in } }
-        func loadTiledMap(_ name: String) -> Future<TiledMapJSON, Error> { Future { _ in } }
-        func loadBitmapFontTextFile(_ name: String) -> Future<BitmapFont, Error> { Future { _ in } }
+        var textFiles: [String: String] = [:]
+        func preload(_ resources: [LoadableResource]) -> Future<Void, Error> { .just(()) }
+        func startTextureLoadIfNeeded(_ resource: LoadableResource) -> Future<Void, Error> { .just(()) }
+        func loadJSONFile<T: Decodable>(_ resource: LoadableResource, decodedAs: T.Type) -> Future<T, Error> { Future { _ in } }
+        func loadTextFile(_ resource: LoadableResource) -> Future<String, Error> { Future { _ in } }
+        func loadTiledMap(_ resource: LoadableResource) -> Future<TiledMapJSON, Error> { Future { _ in } }
+        func loadTileSet(_ resource: LoadableResource) -> Future<TiledTilesetJSON, Error> { Future { _ in } }
+        func loadBitmapFontTextFile(_ resource: LoadableResource) -> Future<BitmapFont, Error> { Future { _ in } }
     }
 
     func tileSet(

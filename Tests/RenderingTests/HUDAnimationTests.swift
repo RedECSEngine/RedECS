@@ -26,7 +26,7 @@ class HUDAnimationTests: HUDSnapshotTestCase {
     /// hud-sprite sheet grows 1x → 3x while fading in, linear, so the
     /// middle frame is exactly 2x at 0.625 opacity.
     func testSpriteScaleAndOpacityTimeline() throws {
-        preloadResources([.init(name: "hud-sprite", type: .image)])
+        preloadResources([.init(name: "hud-sprite", ext: "png", type: .image)])
         setHUD {
             Sprite("hud-sprite", frame: "frame-1")
                 .scaleEffect(from: 1.0, to: 3.0)
