@@ -12,17 +12,18 @@ public final class WebResourceManager: ResourceManager {
         case jsFetchFunctionNotAvailable
         case jsError(String)
     }
-    
+
     public var textures: [TextureId: Resource<TextureMap>] = [:]
     public var animations: [TextureId: SpriteAnimationDictionary] = [:]
     public var tileMaps: [String: TiledMapJSON] = [:]
     public var tileSets: [String: TiledTilesetJSON] = [:]
     public var fonts: [String: BitmapFont] = [:]
-    
+    public var textFiles: [String: String] = [:]
+
     /// Web Specific
     public var textureImages: [TextureId: JSValue] = [:]
     let resourcePath: String
-    
+
     public init(resourcePath: String) {
         self.resourcePath = resourcePath
         registerDefaultHUDFont()
@@ -46,19 +47,20 @@ public final class WebResourceManager: ResourceManager {
         // a later preload of the same face reuses this image.
         textureImages[font.page.file] = image.jsValue
     }
-    
+
     @discardableResult
-    public func startTextureLoadIfNeeded(textureId: TextureId) -> Future<Void, Swift.Error> {
+    public func startTextureLoadIfNeeded(_ resource: LoadableResource) -> Future<Void, Swift.Error> {
+        assert(resource.type == .image, "\(resource.fileName) is not an image resource")
+        let textureId = resource.name
         guard textures[textureId] == nil else {
             return .just(())
         }
-        
+
         textures[textureId] = .loading
         print("starting texture load: \(textureId)")
-        return loadImageFile(name: textureId + ".png")
-            .flatMap { value -> Future<TextureMap, Swift.Error> in
-                self.textureImages[textureId] = value
-                return self.loadJSONFile(textureId + ".json", decodedAs: TextureMap.self)
+        return loadImageFile(resource)
+            .flatMap { _ -> Future<TextureMap, Swift.Error> in
+                self.decodeJSON(LoadableResource(name: textureId, ext: "json", type: .json), as: TextureMap.self)
             }
             .readValue { result in
                 switch result {
@@ -73,13 +75,39 @@ public final class WebResourceManager: ResourceManager {
             }
             .toVoid()
     }
-    
+
+    public func loadTextFile(_ resource: LoadableResource) -> Future<String, Swift.Error> {
+        assert(resource.type == .json || resource.type == .csv, "\(resource.fileName) is not a text resource")
+        if let text = textFiles[resource.fileName] {
+            return .just(text)
+        }
+        return fetchText(resource)
+            .readValue { result in
+                if case let .success(text) = result {
+                    self.textFiles[resource.fileName] = text
+                }
+            }
+    }
+
     public func loadJSONFile<T: Decodable>(
-        _ name: String,
+        _ resource: LoadableResource,
         decodedAs: T.Type
     ) -> Future<T, Swift.Error> {
-        Future { (resolve: @escaping (Result<T, Swift.Error>) -> Void) in
-            guard let origin = JSObject.global.window.object?.location.object?.origin.string else {
+        assert(resource.type == .json, "\(resource.fileName) is not a json resource")
+        return decodeJSON(resource, as: T.self)
+    }
+
+    public func loadImageFile(
+        _ resource: LoadableResource
+    ) -> Future<JSValue, Swift.Error> {
+        assert(resource.type == .image, "\(resource.fileName) is not an image resource")
+        return Future { (resolve: @escaping (Result<JSValue, Swift.Error>) -> Void) in
+            if let image = self.textureImages[resource.name] {
+                resolve(.success(image))
+                return
+            }
+
+            guard let url = self.url(for: resource) else {
                 resolve(.failure(WebResourceManagerError.windowLocationOriginNotAvailable))
                 return
             }
@@ -87,49 +115,7 @@ public final class WebResourceManager: ResourceManager {
                 resolve(.failure(WebResourceManagerError.jsFetchFunctionNotAvailable))
                 return
             }
-            
-            let url = origin + "/" + self.resourcePath + "/" + name
-            
-            (JSPromise(from: fetchFunc(url)))?
-                .then(success: { response in
-                    JSPromise(from: response.json())?.jsValue ?? .null
-                })
-                .then(success: { json in
-                    do {
-                        let parsed = try JSValueDecoder().decode(T.self, from: json)
-                        print("Loaded \(name)")
-                        resolve(.success(parsed))
-                    } catch {
-                        resolve(.failure(WebResourceManagerError.fileDecodeFailure("couldn't decode \(T.self), \(error)")))
-                    }
-                    return JSValue.null
-                }, failure: { error in
-                    print("error", error)
-                    resolve(.failure(WebResourceManagerError.jsError(String(describing: error.jsValue))))
-                    return JSValue.null
-                })
-        }
-    }
-    
-    public func loadImageFile(
-        name: String
-    ) -> Future<JSValue, Swift.Error> {
-        Future { (resolve: @escaping (Result<JSValue, Swift.Error>) -> Void) in
-            if let image = self.textureImages[name] {
-                resolve(.success(image))
-                return
-            }
-            
-            guard let origin = JSObject.global.window.object?.location.object?.origin.string else {
-                resolve(.failure(WebResourceManagerError.fileNotFound))
-                return
-            }
-            guard let fetchFunc = JSObject.global.fetch.function else {
-                resolve(.failure(WebResourceManagerError.jsFetchFunctionNotAvailable))
-                return
-            }
-            
-            let url = origin + "/" + self.resourcePath + "/" + name
+
             (JSPromise(from: fetchFunc(url)))?
                 .then(success: { response in
                     JSPromise(from: response.blob())?.jsValue ?? .null
@@ -143,7 +129,7 @@ public final class WebResourceManager: ResourceManager {
                             resolve(.failure(WebResourceManagerError.jsError("undefined")))
                             return .undefined
                         }
-                        self.textureImages[name] = value
+                        self.textureImages[resource.name] = value
                         resolve(.success(value))
                         return .undefined
                     }).jsValue
@@ -155,18 +141,13 @@ public final class WebResourceManager: ResourceManager {
                 })
         }
     }
-    
-    public func loadTiledMap(_ name: String) -> Future<TiledMapJSON, Swift.Error> {
-        return loadJSONFile(name, decodedAs: TiledMapJSON.self)
+
+    public func loadTiledMap(_ resource: LoadableResource) -> Future<TiledMapJSON, Swift.Error> {
+        assert(resource.type == .tilemap, "\(resource.fileName) is not a tilemap resource")
+        return decodeJSON(resource, as: TiledMapJSON.self)
             .flatMap { tileMap -> Future<TiledMapJSON, Swift.Error> in
-                let loads = Set(tileMap.unresolvedTileSetSources).map { source -> Future<Void, Swift.Error> in
-                    self.loadJSONFile(source, decodedAs: TiledTilesetJSON.self)
-                        .readValue { result in
-                            if case let .success(tileSet) = result {
-                                self.tileSets[source] = tileSet
-                            }
-                        }
-                        .toVoid()
+                let loads = Set(tileMap.unresolvedTileSetSources).map { source in
+                    self.loadTileSet(LoadableResource(fileName: source, type: .tileset)).toVoid()
                 }
                 return Future<Void, Swift.Error>.zip(loads).flatMap { _ -> Future<TiledMapJSON, Swift.Error> in
                     do {
@@ -177,90 +158,98 @@ public final class WebResourceManager: ResourceManager {
                 }
             }
             .flatMap { tileMap -> Future<TiledMapJSON, Swift.Error> in
-                let images = tileMap.tileSets.compactMap { reference -> (String, String)? in
-                    guard let tileSet = reference.tileSet,
-                          let fileName = tileSet.imageFileName,
-                          let textureId = tileSet.textureId else { return nil }
-                    return (textureId, fileName)
-                }
-                let loads = Dictionary(images, uniquingKeysWith: { first, _ in first })
-                    .map { textureId, fileName -> Future<Void, Swift.Error> in
-                        self.loadImageFile(name: fileName)
-                            .readValue { result in
-                                if case let .success(value) = result {
-                                    self.textureImages[textureId] = value
-                                }
-                            }
-                            .toVoid()
-                    }
-                return Future<Void, Swift.Error>.zip(loads).map { _ in tileMap }
+                let imageFileNames = Set(tileMap.tileSets.compactMap { $0.tileSet?.imageFileName })
+                return Future<Void, Swift.Error>.zip(imageFileNames.map { self.loadTileSetImage($0) })
+                    .map { _ in tileMap }
             }
             .readValue { result in
                 if case let .success(tileMap) = result {
-                    self.tileMaps[name] = tileMap
+                    self.tileMaps[resource.fileName] = tileMap
                 }
             }
     }
-    
-    public func preload(_ assets: [LoadableResource]) -> Future<Void, Error> {
-        let futures = assets.map { asset -> Future<Void, Swift.Error> in
-            switch asset.type {
-            case .image:
-                return self.startTextureLoadIfNeeded(textureId: asset.name)
-            case .sound:
-                return .just(())
-            case .tilemap:
-                return self.loadTiledMap(asset.name).toVoid()
-            case .bitmapFont:
-                return self.loadBitmapFontTextFile(asset.name).toVoid()
-            }
-        }
-        if futures.isEmpty {
-            return .just(())
-        }
-        print("⚙️ -- Starting assets preload")
-        return .zip(futures)
-            .readValue({ result in
-                if case .success = result {
-                    print("⚙️ -- Assets preloading complete")
+
+    public func loadTileSet(_ resource: LoadableResource) -> Future<TiledTilesetJSON, Swift.Error> {
+        assert(resource.type == .tileset, "\(resource.fileName) is not a tileset resource")
+        return decodeJSON(resource, as: TiledTilesetJSON.self)
+            .flatMap { tileSet -> Future<TiledTilesetJSON, Swift.Error> in
+                guard let imageFileName = tileSet.imageFileName else {
+                    return .just(tileSet)
                 }
-            })
-            .toVoid()
-    }
-    
-    public func loadBitmapFontTextFile(_ name: String) -> Future<BitmapFont, Swift.Error> {
-        return Future { (resolve: @escaping (Result<BitmapFont, Swift.Error>) -> Void) in
-            if let font = self.fonts[name] {
-                resolve(.success(font))
-                return
+                return self.loadTileSetImage(imageFileName).map { _ in tileSet }
             }
-            
-            guard let origin = JSObject.global.window.object?.location.object?.origin.string else {
-                resolve(.failure(WebResourceManagerError.fileNotFound))
+            .readValue { result in
+                if case let .success(tileSet) = result {
+                    self.tileSets[resource.fileName] = tileSet
+                }
+            }
+    }
+
+    public func loadBitmapFontTextFile(_ resource: LoadableResource) -> Future<BitmapFont, Swift.Error> {
+        assert(resource.type == .bitmapFont, "\(resource.fileName) is not a bitmap font resource")
+        return fetchText(resource)
+            .flatMap { text -> Future<BitmapFont, Swift.Error> in
+                do {
+                    return .just(try BitmapFont(fromString: text))
+                } catch {
+                    print(text)
+                    return .fail(WebResourceManagerError.fileDecodeFailure("\(resource.fileName):" + String(describing: error)))
+                }
+            }
+            .flatMap { font -> Future<BitmapFont, Swift.Error> in
+                self.fonts[font.info.face] = font
+                return self.loadImageFile(LoadableResource(fileName: font.page.file, type: .image))
+                    .map { _ in font }
+            }
+    }
+
+    private func loadTileSetImage(_ imageFileName: String) -> Future<Void, Swift.Error> {
+        loadImageFile(LoadableResource(fileName: imageFileName, type: .image)).toVoid()
+    }
+
+    private func decodeJSON<T: Decodable>(_ resource: LoadableResource, as type: T.Type) -> Future<T, Swift.Error> {
+        let text: Future<String, Swift.Error>
+        if let cached = textFiles[resource.fileName] {
+            text = .just(cached)
+        } else {
+            text = fetchText(resource)
+        }
+        return text.flatMap { text -> Future<T, Swift.Error> in
+            do {
+                let parse: ((ConvertibleToJSValue...) throws -> JSValue)? = JSObject.global.JSON.object?.throwing.parse
+                guard let parse else {
+                    return .fail(WebResourceManagerError.fileDecodeFailure("JSON.parse is not available"))
+                }
+                let json = try parse(text)
+                return .just(try JSValueDecoder().decode(T.self, from: json))
+            } catch {
+                return .fail(WebResourceManagerError.fileDecodeFailure("couldn't decode \(T.self) from \(resource.fileName), \(error)"))
+            }
+        }
+    }
+
+    private func fetchText(_ resource: LoadableResource) -> Future<String, Swift.Error> {
+        Future { (resolve: @escaping (Result<String, Swift.Error>) -> Void) in
+            guard let url = self.url(for: resource) else {
+                resolve(.failure(WebResourceManagerError.windowLocationOriginNotAvailable))
                 return
             }
             guard let fetchFunc = JSObject.global.fetch.function else {
                 resolve(.failure(WebResourceManagerError.jsFetchFunctionNotAvailable))
                 return
             }
-            
-            let url = origin + "/" + self.resourcePath + "/" + name
+
             (JSPromise(from: fetchFunc(url)))?
                 .then(success: { response in
                     JSPromise(from: response.text())?.jsValue ?? .null
                 })
                 .then(success: { value in
-                    guard let fontText = value.string else {
-                        resolve(.failure(WebResourceManagerError.fileDecodeFailure("\(name):")))
+                    guard let text = value.string else {
+                        resolve(.failure(WebResourceManagerError.fileDecodeFailure("\(resource.fileName) is not text")))
                         return JSValue.null
                     }
-                    do {
-                        let decoded = try BitmapFont(fromString: fontText)
-                        resolve(.success(decoded))
-                    } catch {
-                        print(fontText)
-                        resolve(.failure(WebResourceManagerError.fileDecodeFailure("\(name):" + String(describing: error))))
-                    }
+                    print("Loaded \(resource.fileName)")
+                    resolve(.success(text))
                     return JSValue.null
                 }, failure: { error in
                     print("error", error)
@@ -268,18 +257,12 @@ public final class WebResourceManager: ResourceManager {
                     return JSValue.null
                 })
         }
-        .flatMap { font -> Future<BitmapFont, Swift.Error> in
-            self.fonts[font.info.face] = font
-            let textureName = font.page.file.split(separator: ".").dropLast().joined(separator: ".")
-            return self.loadImageFile(name: String(font.page.file))
-                .map { value -> Void in
-                    self.textureImages[textureName] = value
-                    return
-                }
-                .map { _ in
-                    font
-                }
-        }
     }
-    
+
+    private func url(for resource: LoadableResource) -> String? {
+        guard let origin = JSObject.global.window.object?.location.object?.origin.string else {
+            return nil
+        }
+        return origin + "/" + resourcePath + "/" + resource.fileName
+    }
 }

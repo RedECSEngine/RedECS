@@ -10,18 +10,19 @@ public final class MetalResourceManager: ResourceManager {
         case fileLoadFailure(String)
         case fileDecodeFailure(String)
     }
-    
+
     public var textures: [TextureId: Resource<TextureMap>]  = [:]
     public var animations: [TextureId: SpriteAnimationDictionary] = [:]
     public var tileMaps: [String: TiledMapJSON] = [:]
     public var tileSets: [String: TiledTilesetJSON] = [:]
     public var fonts: [String: BitmapFont] = [:]
-    
+    public var textFiles: [String: String] = [:]
+
     // Apple Specific
     public var resourceBundle: Bundle
     public let metalDevice: MTLDevice
     public var textureImages: [TextureId: MTLTexture] = [:]
-    
+
     public init(resourceBundle: Bundle = .main, metalDevice: MTLDevice) {
         self.resourceBundle = resourceBundle
         self.metalDevice = metalDevice
@@ -53,79 +54,41 @@ public final class MetalResourceManager: ResourceManager {
             print("⚠️ failed to load default HUD font atlas:", error)
         }
     }
-    
+
+    public func loadTextFile(_ resource: LoadableResource) -> Future<String, Swift.Error> {
+        assert(resource.type == .json || resource.type == .csv, "\(resource.fileName) is not a text resource")
+        if let text = textFiles[resource.fileName] {
+            return .just(text)
+        }
+        return readText(resource)
+            .readValue { result in
+                if case let .success(text) = result {
+                    self.textFiles[resource.fileName] = text
+                }
+            }
+    }
+
     public func loadJSONFile<T: Decodable>(
-        _ name: String,
+        _ resource: LoadableResource,
         decodedAs: T.Type
     ) -> Future<T, Swift.Error> {
-        let nameSplit = name.split(separator: ".")
-        var name = name
-        var ext = "json"
-        if nameSplit.count > 1 {
-            name = String(nameSplit.dropLast().joined(separator: "."))
-            ext = String(nameSplit[nameSplit.count - 1])
-        }
-        return Future { resolve in
-            guard let path = self.resourceBundle.path(forResource: name, ofType: ext) else {
-                resolve(.failure(MetalResourceManagerError.fileNotFound("\(name).\(ext) in \(self.resourceBundle.description)")))
-                return
-            }
-
-            let url = URL(fileURLWithPath: path)
-
-            guard let jsonData = try? Data(contentsOf: url, options: .mappedIfSafe) else {
-                resolve(.failure(MetalResourceManagerError.fileLoadFailure(url.absoluteString)))
-                return
-            }
-
-            do {
-                let decoded = try JSONDecoder().decode(T.self, from: jsonData)
-                resolve(.success(decoded))
-            } catch {
-                print(String(data: jsonData, encoding: .utf8) as Any)
-                resolve(.failure(MetalResourceManagerError.fileDecodeFailure("\(name).\(ext):" + String(describing: error))))
-            }
-        }
+        assert(resource.type == .json, "\(resource.fileName) is not a json resource")
+        return decodeJSON(resource, as: T.self)
     }
-    
-    public func preload(_ assets: [LoadableResource]) -> Future<Void, Error> {
-        let futures = assets.map { (asset) -> Future<Void, Swift.Error> in
-            switch asset.type {
-            case .image:
-                return self.startTextureLoadIfNeeded(textureId: asset.name)
-            case .sound:
-                return .just(())
-            case .tilemap:
-                return self.loadTiledMap(asset.name).toVoid()
-            case .bitmapFont:
-                return self.loadBitmapFontTextFile(asset.name).toVoid()
-            }
-        }
-        if futures.isEmpty {
-            return .just(())
-        }
-        print("⚙️ -- Starting assets preload")
-        return .zip(futures)
-            .readValue({ result in
-                if case .success = result {
-                    print("⚙️ -- Assets preloading complete")
-                }
-            })
-            .toVoid()
-    }
-    
+
     @discardableResult
-    public func startTextureLoadIfNeeded(textureId: TextureId) -> Future<Void, Swift.Error> {
+    public func startTextureLoadIfNeeded(_ resource: LoadableResource) -> Future<Void, Swift.Error> {
+        assert(resource.type == .image, "\(resource.fileName) is not an image resource")
+        let textureId = resource.name
         guard textures[textureId] == nil else {
             return .just(())
         }
-        
+
         textures[textureId] = .loading
         print("starting texture load: \(textureId)")
-        return loadImageFile(name: textureId)
-            .flatMap { value -> Future<TextureMap, Swift.Error> in
-                self.textureImages[textureId] = value
-                return self.loadJSONFile(textureId + ".json", decodedAs: TextureMap.self)
+        return loadImageFile(resource)
+            .flatMap { _ -> Future<TextureMap, Swift.Error> in
+                self.decodeJSON(LoadableResource(name: textureId, ext: "json", type: .json), as: TextureMap.self)
             }
             .readValue { result in
                 switch result {
@@ -140,19 +103,13 @@ public final class MetalResourceManager: ResourceManager {
             }
             .toVoid()
     }
-    
-    public func loadTiledMap(_ name: String) -> Future<TiledMapJSON, Swift.Error> {
-        return loadJSONFile(name, decodedAs: TiledMapJSON.self)
+
+    public func loadTiledMap(_ resource: LoadableResource) -> Future<TiledMapJSON, Swift.Error> {
+        assert(resource.type == .tilemap, "\(resource.fileName) is not a tilemap resource")
+        return decodeJSON(resource, as: TiledMapJSON.self)
             .flatMap { tileMap -> Future<TiledMapJSON, Swift.Error> in
-                let loads = Set(tileMap.unresolvedTileSetSources).map { source -> Future<Void, Swift.Error> in
-                    self.loadJSONFile(source, decodedAs: TiledTilesetJSON.self)
-                        .readValue { result in
-                            if case let .success(tileSet) = result {
-                                let key = URL(string: source)?.lastPathComponent ?? source
-                                self.tileSets[key] = tileSet
-                            }
-                        }
-                        .toVoid()
+                let loads = Set(tileMap.unresolvedTileSetSources).map { source in
+                    self.loadTileSet(LoadableResource(fileName: source, type: .tileset)).toVoid()
                 }
                 return Future<Void, Swift.Error>.zip(loads).flatMap { _ -> Future<TiledMapJSON, Swift.Error> in
                     do {
@@ -163,46 +120,85 @@ public final class MetalResourceManager: ResourceManager {
                 }
             }
             .flatMap { tileMap -> Future<TiledMapJSON, Swift.Error> in
-                let textureIds = Set(tileMap.tileSets.compactMap { $0.tileSet?.textureId })
-                return Future<Void, Swift.Error>.zip(textureIds.map { self.loadImageFile(name: $0).toVoid() })
+                let imageFileNames = Set(tileMap.tileSets.compactMap { $0.tileSet?.imageFileName })
+                return Future<Void, Swift.Error>.zip(imageFileNames.map { self.loadTileSetImage($0) })
                     .map { _ in tileMap }
             }
             .readValue { result in
                 if case let .success(tileMap) = result {
-                    self.tileMaps[name] = tileMap
+                    self.tileMaps[resource.fileName] = tileMap
                 }
             }
     }
-    
+
+    public func loadTileSet(_ resource: LoadableResource) -> Future<TiledTilesetJSON, Swift.Error> {
+        assert(resource.type == .tileset, "\(resource.fileName) is not a tileset resource")
+        return decodeJSON(resource, as: TiledTilesetJSON.self)
+            .flatMap { tileSet -> Future<TiledTilesetJSON, Swift.Error> in
+                guard let imageFileName = tileSet.imageFileName else {
+                    return .just(tileSet)
+                }
+                return self.loadTileSetImage(imageFileName).map { _ in tileSet }
+            }
+            .readValue { result in
+                if case let .success(tileSet) = result {
+                    self.tileSets[resource.fileName] = tileSet
+                }
+            }
+    }
+
+    public func loadBitmapFontTextFile(_ resource: LoadableResource) -> Future<BitmapFont, Swift.Error> {
+        assert(resource.type == .bitmapFont, "\(resource.fileName) is not a bitmap font resource")
+        return readText(resource)
+            .flatMap { text -> Future<BitmapFont, Swift.Error> in
+                do {
+                    return .just(try BitmapFont(fromString: text))
+                } catch {
+                    print(text)
+                    return .fail(MetalResourceManagerError.fileDecodeFailure("\(resource.fileName):" + String(describing: error)))
+                }
+            }
+            .flatMap { font -> Future<BitmapFont, Swift.Error> in
+                self.fonts[font.info.face] = font
+                return self.loadImageFile(LoadableResource(fileName: font.page.file, type: .image))
+                    .map { _ in font }
+            }
+    }
+
     public func loadImageFile(
-        name: String
+        _ resource: LoadableResource
     ) -> Future<MTLTexture, Swift.Error> {
-        Future { [weak self] (resolve: @escaping (Result<MTLTexture, Swift.Error>) -> Void) in
+        assert(resource.type == .image, "\(resource.fileName) is not an image resource")
+        return Future { [weak self] (resolve: @escaping (Result<MTLTexture, Swift.Error>) -> Void) in
             guard let self = self else { return }
-            if let image = self.textureImages[name] {
+            if let image = self.textureImages[resource.name] {
                 resolve(.success(image))
                 return
             }
-            
+
             let textureLoader = MTKTextureLoader(device: self.metalDevice)
             let textureLoaderOptions: [MTKTextureLoader.Option: NSNumber] = [
                 .textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
                 .textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue),
                 .SRGB: NSNumber(value: false)
             ]
-            
+
             do {
                 let texture = try self.loadTexture(
-                    name: name,
+                    resource,
                     textureLoader: textureLoader,
                     options: textureLoaderOptions
                 )
-                self.textureImages[name] = texture
+                self.textureImages[resource.name] = texture
                 resolve(.success(texture))
             } catch {
                 resolve(.failure(error))
             }
         }
+    }
+
+    private func loadTileSetImage(_ imageFileName: String) -> Future<Void, Swift.Error> {
+        loadImageFile(LoadableResource(fileName: imageFileName, type: .image)).toVoid()
     }
 
     /// Prefer the loose image file over an asset catalog entry: the catalog
@@ -213,61 +209,50 @@ public final class MetalResourceManager: ResourceManager {
     /// The raw file is byte-identical in both environments; the catalog
     /// remains the fallback for resources shipped only that way.
     private func loadTexture(
-        name: String,
+        _ resource: LoadableResource,
         textureLoader: MTKTextureLoader,
         options: [MTKTextureLoader.Option: NSNumber]
     ) throws -> MTLTexture {
-        for ext in ["png", "jpg", "jpeg"] {
-            if let url = resourceBundle.url(forResource: name, withExtension: ext) {
-                return try textureLoader.newTexture(URL: url, options: options)
-            }
+        if let url = resourceBundle.url(forResource: resource.name, withExtension: resource.ext) {
+            return try textureLoader.newTexture(URL: url, options: options)
         }
         return try textureLoader.newTexture(
-            name: name,
+            name: resource.name,
             scaleFactor: 1.0,
             bundle: resourceBundle,
             options: options
         )
     }
 
-    public func loadBitmapFontTextFile(_ name: String) -> Future<BitmapFont, Swift.Error> {
-        var name = name
-        var ext = "fnt"
-        let nameSplit = name.split(separator: ".")
-        if nameSplit.count > 1 {
-            name = String(nameSplit.dropLast().joined(separator: "."))
-            ext = String(nameSplit[nameSplit.count - 1])
+    private func decodeJSON<T: Decodable>(_ resource: LoadableResource, as type: T.Type) -> Future<T, Swift.Error> {
+        let text: Future<String, Swift.Error>
+        if let cached = textFiles[resource.fileName] {
+            text = .just(cached)
+        } else {
+            text = readText(resource)
         }
-        return Future { (resolve: (Result<BitmapFont, Error>) -> Void) in
-            guard let path = self.resourceBundle.path(forResource: name, ofType: ext) else {
-                resolve(.failure(MetalResourceManagerError.fileNotFound("\(name).\(ext) in \(self.resourceBundle.description)")))
+        return text.flatMap { text -> Future<T, Swift.Error> in
+            do {
+                return .just(try JSONDecoder().decode(T.self, from: Data(text.utf8)))
+            } catch {
+                print(text)
+                return .fail(MetalResourceManagerError.fileDecodeFailure("\(resource.fileName):" + String(describing: error)))
+            }
+        }
+    }
+
+    private func readText(_ resource: LoadableResource) -> Future<String, Swift.Error> {
+        Future { (resolve: (Result<String, Swift.Error>) -> Void) in
+            guard let url = self.resourceBundle.url(forResource: resource.name, withExtension: resource.ext) else {
+                resolve(.failure(MetalResourceManagerError.fileNotFound("\(resource.fileName) in \(self.resourceBundle.description)")))
                 return
             }
-
-            let url = URL(fileURLWithPath: path)
-
             guard let data = try? Data(contentsOf: url, options: .mappedIfSafe),
-                  let string = String(data: data, encoding: .utf8) else {
+                  let text = String(data: data, encoding: .utf8) else {
                 resolve(.failure(MetalResourceManagerError.fileLoadFailure(url.absoluteString)))
                 return
             }
-           
-            do {
-                let decoded = try BitmapFont(fromString: string)
-                
-                resolve(.success(decoded))
-            } catch {
-                print(String(data: data, encoding: .utf8) as Any)
-                resolve(.failure(MetalResourceManagerError.fileDecodeFailure("\(name).\(ext):" + String(describing: error))))
-            }
-        }
-        .flatMap { font -> Future<BitmapFont, Swift.Error> in
-            self.fonts[font.info.face] = font
-            let imageName = font.page.file.split(separator: ".").dropLast().joined(separator: ".")
-            return self.loadImageFile(name: String(imageName))
-                .map { _ in
-                    font
-                }
+            resolve(.success(text))
         }
     }
 }
