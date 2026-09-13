@@ -38,6 +38,11 @@ let package = Package(
             name: "TiledInterpreter",
             targets: ["TiledInterpreter"]
         ),
+
+        .plugin(
+            name: "ResourceDefinitionsPlugin",
+            targets: ["ResourceDefinitionsPlugin"]
+        ),
     ],
     dependencies: [
         .package(
@@ -124,6 +129,20 @@ let package = Package(
             dependencies: []
         ),
 
+        .target(
+            name: "ResourceDefinitionsCore",
+            dependencies: []
+        ),
+        .executableTarget(
+            name: "ResourceDefinitionsGenerator",
+            dependencies: ["ResourceDefinitionsCore"]
+        ),
+        .plugin(
+            name: "ResourceDefinitionsPlugin",
+            capability: .buildTool(),
+            dependencies: ["ResourceDefinitionsGenerator"]
+        ),
+
         .testTarget(
             name: "RedECSTests",
             dependencies: ["RedECS", "RedECSBasicComponents", "RedECSAppleSupport"]
@@ -150,7 +169,8 @@ let package = Package(
             exclude: ["__Snapshots__"],
             resources: [
                 .process("Resources")
-            ]
+            ],
+            plugins: ["ResourceDefinitionsPlugin"]
         ),
         .testTarget(
             name: "TiledInterpreterTests",
@@ -167,6 +187,10 @@ let package = Package(
                 "Village_Tileset.tsj",
                 "AltRooves_Tileset.tsj",
             ]
+        ),
+        .testTarget(
+            name: "ResourceDefinitionsTests",
+            dependencies: ["ResourceDefinitionsCore"]
         ),
     ]
 )
