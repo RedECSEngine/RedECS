@@ -73,6 +73,37 @@ final class ShaderEffectTests: XCTestCase {
         XCTAssertTrue(source.contains("uniform float u_params[\(1 + ShaderRegistry.paletteRemapMaxKeys * 6)];"))
     }
 
+    func testFadeIsRegisteredAndEncodesTime() {
+        let registry = ShaderRegistry()
+        XCTAssertNotNil(registry[.fade])
+        XCTAssertEqual(registry[.fade]?.metalFragmentFunction, "fadeFragment")
+        XCTAssertEqual(ShaderEffect.fade(time: 0.25).programId, .fade)
+        XCTAssertEqual(ShaderEffect.fade(time: 0.25).encodeUniforms(), [0.25])
+    }
+
+    func testTimeBasedCasesRoundTripThroughEffectAt() {
+        for timeCase in ShaderEffect.TimeBased.allCases {
+            let effect = timeCase.effect(at: 0.5)
+            XCTAssertEqual(effect.timeBasedCase, timeCase)
+            XCTAssertEqual(effect.encodeUniforms(), [0.5])
+            XCTAssertEqual(effect.programId.rawValue, timeCase.rawValue)
+        }
+        XCTAssertNil(ShaderEffect.tint(.white).timeBasedCase)
+        XCTAssertNil(ShaderEffect.paletteRemap([]).timeBasedCase)
+        XCTAssertNil(ShaderEffect.custom("x", params: []).timeBasedCase)
+    }
+
+    func testTimeBasedCodableRoundTrip() throws {
+        for timeCase in ShaderEffect.TimeBased.allCases {
+            let data = try JSONEncoder().encode(timeCase)
+            let decoded = try JSONDecoder().decode(ShaderEffect.TimeBased.self, from: data)
+            XCTAssertEqual(decoded, timeCase)
+        }
+        let effectData = try JSONEncoder().encode(ShaderEffect.fade(time: 0.75))
+        let decodedEffect = try JSONDecoder().decode(ShaderEffect.self, from: effectData)
+        XCTAssertEqual(decodedEffect, .fade(time: 0.75))
+    }
+
     func testRenderGroupDefaultsToNilShader() {
         let group = RenderGroup(
             triangles: [],
@@ -95,5 +126,36 @@ final class ShaderEffectTests: XCTestCase {
         XCTAssertEqual(group.withTransformMatrix(.identity).shader, shader)
         XCTAssertEqual(group.withOpacity(0.5).shader, shader)
         XCTAssertEqual(group.with(zIndex: 3, projectionSpace: .screen).shader, shader)
+        XCTAssertEqual(group.withClipRect(Rect(x: 0, y: 0, width: 10, height: 10)).shader, shader)
+        XCTAssertEqual(group.applyingClip(Rect(x: 0, y: 0, width: 10, height: 10)).shader, shader)
+    }
+
+    func testWithShaderOverridesAndClears() {
+        let group = RenderGroup(
+            triangles: [],
+            transformMatrix: .identity,
+            fragmentType: .texture("atlas"),
+            zIndex: 2,
+            shader: .tint(.green)
+        )
+        XCTAssertEqual(group.withShader(.ripple(time: 0.5)).shader, .ripple(time: 0.5))
+        XCTAssertNil(group.withShader(nil).shader)
+        XCTAssertEqual(group.withShader(.ripple(time: 0.5)).zIndex, 2)
+    }
+
+    func testWithZIndexOffsetShiftsOnlyZIndex() {
+        let group = RenderGroup(
+            triangles: [],
+            transformMatrix: .identity,
+            fragmentType: .texture("atlas"),
+            zIndex: 5,
+            opacity: 0.5,
+            shader: .tint(.green)
+        )
+        let offset = group.withZIndexOffset(-1_000_000)
+        XCTAssertEqual(offset.zIndex, -999_995)
+        XCTAssertEqual(offset.shader, .tint(.green))
+        XCTAssertEqual(offset.opacity, 0.5)
+        XCTAssertEqual(group.withZIndexOffset(0).zIndex, 5)
     }
 }

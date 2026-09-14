@@ -18,6 +18,7 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
     case timing(TimingOperation<GameAction>)
     case removeEntity(RemoveEntityOperation<GameAction>)
     case shaderEffect(ShaderEffectOperation)
+    case subtreeShader(SubtreeShaderOperation)
     case sound(SoundOperation<GameAction>)
     
     public var duration: Double {
@@ -56,6 +57,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return 0
         case .shaderEffect(let shaderOp):
             return shaderOp.duration
+        case .subtreeShader(let subtreeOp):
+            return subtreeOp.duration
         case .sound:
             return 0
         }
@@ -97,6 +100,8 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             return remove.isComplete
         case .shaderEffect(let shaderOp):
             return shaderOp.isComplete
+        case .subtreeShader(let subtreeOp):
+            return subtreeOp.isComplete
         case .sound(let sound):
             return sound.isComplete
         }
@@ -176,6 +181,10 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
             _ = shaderOp.run(id: id, state: &state, delta: delta)
             self = .shaderEffect(shaderOp)
             return .none
+        case .subtreeShader(var subtreeOp):
+            _ = subtreeOp.run(id: id, state: &state, delta: delta)
+            self = .subtreeShader(subtreeOp)
+            return .none
         case .sound(var sound):
             let effect = sound.run(id: id, state: &state, delta: delta)
             self = .sound(sound)
@@ -235,6 +244,9 @@ public indirect enum OperationType<GameAction: Equatable & Codable>: Codable & E
         case .shaderEffect(var shaderOp):
             shaderOp.reset()
             self = .shaderEffect(shaderOp)
+        case .subtreeShader(var subtreeOp):
+            subtreeOp.reset()
+            self = .subtreeShader(subtreeOp)
         case .sound(var sound):
             sound.reset()
             self = .sound(sound)
@@ -464,6 +476,16 @@ public extension OperationType {
 
 
 public extension OperationType {
+    static func subtreeShader(_ effect: ShaderEffect.TimeBased, duration: Double, reversed: Bool = false) -> Self {
+        .subtreeShader(SubtreeShaderOperation(effect: effect, duration: duration, reversed: reversed))
+    }
+
+    func subtreeShader(_ effect: ShaderEffect.TimeBased, duration: Double, reversed: Bool = false) -> Self {
+        var component = self
+        component.appendOperation(.subtreeShader(SubtreeShaderOperation(effect: effect, duration: duration, reversed: reversed)))
+        return component
+    }
+
     static func shaderEffect(_ effect: ShaderEffect, animated: Bool = false, duration: Double = 1) -> Self {
         .shaderEffect(ShaderEffectOperation(effect: effect, animated: animated, duration: duration))
     }

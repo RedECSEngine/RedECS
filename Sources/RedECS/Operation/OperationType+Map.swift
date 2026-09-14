@@ -12,6 +12,7 @@ public extension OperationType {
         case .opacity(let op): return .opacity(op)
         case .visibility(let op): return .visibility(op)
         case .shaderEffect(let op): return .shaderEffect(op)
+        case .subtreeShader(let op): return .subtreeShader(op)
         case .repeat(let op): return .repeat(op.map(transform))
         case .sequence(let op): return .sequence(op.map(transform))
         case .group(let op): return .group(op.map(transform))
