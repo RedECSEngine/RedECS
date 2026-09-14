@@ -41,6 +41,25 @@ public struct RenderableComponentType<State: GameState> {
     }
 }
 
+public struct RootDrawDisposition: Sendable {
+    public var isDrawn: Bool
+    public var shaderOverride: ShaderEffect?
+    public var zIndexOffset: Int
+
+    public init(
+        isDrawn: Bool = true,
+        shaderOverride: ShaderEffect? = nil,
+        zIndexOffset: Int = 0
+    ) {
+        self.isDrawn = isDrawn
+        self.shaderOverride = shaderOverride
+        self.zIndexOffset = zIndexOffset
+    }
+
+    public static let drawn = RootDrawDisposition()
+    public static let hidden = RootDrawDisposition(isDrawn: false)
+}
+
 public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
     public typealias State = ContextState
     public typealias Action = Never
@@ -48,6 +67,7 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
 
     var renderableComponentTypes: [RenderableComponentType<State>]
     var rootDrawOrder: ((EntityId, State) -> Double)?
+    var rootDrawDisposition: ((EntityId, State) -> RootDrawDisposition)?
 
     /// - Parameter rootDrawOrder: an optional sort key for the **top-level**
     ///   entities, drawn in ascending order — lowest key first (furthest back),
@@ -61,10 +81,12 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
     ///   walk keeps plain tree order.
     public init(
         renderableComponentTypes: [RenderableComponentType<State>],
-        rootDrawOrder: ((EntityId, State) -> Double)? = nil
+        rootDrawOrder: ((EntityId, State) -> Double)? = nil,
+        rootDrawDisposition: ((EntityId, State) -> RootDrawDisposition)? = nil
     ) {
         self.renderableComponentTypes = renderableComponentTypes
         self.rootDrawOrder = rootDrawOrder
+        self.rootDrawDisposition = rootDrawDisposition
     }
 
     public func reduce(
@@ -87,7 +109,8 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
                 state: state,
                 projectionMatrix: projectionMatrix,
                 environment: environment,
-                order: rootDrawOrder
+                order: rootDrawOrder,
+                disposition: rootDrawDisposition
             )
         }
         return .none
@@ -102,10 +125,24 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
         state: State,
         projectionMatrix: Matrix3,
         environment: RenderingEnvironment,
-        order: ((EntityId, State) -> Double)? = nil
+        order: ((EntityId, State) -> Double)? = nil,
+        disposition: ((EntityId, State) -> RootDrawDisposition)? = nil,
+        shaderOverride: ShaderEffect? = nil,
+        zIndexOffset: Int = 0
     ) {
         let cameraMatrix = Matrix3.multiply(projectionMatrix, worldMatrix)
         for entityId in Self.ordered(children, by: order, in: state) {
+            var shaderOverride = shaderOverride
+            var zIndexOffset = zIndexOffset
+            if let disposition {
+                let rootDisposition = disposition(entityId, state)
+                if !rootDisposition.isDrawn {
+                    continue
+                }
+                shaderOverride = rootDisposition.shaderOverride
+                zIndexOffset = rootDisposition.zIndexOffset
+            }
+
             let transform = state.transform[entityId]
             if transform?.isHidden == true {
                 continue
@@ -123,7 +160,14 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
                         continue
                     }
                     environment.renderer.enqueue(groups.map { group in
-                        group.withTransformMatrix(.multiply(worldMatrix, group.transformMatrix))
+                        var reparented = group.withTransformMatrix(.multiply(worldMatrix, group.transformMatrix))
+                        if zIndexOffset != 0 {
+                            reparented = reparented.withZIndexOffset(zIndexOffset)
+                        }
+                        if let shaderOverride {
+                            reparented = reparented.withShader(shaderOverride)
+                        }
+                        return reparented
                     })
                 }
             }
@@ -136,7 +180,9 @@ public struct RenderingReducer<ContextState: RenderableGameState>: Reducer {
                 worldMatrix: childWorldMatrix,
                 state: state,
                 projectionMatrix: projectionMatrix,
-                environment: environment
+                environment: environment,
+                shaderOverride: shaderOverride,
+                zIndexOffset: zIndexOffset
             )
         }
     }

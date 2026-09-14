@@ -5,7 +5,7 @@ import RedECSBasicComponents
 import RedECSAppleSupport
 import RedHUD
 
-struct RenderingTestState: RenderableGameState, OperationCapableGameState {
+struct RenderingTestState: RenderableGameState, OperationCapableGameState, SceneCapableGameState {
     typealias GameAction = RenderingTestAction
 
     var entities: EntityRepository = .init()
@@ -14,6 +14,8 @@ struct RenderingTestState: RenderableGameState, OperationCapableGameState {
     var sprite: [EntityId: SpriteComponent] = [:]
     var camera: [EntityId: CameraComponent] = [:]
     var operation: [EntityId: OperationComponent<RenderingTestAction>] = [:]
+    var scene: [EntityId: SceneComponent] = [:]
+    var sceneManager: SceneManagerState = .init()
 
     /// Button fires observed by TestGameLogicReducer, proving triggered
     /// actions round-trip out of the HUD and into game logic.

@@ -250,20 +250,24 @@ public extension GameEffect {
     static func newEntity<C1: GameComponent>(
         _ entityId: EntityId = newEntityId(),
         tags: Set<String> = [],
+        parent: EntityId? = nil,
         with c1KeyPath: WritableKeyPath<State, [EntityId: C1]>,
         _ modify: (inout C1) -> Void
     ) -> GameEffect<State, LogicAction> {
         var c1 = C1.init(entity: entityId)
         modify(&c1)
-        return .many(
+        let spawn: GameEffect<State, LogicAction> = .many(
             .system(.addEntity(entityId, tags)),
             .system(.addComponent(c1, into: c1KeyPath))
         )
+        guard let parent else { return spawn }
+        return .many(spawn, .system(.setParent(entityId, parent)))
     }
     
     static func newEntity<C1: GameComponent, C2: GameComponent>(
         _ entityId: EntityId = newEntityId(),
         tags: Set<String> = [],
+        parent: EntityId? = nil,
         with c1KeyPath: WritableKeyPath<State, [EntityId: C1]>,
         _ c2KeyPath: WritableKeyPath<State, [EntityId: C2]>,
         _ modify: (inout C1, inout C2) -> Void
@@ -271,11 +275,13 @@ public extension GameEffect {
         var c1 = C1.init(entity: entityId)
         var c2 = C2.init(entity: entityId)
         modify(&c1, &c2)
-        return .many(
+        let spawn: GameEffect<State, LogicAction> = .many(
             .system(.addEntity(entityId, tags)),
             .system(.addComponent(c1, into: c1KeyPath)),
             .system(.addComponent(c2, into: c2KeyPath))
         )
+        guard let parent else { return spawn }
+        return .many(spawn, .system(.setParent(entityId, parent)))
     }
     
     static func newEntity<
@@ -285,6 +291,7 @@ public extension GameEffect {
     >(
         _ entityId: EntityId = newEntityId(),
         tags: Set<String> = [],
+        parent: EntityId? = nil,
         with c1KeyPath: WritableKeyPath<State, [EntityId: C1]>,
         _ c2KeyPath: WritableKeyPath<State, [EntityId: C2]>,
         _ c3KeyPath: WritableKeyPath<State, [EntityId: C3]>,
@@ -294,12 +301,14 @@ public extension GameEffect {
         var c2 = C2.init(entity: entityId)
         var c3 = C3.init(entity: entityId)
         modify(&c1, &c2, &c3)
-        return .many(
+        let spawn: GameEffect<State, LogicAction> = .many(
             .system(.addEntity(entityId, tags)),
             .system(.addComponent(c1, into: c1KeyPath)),
             .system(.addComponent(c2, into: c2KeyPath)),
             .system(.addComponent(c3, into: c3KeyPath))
         )
+        guard let parent else { return spawn }
+        return .many(spawn, .system(.setParent(entityId, parent)))
     }
     
     static func newEntity<
@@ -310,6 +319,7 @@ public extension GameEffect {
     >(
         _ entityId: EntityId = newEntityId(),
         tags: Set<String> = [],
+        parent: EntityId? = nil,
         with c1KeyPath: WritableKeyPath<State, [EntityId: C1]>,
         _ c2KeyPath: WritableKeyPath<State, [EntityId: C2]>,
         _ c3KeyPath: WritableKeyPath<State, [EntityId: C3]>,
@@ -321,13 +331,15 @@ public extension GameEffect {
         var c3 = C3.init(entity: entityId)
         var c4 = C4.init(entity: entityId)
         modify(&c1, &c2, &c3, &c4)
-        return .many(
+        let spawn: GameEffect<State, LogicAction> = .many(
             .system(.addEntity(entityId, tags)),
             .system(.addComponent(c1, into: c1KeyPath)),
             .system(.addComponent(c2, into: c2KeyPath)),
             .system(.addComponent(c3, into: c3KeyPath)),
             .system(.addComponent(c4, into: c4KeyPath))
         )
+        guard let parent else { return spawn }
+        return .many(spawn, .system(.setParent(entityId, parent)))
     }
     
     static func newEntity<
@@ -339,6 +351,7 @@ public extension GameEffect {
     >(
         _ entityId: EntityId = newEntityId(),
         tags: Set<String> = [],
+        parent: EntityId? = nil,
         with c1KeyPath: WritableKeyPath<State, [EntityId: C1]>,
         _ c2KeyPath: WritableKeyPath<State, [EntityId: C2]>,
         _ c3KeyPath: WritableKeyPath<State, [EntityId: C3]>,
@@ -352,7 +365,7 @@ public extension GameEffect {
         var c4 = C4.init(entity: entityId)
         var c5 = C5.init(entity: entityId)
         modify(&c1, &c2, &c3, &c4, &c5)
-        return .many(
+        let spawn: GameEffect<State, LogicAction> = .many(
             .system(.addEntity(entityId, tags)),
             .system(.addComponent(c1, into: c1KeyPath)),
             .system(.addComponent(c2, into: c2KeyPath)),
@@ -360,5 +373,7 @@ public extension GameEffect {
             .system(.addComponent(c4, into: c4KeyPath)),
             .system(.addComponent(c5, into: c5KeyPath))
         )
+        guard let parent else { return spawn }
+        return .many(spawn, .system(.setParent(entityId, parent)))
     }
 }
